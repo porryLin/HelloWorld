@@ -353,3 +353,7 @@ benbom 841207051
 
 
 lmekr_p2  zxc********
+
+git config --global user.name porry.lin
+git config --global user.email porry.lin@gmail.com
+
