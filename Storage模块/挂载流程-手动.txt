@@ -1,0 +1,168 @@
+Content-Type: text/x-zim-wiki
+Wiki-Format: zim 0.4
+Creation-Date: 2014-03-01T16:26:55+08:00
+
+====== 挂载流程-手动 ======
+Created Saturday 01 March 2014
+
+================================================================================================
+
+==== 手动挂载SD card的流程 ====
+
+== 一. 点击挂载，发送挂载信息： ==
+
+-> Memory.mount() 
+-> MountService.mountVolume(sClickedMountPoint) 
+-> MountService.doMountVolume(path) 
+-> NativeDaemonConnector.execute("volume", "mount", path)
+   {
+       ...
+       mOutputStream.write(sentCmd.getBytes(Charsets.UTF_8));        __  // 通过socket发送"volume mount /mnt/extsd"信息给 native层__
+       ...
+   }
+
+== 二. native 层接收挂载请求信息： ==
+
+-> SocketListener::startListener() 
+    {
+                  mSock = android_get_control_socket(mSocketName);
+                  listen(mSock, 4);
+                  mClients->push_back(new SocketClient(mSock, false, mUseCmdNum));
+                  pipe(mCtrlPipe);
+                  pthread_create(&mThread, NULL, SocketListener::threadStart, this);
+     }
+
+-> SocketListener::runListener()  **监听socket数据;**
+         
+-> FrameworkListener::onDataAvailable(SocketClient *c);     **//**__接收到数据后对数据进行分析__**，消息从framework层发来的，则调用子类 FrameworkListener 分析**
+-> FrameworkListener::dispatchCommand(SocketClient *cli, char *data);
+       
+-> FrameworkCommand::runCommand(SocketClient *c, int argc, char **argv);      **// 根据分析结果执行指令**
+   **// 不同指令调用不同的子类去实现，各子类在ConmmandListener.cpp中定义;**
+**   // 如果是挂载请求指令，command = volume **
+-> CommandListener::VolumeCmd::runCommand(SocketClient *cli, int argc, char **argv)
+   {
+      ...
+      cli->sendMsg(ResponseCode::CommandSyntaxError, "Usage: volume mount <path>", false);      **// **__向已连接的socket发送信息__
+      ...
+      rc = vm->mountVolume(argv[2]);
+      ...
+   }
+-> VolumeManager::mountVolume(const char *label)
+-> Volume::mountVol()
+   {
+      ...
+      gid = AID_SDCARD_RW; // 挂载后的权限，另外一个权限是 AID_MEDIA_RW
+      ...
+      if( !Exfat::check(devicePath) ) {     // 检查设备格式，如果是Exfat格式则挂载成Exfat格式     
+          Exfat::doMount(devicePath, "/mnt/secure/staging", false, false, false, AID_SYSTEM, gid, 0002, true);     __// 先挂载到临时挂载点__
+      }
+      ...
+      doMoveMount("/mnt/secure/staging", mMountPart[i], false);     __ // 将挂载点移动到/mnt/extsd__
+      ...
+      
+   }
+
+
+== 三. 至此挂载完成，接下来更新设备State信息和返回挂载成功信息： ==
+
+-> Volume::setState(int state)
+   {
+       ...
+       mVm->getBroadcaster()->sendBroadcast(ResponseCode::VolumeStateChange, msg, false);       ** //  mVm->getBroadcaster()返回 SocketListener**
+       ...
+   }
+-> SocketListener::sendBroadcast(int code, const char *msg, bool addErrno)
+   {
+       ...
+       (*i)->sendMsg(code, msg, addErrno, false);
+         // 即SocketClient::sendMsg(int code, const char *msg, bool addErrno, bool useCmdNum);
+   }
+-> SocketClient::sendMsg(int code, const char *msg, bool addErrno, bool useCmdNum);
+-> SocketClient::sendMsg(const char *msg);
+-> SocketClient::sendData(const void *data, int len);
+-> SocketClient::sendDataLocked(const void *data, int len)
+   {
+       ...
+       rc = send(mSocket, p, brtw, MSG_NOSIGNAL); //向已连接的mSocket发送数据p，数据长度为brtw，发送方式为MSG_NOSIGNAL。
+                                                                                                              // 也就是将挂载成功的信息发送回给framework层
+       ...
+   }
+
+
+== 四. framework层收到挂载成功信息，发送挂载成功广播: ==
+
+-> NativeDaemonConnector.listenToSocket()
+   {
+       ...
+       int count = inputStream.read(buffer, start, BUFFER_SIZE - start);
+       ...
+       if (event.isClassUnsolicited()) {
+            // TODO: migrate to sending NativeDaemonEvent instances
+            mCallbackHandler.sendMessage(mCallbackHandler.obtainMessage(event.getCode(), event.getRawEvent()));
+       }
+       ...
+   }
+从socket读取到的返回信息如log所示，由最后一句log可知frameworkd层接收到返回信息后又发送接收成功信息给native层
+I/Porry   ( 2362): rawEvent = 605 Volume extsd /mnt/extsd state changed from 1 (Idle-Unmounted) to 3 (Checking)
+I/Porry   ( 2362): event is ClassUnsolicited
+I/Porry   ( 2362): rawEvent = 605 Volume extsd /mnt/extsd state changed from 3 (Checking) to 4 (Mounted)
+I/Porry   ( 2362): event is ClassUnsolicited
+I/Porry   ( 2362): rawEvent = 200 19 volume operation succeeded
+I/Porry   ( 2362): event is not ClassUnsolicited
+I/Porry   ( 2362): execute() event = 200 19 volume operation succeeded    //发送接收成功信息给native层
+
+-> NativeDaemonConnector.handleMessage(Message msg)
+   {
+       String event = (String) msg.obj;
+       ...
+       if (!mCallbacks.onEvent(msg.what, event, NativeDaemonEvent.unescapeArgs(event)));
+       ...
+   }
+-> MountService.onEvent(int code, String raw, String[] cooked)
+   {
+       ...
+        // 事件为存储设备的状态变化
+       if (code == VoldResponseCode.VolumeStateChange) {
+             notifyVolumeStateChange(
+                    cooked[2], cooked[3], Integer.parseInt(cooked[7]), Integer.parseInt(cooked[10]));
+       }
+       ...
+        // 事件为插入存储设备，则发送挂载指令给native层，此处是自动挂载的流程！！！
+       if (code == VoldResponseCode.VolumeDiskInserted) {
+             ...
+             if ((rc = doMountVolume(path)) != StorageResultCode.OperationSucceeded);
+             ...
+       }
+   }
+-> MountService.notifyVolumeStateChange(String label, String path, int oldState, int newState)
+   {
+       ...
+       updatePublicVolumeState(volume, Environment.MEDIA_MOUNTED);// 完成其他的工作。
+       ...
+       sendStorageIntent(action, volume, UserHandle.ALL); // 此处调用方法发送挂载成功的广播！！！
+       ...
+   }
+
+/mnt/extsd  isPrimary() = false
+至此framework层手动挂载的工作基本完成，剩下一些收尾工作
+
+
+
+查看Volume.cpp在手动挂载的时候输出的log信息：--------------------------
+I/Vold    ( 1278): Volume::mountVol state : 1
+I/Vold    ( 1278): Volume::mountVol: mMountpoint /mnt/extsd
+I/Vold    ( 1278): /dev/block/vold/179:49 being considered for volume extsd
+D/Vold    ( 1278): Volume extsd state changing 1 (Idle-Unmounted) -> 3 (Checking)
+I/Vold    ( 1278): Exfat::check
+E/Vold    ( 1278): Filesystem check failed (unknown exit code 1)
+I/Vold    ( 1278): Filesystem check completed OK
+I/Vold    ( 1278): Device /dev/block/vold/179:49, target /mnt/extsd mounted @ /mnt/secure/staging
+D/Vold    ( 1278): Moved mount /mnt/secure/staging -> /mnt/extsd sucessfully
+D/Vold    ( 1278): Volume extsd state changing 3 (Checking) -> 4 (Mounted)
+
+从上述log信息中可知，首先检查设备/dev/block/vold/179:49的格式（Exfat, Fat, Ntfs），然后将设备/dev/block/vold/179:49挂载到/mnt/secure/staging，接着再移到/mnt/extsd。 移除掉临时挂载目录mnt/secure/staging
+
+
+
+====== 手动挂载的流程结束 ======

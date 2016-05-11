@@ -1,0 +1,114 @@
+当播放完毕时会调用onCompletion() : ( GLMusicService.java )
+OnCompletionListener compleListener = new OnCompletionListener() {
+
+		// Override
+		public void onCompletion(MediaPlayer mp) {
+			// TODO Auto-generated method stub
+			if(isMusicLayoutExist){
+
+				sendBroadcast2Layout("OnCompletion");}
+			else
+       
+				PlayNext();
+		}
+};
+
+播放出错会调用 Errorlistener() :
+OnErrorListener Errorlistener = new OnErrorListener() {
+		public boolean onError(MediaPlayer mp, int what, int extra) {
+			// TODO Auto-generated method stub
+			if(isMusicLayoutExist) {
+					sendBroadcast2Layout("OnError");
+
+			else
+				{
+				try {                        
+					PlayNext();
+				} catch (Exception e) {
+					e.printStackTrace();
+				}
+			}
+			return false;
+		}
+	};
+
+推测 onCompletion() 调用了两次以上
+
+在reset() 后 MediaPlayer 处于 Idle 状态， 此时如果调用了getDuration()等方法, 会触发OnErrorListener.onError()，并且MediaPlayer会进入Error状态，如果MediaPlayer进入了Error状态，可以通过调用reset()来恢复，使得MediaPlayer重新返回到Idle状态。
+
+0312版本没问题，0320版没问题。
+
+问题出在 GLMusicLayout.java ——> TimerTask taskAutoPlay = new TimerTask() { 
+
+              public void run() {
+                  showProgress(); // Porry add, fix the bar did't drag while pause issue.
+			if (isPlaying()) {
+				//showProgress();  Porry delete
+                         ...
+                         }
+
+修改方法：(1) TimerTask taskAutoPlay = new TimerTask() {
+		// Override
+		public void run() {
+			if (isPlaying() || isPausing()) {
+				 showProgress(); 
+                        ...
+                        }
+           (2) 增加方法  public boolean isPausing() {
+                      try {
+                          return musicService.isPausing();
+                      } catch (RemoteException ex) {
+                          return false;
+                             } 
+                         }
+           (3) 在IGLMusicService.aidl 中增加     boolean isPausing();
+
+           (4) 在GLMusicService.java 中增加 private boolean isPaused = false;
+
+      public boolean isPausing() 
+	{
+            if( (mService != null) && (mService.get() != null) )
+                return mService.get().isPausing();
+            else
+                return false;
+        }
+
+      public boolean isPausing()
+		{
+		return isPaused;
+		}
+
+      public void play() {
+                ...
+            isPaused = false; 
+	}  
+
+       public void pause() { 
+                  ...
+            isPaused = true; 
+	}  
+
+      public void stop() {
+                 ...
+            isPaused = false; 
+	}  
+
+      public void reset(){
+                 ...
+            isPaused = false; 
+	} 
+
+      public void setDataSource(String path){
+                 ...
+            isPaused = false; 
+	} 
+
+      public void prepare(){
+                 ...
+            isPaused = false; 
+	} 
+
+      public void start(){
+                 ...
+            isPaused = false; 
+	} 

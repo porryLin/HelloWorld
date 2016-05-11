@@ -1,0 +1,261 @@
+http://www.chainfire.eu/articles/113/Is_Google_blocking_apps_writing_to_SD_cards_/
+
+"谷歌是否在向阻止第三方APK写到secondary external storage的趋势发展"
+
+此刻，谷歌表现出来的确实是这样，但它也可能是一个bug或者是制造商错误实现出来的一个“功能”。首先，让我澄清问题，和初学者解释下我所说的存储究竟是什么意思。
+
+在过去几年发布的各种Android设备都包含了“internal”快闪记忆体，以及为有能力通过使用SD卡扩展存储。
+
+对于Android系统来说，所谓的“internal”闪存存储也被称为“external storage”。至于该存储设备是否被固定在Android设备内部并没有什么关系，它判断的条件是超出正常的应用程序的存储位置。
+
+不幸的是，尽管这两种类型的外部存储设备已经相当普遍，Android系统仍然没有提供适当的API来访问这些存储设备。你可能会认为这篇文章写的是有关怎么访问的 - 不，本文讨论的更加深入。
+
+所以，如果你已经购买了一个Android设备预装16GB（或8或32等）的存储，而且还可以使用SD卡，那么您的设备有两个external storage。
+
+internal快闪记忆体通常会被认为是primary external storage主要的外部存储位置，而SD卡将被认为是secondary external storage次要的外部存储位置（如果存在内部闪存）。你可能会连接一个USB记忆棒或硬盘也将是次要的外部存储。
+
+在较新的Android上面，谷歌使得第三方应用程序（没有预装在设备上的应用程序，但你手动安装或从Android Market/Google Play下载）不可能获得外部SD卡的写入访问权限。
+
+这将使得SD卡（或者是USB设备）像任何其他只读存储设备一样完全没有用处。除非你使用内置文件浏览器（如果您的设备至少配备了一个）手动复制文件，就是这样。
+
+
+我早在今天之前就研究过这个问题，那个时候是在做数码单反相机控制器的备份相片功能，并且在搭载了Android 3.2系统的三星Galaxy Tab 7.7上进行测试。经过一段时间的研究之后，发现有相当数量的其他安卓设备也存在这个现象：如果你能够看到的话，关于这方面的抱怨相当多。
+在数码单反相机控制器的例子中，只能写到internal闪存而不是写到SD卡使得相片备份功能变得和许多其他应用程序的功能一样没有意义。这个问题在Android2.x中存在，但是我现在还不能非常确定3.x中会不会也有。
+
+在过去，一个应用程序需要声明“WRITE_EXTERNAL_STORAGE”权限，才被授予写访问所有外部存储器（user/group 的“sdcard_rw”）的权限。现在有了明显的变化，该声明只被授予写访问primary external storage的权限。现在推出了名为“WRITE_MEDIA_STORAGE”的第二权限，这将授予访问其他外部存储（user/group 的“media_rw”）。
+
+问题是，第三方应用实际上没有被授予此权限，只有系统应用或者由设备制造商提供的应用程序通常会被授予此权限。但也有例外，显然在某些设备上的第三方应用程序将被授予该权限，但根据AOSP(简单对象访问协议)，这样做是不被认可的。
+
+那么，究竟是怎么回事呢？这是一个错误吗？这是一个功能呢？这是不是意味着要使用由OEM(代工)提供的不同，但是错误的固件？我真的很想知道！
+
+当然，不能期待你相信不管我说什么都是正确的。这里有些源码：
+
+
+system/core/include/private/android_filesystem_config.h:
+
+{ "media_rw",  AID_MEDIA_RW, },
+
+这里显示AID_MEDIA_RW的定义，应用程序想要获得访问secondary external storages需要的group。
+
+
+
+frameworks/base/core/res/AndroidManifest.xml:
+
+<!-- Allows an application to write to internal media storage
+     @hide  -->
+
+<permission android:name="android.permission.WRITE_MEDIA_STORAGE"
+
+    android:permissionGroup="android.permission-group.STORAGE"
+
+    android:label="@string/permlab_mediaStorageWrite"
+
+    android:description="@string/permdesc_mediaStorageWrite"
+
+    android:protectionLevel="signatureOrSystem" />
+
+   这里表示了“WRITE_MEDIA_STORAGE的”权限怎样受到“signatureOrSystem”的保护。这意味着，它只会被授予系统应用程序或使用和平台相同的密钥签名的应用程序（由OEM提供）。注意 @hide 标记，其描述提到了internal媒体存储，这可能暗示外置SD卡用这种方式来标志实际上是一个bug，而不是一个功能。
+
+
+
+frameworks/base/data/etc/platform.xml:
+
+<permission name="android.permission.WRITE_MEDIA_STORAGE" >
+
+    <group gid="media_rw" />
+
+</permission>
+
+这表明了WRITE_MEDIA_STORAGE权限 使得应用程序获得 "media_rw" group。
+
+
+
+
+system/vold/Volume.cpp @ Volume::mountVol():
+
+const char* externalStorage = getenv("EXTERNAL_STORAGE");
+
+bool primaryStorage = externalStorage && !strcmp(getMountpoint(), externalStorage);
+......
+
+if (primaryStorage) {
+
+    // Special case the primary SD card.
+
+    // For this we grant write access to the SDCARD_RW group.
+
+    gid = AID_SDCARD_RW;
+
+} else {
+
+    // For secondary external storage we keep things locked up.
+
+    gid = AID_MEDIA_RW;
+
+}
+这说明挂载点等于环境变量“EXTERNAL_STORAGE”的external 存储设备将得到正常AID_SDCARD_RW的组，应用程序可以通过声明“WRITE_EXTERNAL_STORAGE”来获得访问该设备的权限。其他的external存储设备（包括USB记忆棒和诸如此类的东西）将得到AID_MEDIA_RW的组，因此不能被第三方应用程序写访问。
+
+对于“primary SD card”大家的解释有点混乱，因为EXTERNAL_STORAGE环境变量，通常是指internal闪存，而不是 primary SD card。所以，再一次，也许什么都没有发生。
+
+有一种情况并非罕见（但也不是一个标准）：internal闪存，可挂载在被称为“external storage”的地方，所有其他外部存储设备挂载在该挂载点的子文件夹中。这是一种流行的OEM解决方案，Android没有提供合适的API来支持多个外部存储（谷歌似乎拒绝解决这个问题）。通过这种方式，第三方应用程序只需要知道“external storage”的位置，由于子文件夹结构，它仍然可以访问所有的外部存储器。这种特定的方式显然会导致上面贴的代码出现问题。
+
+希望谷歌有人可以摆脱一些这方面的情况。
+
+
+
+
+
+Update #1
+
+This has been discussed on Android Developers' weekly Google Plus hangout, as well as some other chats with Google engineers.
+
+None of them had any idea what is going on here - yet. But we have gotten a promise that this specific issue will be looked into, and they will get back to me on this - I hope it will be in dialog!
+
+I also wanted to share with you that even devices like the SGS2 (international) suffer from this issue on ICS, though Samsung has worked around it using a very ugly permission hack. The problem is still there, even if it doesn't show up.
+
+
+Update #2
+
+By request, here's the way Samsung has worked around the problem in their ICS builds for the SGS2:
+
+/system/etc/permissions/platform.xml:
+
+<permission name="android.permission.WRITE_EXTERNAL_STORAGE" >
+
+    <group gid="sdcard_rw" />
+
+    <group gid="media_rw" />
+
+</permission>
+
+Well, this is certainly an interesting way to go about working around the problem. What is happening here is that if you ask for the "WRITE_EXTERNAL_STORAGE" permission, you also get the "WRITE_MEDIA_STORAGE" permission - at no extra charge! It should be obvious that this is not in any way a proper solution to the issue.
+
+
+仍然期待着听到谷歌对于这一切说些什么。使我担心的是，他们所添加的代码 (基于代码注释)，甚至是为了限制更多的访问，而没有提供任何明确的原因。
+
+
+Update #3
+
+XDA门户网站有篇文章细心的评论指出，这个问题CyanogenMod做了修补：
+
+// Originally, non-primary storage was set to MEDIA_RW group which  
+// prevented users from writing to it. We don't want that.  
+
+gid = AID_SDCARD_RW;
+
+对于CyanogenMod的用户，这个方法很不错，但不利于其他原生Android系统的用户。问题仍然存在 - 为什么？这个东西似乎没有任何理由，但它对现实世界中的人的真实世界的设备造成了现实世界中的问题！
+
+
+
+
+
+讨论：
+1.
+Can this problem be fixed by a kernel re-build?
+We are facing this problem with ICS on Galaxy S + family phones which we cant access the internal sd card after facing encryption unsuccessful.
+
+http://forum.xda-developers.com/showthread.php?t=1447303
+
+No real solution has come up yet.
+Cyanogen himself has posted some thoughts about the subject but nothing that will really help is found.
+Are you able to help us out on this?
+Same issues are facing in other threads in Vibrant and Nexus S also.
+Thank you in advance
+
+2.
+谢谢你把它总结出来了，我曾经为了跟客户解释AppMonster为什么不能写入到SD卡写到手指都起水泡了（现在我可以直接在这里链接您的文章了)
+情况是可怕的，Android 对SD卡的支持还有待提高。有些设备有1个SD卡，有些支持2个SD卡，SDK只支持1个SD卡...恐怖
+
+3.
+After applying update 2 on my phone, write to sdcard was successful but if try to delete photos from the gallery, reboot the photos reappear again.any specific reason?
+
+I actually wanted to ask about this, is shortcuts of apps installed in the external SD card disappear has something to do with these permissions ?
+
+Nice topic !!
+
+4.
+听起来就像他们倒退到最初的Android版本，允许你添加更多的app storage，而无需支付额外费用购买更多的硬件存储设备。这是苹果公司从最初就一直在严格执行的，这件事完全把我关在他们外面了。
+
+我不知道另一条线索是不是事实，谷歌没有在他们的新的Nexus平板电脑包含一个SD卡插槽。基于这一线索，我会说​​，谷歌的目的是减弱SD商，还有试图“剥削”消费者。
+
+耻辱耻辱耻辱谷歌！
+
+5.
+It doesn't seem like a fix from Google is forthcoming. They keep dodging my questions about it.
+
+At least on the 7.7, the ICS update fixes the problem. Samsung is using the permission hack I described in the article again. It's a working solution, even though it's not pretty.
+
+
+6.
+I'm currently conversing with Samsung about this.
+
+Anyone tell me what stock apps could be moved from internal storage on the other Samsung phones/tablets to user-mounted SD storage via the Applications Manager move-to-SD button pls.
+
+Also, some non-stock apps which could be moved/mounted on the user-mounted SD storage on Samsung phones/tablets.
+
+I want to show Samsung that their product (S3),at the moment, is *not-fit-for-purpose*, ie, the taking away of the ability to mount apps on user-mounted SD cards is regressive and unexpected by reasonable users of their devices.
+
+我目前正在与三星讨论这个问题。
+
+请问谁能告诉我，什么样的原始APP可以通过点击应用程序管理器的“move-to-SD”按钮从其他三星手机/平板电脑的internal存储中移动到用户安装的SD存储设备上。
+
+同样的，有哪些非原始APP可以从三星手机/平板电脑移动到用户安装的SD存储设备上。
+
+我想对三星说，他们的产品（S3），在这一刻，是不符合要求的，即对于合理的用户和设备来说，安装APP到SD卡并可以带走的功能是倒退的和意想不到的。
+
+
+7.
+None of the apps can be moved to the user mounted SD card only the camera can save data there.. :(
+
+And with navigation maps and games that have sizes around 1-2GB,11 GB is not much.
+
+I have never seen the move-to-SD button on my S3.. :( and i have a 32gb card in it that only the camera uses..
+
+
+8.
+我能告诉原来最好的解法，是在internal存储中划分出一个分区当作external存储，以便储存随机文件（图片，音频，电影）。
+
+原生Android设计似乎是所有internal存储应该致力于应用程序和存储相关数据，而移动媒体是提供大容量文件存储。但是当内置大容量internal存储的设备(比如iPhone)成为时尚之后，这一点发生了变化，制造商们通过"internal as external"来解决这个问题。
+
+后来，较早期发展到使用 "move to SD"作为减少app容量的方法，该功能似乎被限制在指定为"primary external"的设备上。
+
+The change to media seems to be linked to the change to MTP as the transfer protocol between device and computer btw. I have seen some scattered references that apps should move to using the MTP protocol internally to interact with external storage media, but nothing definitive.
+媒体的变化似乎随着MTP(设备和计算机btw之间的传输协议)的变化而变化。我已经看到一些零散的引用，应用程序应该移动到使用MTP协议的内部存储与外部存储互动，但没有明确。
+
+9.
+There is a perfectly good reason for this, good for google that is. Is the same reason nexus devices don't have SD cards and chromebooks have crappy storage. They're tying to make it difficult even for OEMs that ship devices with external storage.
+
+Google wants everyone to use their cloud services not local storage. Google music, youtube, gmail, docs, all these are in the cloud and that's where google wants you to be. That's where ads are too.
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+DK:Google 从4.0开始就移除了SDcard，但是整体的架构还在。
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

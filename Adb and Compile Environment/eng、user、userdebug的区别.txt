@@ -1,0 +1,54 @@
+
+========= Android源码编译选项eng、user、userdebug的区别
+
+
+1、各选项简要说明
+
+eng：debug版本
+
+user:release版本
+
+userDebug版本：部分debug版本
+
+2、详细介绍
+
+Android源码编译选项eng、user、userdebug是由Android.mk文件中的LOCAL_MODULE_TAGS配置项来决定的。其一般形式如下：
+
+LOCAL_MODULE_TAGS := user eng optional test
+其中的值可设置为1个或多个，分别对应编译选项的同一个或多个。
+各项具体说明如下：
+
+1)、user：只有在user版本时该模块才被编译进去；
+    ·Intended to be the final release
+    ·Installs modules tagged as user
+    ·Installs non-APK modules that have no tags specified
+    ·Installs APKs according to the product definition files (tags are ignored forAPK modules)
+
+    Sets ro.secure=1
+    Sets ro.debuggable=0   //不能对应用进行调试，当应用的<application>项中包含了android:debuggable="true"则可以调试
+    adbd is disabled by default
+
+2)、eng：只有在eng版本时该模块才被编译进去；
+    eng为默认编译模式,编译进去的内容包括：
+    ·Intended for platform-level debugging
+    ·Installs modules tagged with: eng, debug, user, and/or development
+    ·Installs non-APK modules that have no tags specified
+    ·Installs APKs according to the product definition files, in addition to taggedAPKs
+
+    Sets ro.secure=0
+    Sets ro.debuggable=1
+    Sets ro.kernel.android.checkjni=1
+    adbd is enabled by default
+
+3)、userdebug: 此时BuildType为userdebug,那么其编译进去的内容包括：
+
+		thesame as user, except:
+		·Intended for limited debugging
+		·Installs modules tagged with debug
+
+		·Sets ro.debuggable=1
+		·adbd is enabled by default
+
+4)、test：只有在tests版本时该模块才被编译进去；
+
+5)、optional：在所有版本中都编译该模块进去。

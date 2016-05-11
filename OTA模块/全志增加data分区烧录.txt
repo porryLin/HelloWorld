@@ -1,0 +1,294 @@
+全志解决方案,很久了的.
+=================================================================================
+Hi 陳工，
+
+我們有一些預載的apk，如果放到System下面，系統啟動后再做安裝，需要等待，apk越大，等待時間越長；
+我們是希望能夠將apk放在data分區直接燒錄，恢復出廠值時仍然對data做清除。
+如果要在燒錄時對data分區做燒錄，請問是否會對4.4的多用戶有影響？
+也請提供對data分區燒錄的支持方法。
+
+=================================================================================
+hi johnny,
+可以参考system.img来添加data分区的烧录。
+如：tools/pack_brandy/pack 中有：
+    ln -s $CRANE_IMAGE_OUT/system.img system.fex
+在sys_partition.fex中有：
+;------------------------------>mmcblk0p7/nandd
+[partition]
+    name         = system
+    size         = 1572864
+    downloadfile = "system.fex"
+    user_type    = 0x2
+
+;------------------------------>nandk, UDISK
+[partition]
+    name         = UDISK
+    downloadfile = "diskfs.fex"
+    verify       = 0
+你在lichee/tools/pack/out 目录下执行ls -l便知道了system.img system.fex 两者关系。
+因此你们首先得生成data.img(包含了你们预装的APK)，再链接到diskfs.fex文件。
+在执行pack命令时，会将所有img打包。
+至于是否会对多用户有影响，原理上是没有的，我们没特别针对这个去测试。
+
+--------------------------------------------------------------------------------
+
+thanks
+
+chendan
+
+=================================================================================
+Hi Tony,Skay,
+
+如果第三方APK過大，會造成燒錄等待及OTA的問題，
+第三方apk的需求一直會有，且會越來越多。
+為方便起見，建議將第三方apk全部放data，
+這樣後續也沒有CTS相關問題。
+請安排人做以下驗證。
+
+
+
+=================================================================================
+
+=== 我尝试的做法： ===
+
+1. 直接将apk文件拷贝到 out/target/product/fiber-a31stm/out/app/下面
+
+2. 生成data.img
+make_ext4fs -s -S  out/target/product/fiber-a31stm/root/file_contexts   -l   13582834073   -a data out/target/product/fiber-a31stm/obj/PACKAGING/systemimage_intermediates/system.img  out/target/product/fiber-a31stm/system
+
+
+3. 在 tools/pack_brandy/pack 中添加 ：
+    ln -s $CRANE_IMAGE_OUT/data.img diskfs.fex
+执行pack 时会报以下错误，无法链接到data.img，请问如何解决：
+ln: failed to create symbolic link `diskfs.fex': File exists
+
+问题：1. 如何将APK预装到data分区中
+             2. 预装后如何生成data.img
+             3. 生成data.img后如何链接到diskfs.fex
+             4. 由于多用户中没有独立的 /data分区，是否需要在sys_partition.fex中添加一个 /data分区
+
+
+
+
+=================================================================================
+
+=== 全志给出的解决方案： ===
+
+1.  将apk放在 device/softwinner/fiber-a31stm/prebuild/data/apk  目录中
+
+2.  将apk编译到 /data/app 中
+  android4.4/device/softwinner/fiber-a31stm/fiber_a31stm.mk
+     添加
+            +# data/app
+            +PRODUCT_COPY_FILES += \
+            +$(call find-copy-subdir-files,*,device/softwinner/fiber-a31stm/prebuild/data/apk,data/app)
+
+3. 修改文件使编译不报错
+   android4.4/build/core/Makefile
+     注释
+           +#define check-product-copy-files
+           +#$(if $(filter %.apk, $(1)),$(error \
+           +#    Prebuilt apk found in PRODUCT_COPY_FILES: $(1), use BUILD_PREBUILT instead!))
+           +#endef
+
+4. 编译userdata.img（RL1大小暂定为12.65G）
+   android4.4/device/softwinner/fiber-common/BoardConfigCommon.mk
+     添加
+           +BOARD_USERDATAIMAGE_PARTITION_SIZE := 5744518758
+
+5. 修改pack方法
+   lichee/tools/pack_brandy/pack
+               ln -s $CRANE_IMAGE_OUT/boot.img boot.fex
+               ln -s $CRANE_IMAGE_OUT/system.img system.fex
+               ln -s $CRANE_IMAGE_OUT/recovery.img recovery.fex
++             rm diskfs.fex
++             ln -s $CRANE_IMAGE_OUT/userdata.img diskfs.fex
+
+
+6.  修改签名生成img文件
+   android4.4/build/tools/releasetools/img_from_target_files
+               #AddUserdata(output_zip)
+
+
+7. 正常pack后，会将userdata.img打包到sun6i_android_fiber-a31stm.img。需要使用特殊烧录工具烧写sun6i_android_fiber-a31stm.img，不需要单独烧写userdata.img。
+
+=================================================================================
+
+== apk放置位置1   可卸载的预装APK文件 ==
+/system/preinstall/baidumap_Android_6-2dtyz10256.apk
+/system/preinstall/DragonFire.apk
+
+
+== apk放置位置2 ==
+data/app/com.baidu.BaiduMap-1.apk
+data/app/com.softwinner.dragonfire-1.apk
+
+
+== so文件存放位置1 ==
+/data/app-lib/com.baidu.BaiduMap-1/libBDVoiceInput_V1.so
+/data/app-lib/com.baidu.BaiduMap-1/libBdMoplusMD5_V1.so
+/data/app-lib/com.baidu.BaiduMap-1/libCNPackage.so
+/data/app-lib/com.baidu.BaiduMap-1/libDMPackage.so
+/data/app-lib/com.baidu.BaiduMap-1/libapp_BaiduMapApplib.so
+/data/app-lib/com.baidu.BaiduMap-1/libbdpush_V1_0.so
+/data/app-lib/com.baidu.BaiduMap-1/libcom_radar.so
+/data/app-lib/com.baidu.BaiduMap-1/libejTTS.so
+/data/app-lib/com.baidu.BaiduMap-1/liblocSDK4a.so
+/data/app-lib/com.baidu.BaiduMap-1/libsapi_so_1.so
+
+/data/app-lib/com.softwinner.dragonfire-1    无so文件，该目录为空
+
+
+== so文件存放位置2 ==
+/data/data/com.baidu.BaiduMap/lib/libBDVoiceInput_V1.so
+/data/data/com.baidu.BaiduMap/lib/libBdMoplusMD5_V1.so
+/data/data/com.baidu.BaiduMap/lib/libCNPackage.so
+/data/data/com.baidu.BaiduMap/lib/libDMPackage.so
+/data/data/com.baidu.BaiduMap/lib/libapp_BaiduMapApplib.so
+/data/data/com.baidu.BaiduMap/lib/libbdpush_V1_0.so
+/data/data/com.baidu.BaiduMap/lib/libcom_radar.so
+/data/data/com.baidu.BaiduMap/lib/libejTTS.so
+/data/data/com.baidu.BaiduMap/lib/liblocSDK4a.so
+/data/data/com.baidu.BaiduMap/lib/libsapi_so_1.so
+
+/data/data/com.softwinner.dragonfire/lib  无so文件，该目录为空
+                                                                                     除了可卸载的apk，随机打开不可卸载的几个apk，发现lib目录链接到/data/app-lib/下面
+
+
+== /data/data/目录  包含所有的应用程序 ==
+com.android.apps.tag
+com.android.awgallery
+com.android.backupconfirm
+com.android.bluetooth
+com.android.browser
+com.android.browser.provider
+com.android.calculator2
+com.android.calendar
+com.android.certinstaller
+com.android.contacts
+com.android.defcontainer
+com.android.deskclock
+com.android.development
+com.android.documentsui
+com.android.dreams.basic
+com.android.dreams.phototable
+com.android.email
+com.android.exchange
+com.android.externalstorage
+com.android.facelock
+com.android.galaxy4
+com.android.gallery3d
+com.android.htmlviewer
+com.android.inputdevices
+com.android.keychain
+com.android.keyguard
+com.android.launcher
+com.android.location.fused
+com.android.magicsmoke
+com.android.music
+com.android.musicfx
+com.android.musicvis
+com.android.nfc
+com.android.noisefield
+com.android.onetimeinitializer
+com.android.packageinstaller
+com.android.pacprocessor
+com.android.phasebeam
+com.android.phone
+com.android.printspooler
+com.android.providers.calendar
+com.android.providers.contacts
+com.android.providers.downloads
+com.android.providers.downloads.ui
+com.android.providers.media
+com.android.providers.partnerbookmarks
+com.android.providers.settings
+com.android.providers.telephony
+com.android.providers.userdictionary
+com.android.provision
+com.android.proxyhandler
+com.android.quicksearchbox
+com.android.settings
+com.android.sharedstoragebackup
+com.android.shell
+com.android.smspush
+com.android.soundrecorder
+com.android.speechrecorder
+com.android.systemui
+com.android.vpndialogs
+com.android.wallpaper
+com.android.wallpaper.holospiral
+com.android.wallpaper.livepicker
+com.baidu.BaiduMap
+com.estrongs.android.pop
+com.example.logo
+com.google.android.apps.uploader
+com.google.android.backuptransport
+com.google.android.ears
+com.google.android.feedback
+com.google.android.gsf
+com.google.android.gsf.login
+com.google.android.inputmethod.latin
+com.google.android.inputmethod.pinyin
+com.google.android.marvin.talkback
+com.google.android.partnersetup
+com.google.android.setupwizard
+com.google.android.syncadapters.contacts
+com.google.android.tts
+com.ota.f1
+com.softwinner.dragonfire
+com.softwinner.dragonphone
+com.softwinner.videotest
+com.svox.pico
+
+
+
+
+=================================================================================
+
+== 烧录userdata.img后的评估： ==
+1.  mount指令查看
+      rootfs / rootfs ro,seclabel,relatime 0 0
+      tmpfs /dev tmpfs rw,seclabel,nosuid,relatime,mode=755 0 0
+      devpts /dev/pts devpts rw,seclabel,relatime,mode=600 0 0
+      proc /proc proc rw,relatime 0 0
+      sysfs /sys sysfs rw,seclabel,relatime 0 0
+      selinuxfs /sys/fs/selinux selinuxfs rw,relatime 0 0
+      none /sys/fs/cgroup tmpfs rw,seclabel,relatime,mode=750,gid=1000 0 0
+      tmpfs /mnt/secure tmpfs rw,seclabel,relatime,mode=700 0 0
+      tmpfs /mnt/asec tmpfs rw,seclabel,relatime,mode=755,gid=1000 0 0
+      tmpfs /mnt/obb tmpfs rw,seclabel,relatime,mode=755,gid=1000 0 0
+      none /dev/cpuctl cgroup rw,relatime,cpu 0 0
+      debugfs /sys/kernel/debug debugfs rw,relatime 0 0
+      /dev/block/by-name/system /system ext4 ro,seclabel,relatime,user_xattr,barrier=1,data=ordered 0 0
+      /dev/block/by-name/cache /cache ext4 rw,seclabel,nosuid,nodev,noatime,user_xattr,barrier=1,nomblk_io_submit,data=ordered 0 0
+      /dev/block/by-name/UDISK /data ext4 rw,seclabel,nosuid,nodev,noatime,user_xattr,barrier=1,nomblk_io_submit,data=ordered,noauto_da_alloc 0 0
+      /dev/block/by-name/private /snsn ext4 rw,seclabel,nosuid,nodev,noatime,user_xattr,barrier=1,nomblk_io_submit,data=ordered 0 0
+      /dev/fuse /mnt/shell/emulated fuse rw,nosuid,nodev,relatime,user_id=1023,group_id=1023,default_permissions,allow_other 0 0
+
+2. df指令查看
+      Filesystem               Size     Used     Free   Blksize
+      /dev                   797.9M   128.0K   797.8M   4096
+      /sys/fs/cgroup         797.9M    12.0K   797.9M   4096
+      /mnt/secure            797.9M     0.0K   797.9M   4096
+      /mnt/asec              797.9M     0.0K   797.9M   4096
+      /mnt/obb               797.9M     0.0K   797.9M   4096
+      /system                756.8M   493.8M   263.0M   4096
+      /cache                 756.8M    13.6M   743.2M   4096
+      /data                   12.4G   225.7M    12.2G   4096
+      /snsn                   15.8M     4.1M    11.7M   4096
+      /mnt/shell/emulated     12.4G   225.7M    12.2G   4096
+
+3.  相关文件位置
+    /data/app/CtsVerifier.apk
+    /data/app-lib/CtsVerifier/libctsverifier_jni.so
+    /data/data/com.android.cts.verifier/lib/libctsverifier_jni.so
+
+4. 创建多用户
+     新用户看不到 CtsVerifier.apk （正常现象）
+     切换回主用户又可以看到（正常现象）
+
+5.  恢复出厂设置
+     主用户看不到CtsVerifier.apk（正常现象）
+      其他在system/prebuid/preinstall/的apk还在 （正常现象）
+     新用户被删除

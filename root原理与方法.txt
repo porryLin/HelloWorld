@@ -1,0 +1,306 @@
+Content-Type: text/x-zim-wiki
+Wiki-Format: zim 0.4
+Creation-Date: 2014-06-18T19:22:04+08:00
+
+====== root原理与方法 ======
+Created Wednesday 18 June 2014
+
+一、 概述
+
+本文介绍了android中获取root权限的方法以及原理，让大家对android 玩家中常说的“越狱”有一个更深层次的认识。
+
+ 
+
+二、 Root 的介绍
+
+1.       Root 的目的
+
+可以让我们拥有掌控手机系统的权限，比如删除一些system/app下面的无用软件，更换开关机铃声和动画，拦截状态栏弹出的广告等。
+
+2.       Root的原理介绍
+
+谷歌的android系统管理员用户就叫做root，该帐户拥有整个系统至高无上的权利，它可以访问和修改你手机几乎所有的文件，只有root才具备最高级别的管理权限。我们root手机的过程也就是获得手机最高使用权限的过程。同时为了防止不良软件也取得root用户的权限，当我们在root的过程中，还会给系统装一个程序，用来作为运行提示，由用户来决定，是否给予最高权限。这个程序的名字叫做Superuser.apk。当某些程序执行su指令想取得系统最高权限的时候，Superuser就会自动启动，拦截该动作并作出询问，当用户认为该程序可以安全使用的时候，那么我们就选择允许，否则，可以禁止该程序继续取得最高权限。Root的过程其实就是把su文件放到/system/bin/ Superuser.apk 放到system/app下面，还需要设置/system/bin/su可以让任意用户可运行，有set uid和set gid的权限。即要在android机器上运行命令：adb shell chmod 4755 /system/bin/su。而通常，厂商是不会允许我们随便这么去做的，我们就需要利用操作系统的各种漏洞，来完成这个过程。
+
+特别说明：我们烧机中的Eng版本并没有Root权限
+
+3.       Root的方法
+
+从Root的原理我们了解到，root 过程分三步：
+
+a.        adb push su /system/bin
+
+b.        adb push SuperUser.apk /system/app
+
+c.       adb shell chmod 4755 /system/bin/su
+
+若系统是eng版的，做到以上三步，那么我们Root就大功告成，但实际是不行的。为什么呢？原因有三：
+
+1、user版的/system路径是只读权限，不能简单写入
+
+2、 chmod需要Root权才能运行（死循环了）
+
+3、有些系统在启动时会自动将su的4755权限设成755，甚至直接删除su
+
+那么针对这种情况，我们怎么办呢？非常简单：烧一个eng版本的boot.img就行了
+
+
+可以用展讯的烧录工具，或者用fastboot模式从sd卡烧一个boot.img文件即可
+
+至此，我们Root就成功了，可以用R.E(Root Explorer)在根目录创建和删除文件。
+
+ 
+
+三、 深入理解Root机制
+
+其流程是：
+
+1.       Su 被用户调用
+
+2.       Su 创建了一个socket监听
+
+3.       Su 向Superuser发送了一个广播，说是有一个程序要请求root
+
+4.       Su 等待socket 数据接收。有超时处理。
+
+5.       Superuser 界面收到广播后，弹出一个对话框，询问用户
+
+6.       Superuser 向传来的数据中的socket写回用户应答结果。
+
+7.       Su 根据socket得到的结果处理应该不应该继续执行
+
+8.       完成提权管理
+
+ 
+
+superuser.apk这个程序是root成功后，专门用来管理root权限使用的，防止被恶意程序滥用。
+
+源码地址： http://superuser.googlecode.com/svn/trunk
+
+我们有两点疑问：
+
+1.  superuser是怎么知道谁想用root权限？ 
+
+2.  superuser是如何把用户的选择告诉su程序的？
+
+即superuser和su程序是如何通讯的，他们俩位于不通的时空，一个在java虚拟中，一个在linux的真实进程中。
+
+superuser共有两个activity: SuperuserActivity 和 SuperuserRequestActivity ，其中SuperuserActivity 主要是用来管理白名单的，就是记住哪个程序已经被允许使用root权限了，省的每次用时都问用户。
+
+SuperuserRequestActivity 就是用来询问用户目前有个程序想使用root权限，是否允许，是否一直允许，即放入白名单。
+
+这个白名单比较关键，是一个sqlite数据库文件，位置：
+/data/data/com.koushikdutta.superuser/databases/superuser.sqlite
+
+上文说过，root的本质就是往 /system/bin/ 下放一个su文件，不检查调用者权限的su文件。普通程序可以调用该su来运行root权限的命令。superuser.apk中就自带了一个这样的su程序。一开始superuser会检测/system/bin/su是否存在:
+
+File su = new File("/system/bin/su");
+
+// 检测su文件是否存在,如果不存在则直接返回
+
+if (!su.exists())  {
+
+Toast toast = Toast.makeText(this, "Unable to find /system/bin/su.", Toast.LENGTH_LONG);
+
+toast.show();
+ 
+return;
+
+}
+
+
+//如果大小一样，则认为su文件正确，直接返回了事。
+
+if (su.length() == suStream.available()) 
+
+{
+
+  suStream.close();
+
+  return;   //
+
+}
+
+ 
+
+// 如果检测到/system/bin/su 文件存在，但是不对头，则把自带的su先写到"/data/data/com.koushikdutta.superuser/su"
+
+//再写到/system/bin/su。
+
+byte[] bytes = new byte[suStream.available()];
+
+DataInputStream dis = new DataInputStream(suStream);
+
+dis.readFully(bytes);
+
+FileOutputStream suOutStream = new FileOutputStream("/data/data/com.koushikdutta.superuser/su");
+
+   suOutStream.write(bytes);
+
+   suOutStream.close();
+
+  
+
+   Process process = Runtime.getRuntime().exec("su");
+
+ DataOutputStream os = new DataOutputStream(process.getOutputStream());
+
+   os.writeBytes("mount -oremount,rw /dev/block/mtdblock3 /system\n");
+
+   os.writeBytes("busybox cp /data/data/com.koushikdutta.superuser/su /system/bin/su\n");
+
+   os.writeBytes("busybox chown 0:0 /system/bin/su\n");
+
+   os.writeBytes("chmod 4755 /system/bin/su\n");
+
+   os.writeBytes("exit\n");
+
+   os.flush();
+
+有进程使用root权限，superuser是怎么知道的呢，关键是句：
+
+sprintf(sysCmd, "am start -a android.intent.action.MAIN
+
+                                    -n com.koushikdutta.superuser/com.koushikdutta.superuser.SuperuserRequestActivity
+
+                                 --ei uid %d --ei pid %d > /dev/null", g_puid, ppid);
+
+  if (system(sysCmd))
+
+   return executionFailure("am.");
+
+   原理是am命令，am的用法：
+
+  usage: am [subcommand] [options]
+
+    start an Activity: am start [-D] [-W] <INTENT>
+
+        -D: enable debugging
+
+        -W: wait for launch to complete
+
+    start a Service: am startservice <INTENT>
+
+    send a broadcast Intent: am broadcast <INTENT>
+
+    start an Instrumentation: am instrument [flags] <COMPONENT>
+
+        -r: print raw results (otherwise decode REPORT_KEY_STREAMRESULT)
+
+-e <NAME> <VALUE>: set argument <NAME> to <VALUE>
+
+        -p <FILE>: write profiling data to <FILE>
+
+        -w: wait for instrumentation to finish before returning
+
+    start profiling: am profile <PROCESS> start <FILE>
+
+    stop profiling: am profile <PROCESS> stop
+
+ 
+
+    <INTENT> specifications include these flags:
+
+        [-a <ACTION>] [-d <DATA_URI>] [-t <MIME_TYPE>]
+
+        [-c <CATEGORY> [-c <CATEGORY>] ...]
+
+        [-e|--es <EXTRA_KEY> <EXTRA_STRING_VALUE> ...]
+
+        [--esn <EXTRA_KEY> ...]
+
+        [--ez <EXTRA_KEY> <EXTRA_BOOLEAN_VALUE> ...]
+
+        [-e|--ei <EXTRA_KEY> <EXTRA_INT_VALUE> ...]
+
+        [-n <COMPONENT>] [-f <FLAGS>]
+
+        [--grant-read-uri-permission] [--grant-write-uri-permission]
+
+        [--debug-log-resolution]
+
+        [--activity-brought-to-front] [--activity-clear-top]
+
+        [--activity-clear-when-task-reset] [--activity-exclude-from-recents]
+
+        [--activity-launched-from-history] [--activity-multiple-task]
+
+        [--activity-no-animation] [--activity-no-history]
+
+        [--activity-no-user-action] [--activity-previous-is-top]
+
+ [--activity-reorder-to-front] [--activity-reset-task-if-needed]
+
+        [--activity-single-top]
+
+        [--receiver-registered-only] [--receiver-replace-pending]
+
+        [<URI>]
+
+ 
+
+还有个疑点，就是su怎么知道用户是允许root权限还是反对呢？原来是上面提到的白名单起来作用，superuser把用户的选择放入：
+
+/data/data/com.koushikdutta.superuser/databases/superuser.sqlite    数据库中，然后su进程再去读该数据库来判断是否允许。
+
+static int checkWhitelist()
+
+{
+
+ sqlite3 *db;
+
+ int rc = sqlite3_open_v2(DBPATH, &db, SQLITE_OPEN_READWRITE, NULL);
+
+ if (!rc)
+
+ {
+
+  char *errorMessage;
+
+  char query[1024];
+
+  sprintf(query, "select * from whitelist where _id=%d limit 1;", g_puid);
+
+  struct whitelistCallInfo callInfo;
+
+  callInfo.count = 0;
+
+  callInfo.db = db;
+
+  rc = sqlite3_exec(db, query, whitelistCallback, &callInfo, &errorMessage);
+
+  if (rc != SQLITE_OK)
+
+  {
+
+   sqlite3_close(db);
+
+   return 0;
+
+  }
+
+sqlite3_close(db);
+
+  return callInfo.count;
+
+ }
+
+ sqlite3_close(db);
+
+ return 0;
+
+}
+
+ 
+
+四、 资源文件的获取
+
+从上文的源码地址获取源代码，替换系统的system/extras/su/下面的su.c 和Android.mk文件，使用编译命令./mk td28 u adr system/extras/su/ 编译成功后会生成out/target/product/hsdroid/system/xbin/su 文件，而Superuser.apk就是普通的apk文件，都在源码地址里面可以下载，下载后倒入到eclipse即可直接运行。
+
+ 
+
+五、 总结
+
+在阅读完本文后，可以站在专业的角度了解root的真正原理，以及有用户有需求时我们可以帮助其快速的解决问题。
+
+
+

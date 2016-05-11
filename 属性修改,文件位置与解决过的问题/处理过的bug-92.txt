@@ -1,0 +1,234 @@
+=========================================
+20140731 TTP-1243 : 视频通话中将“截图已保存入SD卡”改为“截图已保存”
+
+packages/apps/InCallUI/res/values-zh-rCN/mtk_strings.xml
+-    <string name="vt_pic_saved_to_sd">截图已保存入SD卡</string>
++    <string name="vt_pic_saved_to_sd">截图已保存</string>
+还有英语和繁体中文也修改了
+
+
+
+=========================================
+20140731 BULMA-295 Wrong translation in continuous shot of camera
+
+packages/apps/Gallery2/src/com/mediatek/gallery3d/conshots/ConShotSet.java
+--> public MediaDetails getDetails() {
+         MediaDetails details = new MediaDetails();
+-        details.addDetail(MediaDetails.INDEX_TITLE, "continuous shot");
++        //ckt chunhui.lin modify for different languages 2014-07-31
++        details.addDetail(MediaDetails.INDEX_TITLE, mApplication.getAndroidContext().getString(R.string.conshots_title));
+
+
+
+=========================================
+20140801 BULMA-297 When you take a photo, Focal length is not correct
+
+mediatek/custom/bulma/hal/imgsensor/ov13850_mipi_raw/camera_tuning_para_ov13850mipiraw.cpp
+const NVRAM_CAMERA_3A_STRUCT CAMERA_3A_NVRAM_DEFAULT_VALUE =
+             12,    // u4CapMaxFrameRate
+             1024,    // u4Cap2PreRatio, 1024 base = 1x
+             24,    // u4LensFno, Fno = 2.8
+-            0    // u4FocusLength_100x
++            375    // u4FocusLength_100x
+         },
+修改Camera的硬件配置文件
+
+
+
+=========================================
+20140808 VEGETA-1708 : Catalonian wrong translation
+packages/apps/Settings/res/values-ca/mtk_arrays.xml
+
+
+
+=========================================
+20140813 BULMA-320 : None alarm ringtone set by default.
+
+通过
+final Intent intent = new Intent(RingtoneManager.ACTION_RINGTONE_PICKER);
+调用铃声选择界面
+
+packages/providers/MediaProvider/src/com/android/providers/media/RingtonePickerActivity.java
+             /// M: if the given uri not exist, show default ringtone.
+             if (RingtoneManager.isRingtoneExist(getApplicationContext(), mExistingUri)) {
+                 mClickedPos = getListPosition(mRingtoneManager.getRingtonePosition(mExistingUri));
++                // ckt-chunhui, If no ringtone has been checked, show default instead.
++                if (mClickedPos == POS_UNKNOWN) {
++                    if (mHasDefaultItem) {
++                          mClickedPos = mDefaultRingtonePos;
++                    } else {
++                          mClickedPos = getListPosition(mRingtoneManager.getRingtonePosition(
++                                   RingtoneManager.getDefaultRingtoneUri(getApplicationContext(), mType)));
++                    }
++                }
+
+
+
+=========================================
+20140818 BULMA-341 Add "HP Print Service Plugin" by default
+
+vendor/google/apps/HpPrint.apk
+增加了HpPrint.apk和apk里面的库，就可以了
+
+
+
+
+=========================================
+20140821 BULMA-363 : Camera: Remove Noise reduction option in camera settings
+
+packages/apps/Camera/src/com/android/camera/CameraSettings.java
+settingChecker.setListPreference(SettingChecker.ROW_SETTING_MUTE_RECORDING_SOUND, shuttersound);
+-        settingChecker.setListPreference(SettingChecker.ROW_SETTING_CAMERA_ANR, cameraAnr);
++       //ckt-chunhui.lin settingChecker.setListPreference(SettingChecker.ROW_SETTING_CAMERA_ANR, cameraAnr);
+         settingChecker.setListPreference(SettingChecker.ROW_SETTING_SLOW_MOTION_VIDEO_QUALITY, slowMotionQuality);
+         settingChecker.setListPreference(SettingChecker.ROW_SETTING_JPEG_QUALITY, jpegQuality);
+         settingChecker.setListPreference(SettingChecker.ROW_SETTING_VOLUME_KEYS, volumeKeys);
+
+
+
+
+=========================================
+20140826 BLUMA-388: String is not properly displayed when language is set to Deutsch
+
+packages/apps/Launcher3/res/layout-land/first_run_cling.xml
+packages/apps/Launcher3/res/layout-port/first_run_cling.xml
+            <TextView
+                style="@style/ClingAltTitleText"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_gravity="center_horizontal"
+                android:layout_marginBottom="10dp"
+                android:text="@string/first_run_cling_title"
+                android:textColor="#FFFFFFFF"
+                android:textSize="25sp"  //30sp -> 25sp
+                android:gravity="center" />
+
+
+
+
+
+==========================================
+20140827 VEGETA-1816 : Add phone number with + doesn't work fine
+
+packages/apps/Dialer/src/com/android/dialer/dialpad/LatinSmartDialMap.java
+    public class LatinSmartDialMap implements SmartDialMap {
+         /**
+          * origin code: return ((ch >= '0' && ch <= '9');
+          */
+-        return ((ch >= '0' && ch <= '9') || ch == ',' || ch == ';');
++        return ((ch >= '0' && ch <= '9') || ch == ',' || ch == ';' || ch == '+'); //ckt-chunhui.lin, support "+"
+         /// M: @}
+     }
+
+
+
+=========================================
+20140828 BLUMA-376 : The pointer size does not vary    687ff05
+
+驱动部分
+mediatek/custom/common/kernel/touchpanel/hx8527/hx8527_driver.c
+#define FTS_PRESSURE
+
+#ifdef FTS_PRESSURE
+static  void tpd_down(int x, int y, int press, int p)//ckt-chunhui.lin
+#else
+static  void tpd_down(int x, int y, int p)
+#endif
+
+#ifdef FTS_PRESSURE
+    unsigned int area = press;
+    if(area > 31) {
+	  area = (area >> 3); 
+    }
+    printk("chunhui press = %d, area = %d \n", press, area);    
+    input_report_abs(tpd->dev, ABS_MT_PRESSURE, press);//ckt-chunhui.lin
+    input_report_abs(tpd->dev, ABS_MT_TOUCH_MAJOR, area);//ckt-chunhui.lin
+#else
+    input_report_abs(tpd->dev, ABS_MT_PRESSURE, 1);//wangli
+    input_report_abs(tpd->dev, ABS_MT_TOUCH_MAJOR, 20);//wangli
+#endif
+
+ #ifdef FTS_PRESSURE
+		tpd_down(tpd_keys_dim_local[tpd_key-1][0],tpd_keys_dim_local[tpd_key-1][1], 1, 0); //第三个参数如果为0，会导致home，返回键等不能用
+ #else
+		tpd_down(tpd_keys_dim_local[tpd_key-1][0],tpd_keys_dim_local[tpd_key-1][1], 0);
+ #endif
+          
+  #ifdef FTS_PRESSURE
+	  tpd_down(tpd_keys_dim_local[tpd_key-1][0],tpd_keys_dim_local[tpd_key-1][1], 1, 0);
+  #else
+	  tpd_down(tpd_keys_dim_local[tpd_key-1][0],tpd_keys_dim_local[tpd_key-1][1], 0);
+  #endif                     
+
+#ifdef FTS_PRESSURE
+		tpd_down(cinfo.x[i], cinfo.y[i], cinfo.p[i], cinfo.id[i]); //ckt-chunhui.lin
+#else
+		tpd_down(cinfo.x[i], cinfo.y[i], cinfo.id[i]);
+		//tpd_down(cinfo.y[i], cinfo.x[i], cinfo.id[i]); //wangli_20140507
+#endif
+
+native层
+frameworks/base/services/input/InputReader.cpp
+--> void TouchInputMapper::cookPointerData() {
+        PointerCoords& out = mCurrentCookedPointerData.pointerCoords[i];
+        out.clear();
+        out.setAxisValue(AMOTION_EVENT_AXIS_X, x);
+        out.setAxisValue(AMOTION_EVENT_AXIS_Y, y);
+        out.setAxisValue(AMOTION_EVENT_AXIS_PRESSURE, pressure);
+        out.setAxisValue(AMOTION_EVENT_AXIS_SIZE, size);
+
+--> void MultiTouchInputMapper::syncTouch(nsecs_t when, bool* outHavePointerIds) {
+        //按下为正值，松开为-30
+        outPointer.pressure = inSlot->getPressure();
+        //按下松开都为正值
+        outPointer.touchMajor = inSlot->getTouchMajor();
+        
+UI画图部分
+frameworks/base/core/java/com/android/internal/widget/PointerLocationView.java
+--> protected void onDraw(Canvas canvas) {
+       canvas.drawText(mText.clear()
+             .append("Prs: ").append(ps.mCoords.pressure, 2)
+             .toString(), 1 + itemW * 5, base, mTextPaint);
+        
+     
+    
+        
+=========================================       
+20140903 TTP-4210 : long press volume down key while taking photos in Motion Track mode, shutter sound doesn't stop.     
+[c45ed6f]
+运动模式拍照问题
+
+
+=========================================       
+20140905 BULMA-458 : Reboot menu is incorrect
+
+frameworks/base/services/java/com/android/server/power/ShutdownThread.java
+                    sConfirmDialog = new AlertDialog.Builder(context)
+                    .setTitle(mRebootSafeMode
+                            ? com.android.internal.R.string.reboot_safemode_title
+                           : (mReboot ? com.android.internal.R.string.global_action_reboot :
+                              com.android.internal.R.string.power_off))
+                    .setMessage(mReboot ? com.android.internal.R.string.reboot_confirm : resourceId)
+                    
+frameworks/base/core/res/res/values-ca/strings.xml
+    <string name="global_action_reboot">"reprendre"</string>
+    <string name="global_action_screenshot">"imatges"</string>
+    <string name="reboot_confirm">"El telèfon es reiniciarà"</string>
+
+frameworks/base/core/res/res/values-es-rUS/strings.xml
+    <string name="global_action_reboot">Reiniciar</string>
+    <string name="reboot_confirm">EI teléfono se reiniciará</string>
+    <string name="global_action_screenshot">Captura de Pantalla</string>
+    
+frameworks/base/core/res/res/values-zh-rHK/strings.xml
+    <string name="global_action_reboot">"重啟"</string>
+    <string name="global_action_screenshot">"截屏"</string>
+    <string name="reboot_confirm">"您的手機將會重啟"</string>
+    
+frameworks/base/core/res/res/values-zh-rTW/strings.xml
+    <string name="global_action_reboot">"重啟"</string>
+    <string name="global_action_screenshot">"截屏"</string>
+    <string name="reboot_confirm">"您的手機將會重啟"</string>
+    
+    
+

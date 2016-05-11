@@ -1,0 +1,63 @@
+====== 如何不被系统kill掉 ======
+Created Tuesday 04 March 2014
+
+有一种方法可以设置app永远不会被kill，AndroidManifest.xml 中添加:
+android:persistent="true"
+适用于放在/system/app下的app
+设置后app提升为系统核心级别，任何情况下不会被kill掉, settings->applications里面也会屏蔽掉stop操作.
+
+设置前 Proc #19: adj=svc  /B 4067b028 255:com.xxx.xxx/10001 (started-services)
+# cat /proc/255/oom_adj
+4
+设置后 PERS #19: adj=core /F 406291f0 155:com.xxx.xxx/10001 (fixed)
+# cat /proc/155/oom_adj
+-12
+
+
+lowmemorykiller的操作规则比如为
+
+write /sys/module/lowmemorykiller/parameters/adj 0,1,2,4,7,15
+
+write /sys/module/lowmemorykiller/parameters/minfree 2048,3072,4096,6144,7168,8192
+
+当可用内容达到临界值 8192 时, >=15 的进程会被 kill 掉;
+                  2048 时, >=0  的进程会被 kill 掉;
+
+所以，设置 persistent = true 后， oom_adj=-12，永远没有机会被lowmemorykiller处理
+
+
+
+android:persistent
+Whether or not the application should remain running at all times — "true" if it should, and "false" if not. The default value is "false". Applications should not normally set this flag; persistence mode is intended only for certain system applications
+
+
+
+代码
+
+ActivityManagerService.java
+    final ProcessRecord addAppLocked(ApplicationInfo info) {
+               ProcessRecord app = getProcessRecordLocked(info.processName, info.uid);
+
+               if (app == null) {
+                          app = newProcessRecordLocked(null, info, null);
+                          mProcessNames.put(info.processName, info.uid, app);
+                          updateLruProcessLocked(app, true, true);
+                }
+
+                 if ((info.flags&(ApplicationInfo.FLAG_SYSTEM | ApplicationInfo.FLAG_PERSISTENT))
+                                                                   == (ApplicationInfo.FLAG_SYSTEM|ApplicationInfo.FLAG_PERSISTENT)) {
+                          app.persistent = true;
+                          app.maxAdj = CORE_SERVER_ADJ;
+                  }
+                 if (app.thread == null && mPersistentStartingProcesses.indexOf(app) < 0) {
+                          mPersistentStartingProcesses.add(app);
+                          startProcessLocked(app, "added application", app.processName);
+                 }
+
+                 return app;
+      }
+
+
+可以看到同时符合FLAG_SYSTEM(/system/app目录)及FLAG_PERSISTENT(android:persistent="true")
+
+的app，设置app.maxAdj = CORE_SERVER_ADJ(-12)，而adj=-12不会被lowmemorykiller处理

@@ -1,0 +1,13 @@
+Content-Type: text/x-zim-wiki
+Wiki-Format: zim 0.4
+Creation-Date: 2014-06-25T14:18:58+08:00
+
+====== 耳机侦测问题 ======
+Created Wednesday 25 June 2014
+
+因為電路上headphone detect pin是接在Camera那組GPIO上，camera在early suspend時都會斷電，導致耳機偵測異常 引起以下幾個bug，
+若要解決這幾個問題，得讓camera在 early suspend時不斷電，那麼志文剛剛測試耗電會多出2.7mA，請知悉！
+ 
+Bug 1843 - [Music] 播放音樂過程中，自動或手動息屏，音樂停止播放。
+Bug 1848 - [Launcher] 沒有插入耳機的情況下，自動或手動休眠后再喚醒設備，屏幕右上角狀態欄有時會顯示耳機icon：此圖標有時會顯示一會就消失，有時會一直顯示不消失。
+Bug 1849 - [PMIC] 鎖屏提示音為勾選、媒體音量不為靜音且屏幕鎖定不為無的情況下，休眠喚醒設備后解鎖有時會出現啵啵兩聲。

@@ -1,0 +1,83 @@
+Content-Type: text/x-zim-wiki
+Wiki-Format: zim 0.4
+Creation-Date: 2014-03-02T16:12:21+08:00
+
+====== 屏幕旋转锁定问题 ======
+Created Sunday 02 March 2014
+
+=== 问题描述： ===
+进入Settings，Accessibility（辅助功能）界面，旋转到竖屏，取消自动旋转功能。
+屏幕自动变成横屏显示，并锁定屏幕，下拉菜单栏中“自动旋转”选项消失。
+
+=== 解题过程： ===
+搜关键字 Auto-rotate screen找到相对应位置
+
+         packages/apps/Settings/src/com/android/settings/accessibility/AccessibilitySettings.java                           // 辅助功能
+         frameworks/base/packages/SystemUI/src/com/android/systemui/statusbar/policy/RotationLockController.java            //下拉菜单
+         frameworks/base/core/java/com/android/internal/view/RotationPolicy.java
+
+== 1. 从辅助功能处取消自动旋转 ==
+会调用 RotationPolicy.setRotationLockForAccessibility(getActivity(),   !mToggleLockScreenRotationPreference.isChecked());
+
+    public static void setRotationLockForAccessibility(Context context, final boolean enabled) {
+//   此处注释掉，下拉菜单栏中就不会消失“自动旋转”选项
+//              Settings.System.putIntForUser(context.getContentResolver(),
+//                                **Settings.System.HIDE_ROTATION_LOCK_TOGGLE_FOR_ACCESSIBILITY**, enabled ? 1 : 0,
+//                                UserHandle.USER_CURRENT);
+
+             AsyncTask.execute(new Runnable() {
+                       @Override
+                       public void run() {
+                                try {
+                                               IWindowManager wm = WindowManagerGlobal.getWindowManagerService();
+                                               if (enabled) {
+                                                              wm.freezeRotation(Surface.ROTATION_0);       // 屏幕锁定，则固定为第一个横屏。可以改为 -1 ，则会锁定在当前的屏幕
+                                               } else {
+                                                             wm.thawRotation();
+                                               }
+                                } catch (RemoteException exc) {
+                                               Log.w(TAG, "Unable to save auto-rotate setting");
+                                }
+                         }
+              });
+    }
+
+== 2.从下拉菜单栏处取消自动旋转 ==
+会调用 RotationPolicy.RotationPolicy.setRotationLock(mContext, locked);
+
+    public static void setRotationLock(Context context, final boolean enabled) {
+                  Settings.System.putIntForUser(context.getContentResolver(),   //目测是这里
+                                                 Settings.System.HIDE_ROTATION_LOCK_TOGGLE_FOR_ACCESSIBILITY, 0,
+                                                 UserHandle.USER_CURRENT);
+
+                  AsyncTask.execute(new Runnable() {
+                         @Override
+                         public void run() {
+                                      try {
+                                              IWindowManager wm = WindowManagerGlobal.getWindowManagerService();
+                                              if (enabled) {
+                                                           wm.freezeRotation(-1);           // -1 锁定为当前屏幕
+                                               } else {
+                                                           wm.thawRotation();
+                                               }
+                                      } catch (RemoteException exc) {
+                                                         Log.w(TAG, "Unable to save auto-rotate setting");
+                                      }
+                          }
+               });
+    }
+
+
+== 获得当前屏幕的方向 ==
+frameworks/base/services/java/com/android/server/wm/WindowManagerService.java
+    @Override
+    public int getRotation() {
+           return mRotation;
+    }
+
+
+
+
+
+
+

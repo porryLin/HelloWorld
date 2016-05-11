@@ -1,0 +1,52 @@
+==============================================
+20141010 TTP-6461 拨号盘输入号码，并且选择延长等待时间，拨出号码之后，切换语言或者改变文字大小，提示拨号已停止运行。
+
+AndroidRuntime: java.lang.RuntimeException: Unable to start activity ComponentInfo{com.android.dialer/com.android.incallui.InCallActivity}: android.app.Fragment$InstantiationException: Unable to instantiate fragment com.android.incallui.PostCharDialogFragment: make sure class name exists, is public, and has an empty constructor that is public
+
+packages/apps/InCallUI/src/com/android/incallui/PostCharDialogFragment.java
+-    private String mPostDialStr;
++    private String mPostDialStr = "";
+ 
++    public PostCharDialogFragment() { //增加了空的构造方法
++    }
+
+
+
+==============================================
+TTP-6492 手机播放视频，需要点三次才可以播放。
+
+09-28 18:13:58.749  1062  1062 V WallpaperService: New surface: Surface(name=null)/@0x41cc0a88, frame=Rect(0, 0 - 2133, 1280)
+09-28 18:13:58.755  1062  1062 W WallpaperService: forceReport=false creating=false formatChanged=false sizeChanged=true
+09-28 18:13:58.755  1062  1062 W WallpaperService: java.lang.RuntimeException
+09-28 18:13:58.755  1062  1062 W WallpaperService: 	at android.service.wallpaper.WallpaperService$Engine.updateSurface(WallpaperService.java:763)
+09-28 18:13:58.755  1062  1062 W WallpaperService: 	at android.service.wallpaper.WallpaperService$IWallpaperEngineWrapper.executeMessage(WallpaperService.java:1173)
+09-28 18:13:58.755  1062  1062 W WallpaperService: 	at com.android.internal.os.HandlerCaller$MyHandler.handleMessage(HandlerCaller.java:40)
+09-28 18:13:58.755  1062  1062 W WallpaperService: 	at android.os.Handler.dispatchMessage(Handler.java:110)
+09-28 18:13:58.755  1062  1062 W WallpaperService: 	at android.os.Looper.loop(Looper.java:193)
+09-28 18:13:58.755  1062  1062 W WallpaperService: 	at android.app.ActivityThread.main(ActivityThread.java:5323)
+09-28 18:13:58.755  1062  1062 W WallpaperService: 	at java.lang.reflect.Method.invokeNative(Native Method)
+09-28 18:13:58.755  1062  1062 W WallpaperService: 	at java.lang.reflect.Method.invoke(Method.java:515)
+09-28 18:13:58.755  1062  1062 W WallpaperService: 	at com.android.internal.os.ZygoteInit$MethodAndArgsCaller.run(ZygoteInit.java:824)
+09-28 18:13:58.755  1062  1062 W WallpaperService: 	at com.android.internal.os.ZygoteInit.main(ZygoteInit.java:640)
+09-28 18:13:58.755  1062  1062 W WallpaperService: 	at dalvik.system.NativeStart.main(Native Method)
+09-28 18:13:58.755  1062  1062 V WallpaperService: onSurfaceChanged(android.service.wallpaper.WallpaperService$Engine$1@41cc09f8, 2, 2133, 1280): com.mediatek.vlw.VideoLiveWallpaper$VLWEngine@41cc0730
+
+
+
+1248  2846 W System.err: java.io.IOException: BufferedOutputStream is closed
+1248  2846 W System.err: 	at java.io.BufferedOutputStream.checkNotClosed(BufferedOutputStream.java:91)
+1248  2846 W System.err: 	at java.io.BufferedOutputStream.flush(BufferedOutputStream.java:84)
+1248  2846 W System.err: 	at java.io.FilterOutputStream.flush(FilterOutputStream.java:88)
+1248  2846 W System.err: 	at java.io.DataOutputStream.flush(DataOutputStream.java:63)
+1248  2846 W System.err: 	at java.io.FilterOutputStream.close(FilterOutputStream.java:61)
+1248  2846 W System.err: 	at com.android.camera.Util.closeSilently(Util.java:629)
+1248  2846 W System.err: 	at com.android.camera.Thumbnail.saveLastThumbnailToFile(Thumbnail.java:120)
+1248  2846 W System.err: 	at com.android.camera.manager.ThumbnailManager$SaveThumbnailTask.doInBackground(ThumbnailManager.java:314)
+1248  2846 2846 W System.err: 	at com.android.camera.manager.ThumbnailManager$SaveThumbnailTask.doInBackground(ThumbnailManager.java:308)
+1248  2846 W System.err: 	at android.os.AsyncTask$2.call(AsyncTask.java:288)
+1248  2846 W System.err: 	at java.util.concurrent.FutureTask.run(FutureTask.java:237)
+1248  2846 W System.err: 	at android.os.AsyncTask$SerialExecutor$1.run(AsyncTask.java:231)
+1248  2846 W System.err: 	at java.util.concurrent.ThreadPoolExecutor.runWorker(ThreadPoolExecutor.java:1112)
+1248  2846 W System.err: 	at java.util.concurrent.ThreadPoolExecutor$Worker.run(ThreadPoolExecutor.java:587)
+1248  2846 W System.err: 	at java.lang.Thread.run(Thread.java:841)
+

@@ -1,0 +1,79 @@
+Content-Type: text/x-zim-wiki
+Wiki-Format: zim 0.4
+Creation-Date: 2014-06-19T09:37:17+08:00
+
+====== fastboot原理与方法 ======
+Created Thursday 19 June 2014
+
+什么是fastboot?
+英语翻译：快速启动。在安卓手机中fastboot是一种比recovery更底层的刷机模式。
+fastboot是一种线刷，就是使用USB数据线连接手机的一种刷机模式。相对于某些系统（如小米）卡刷来说，线刷更可靠，安全。
+recovery是一种卡刷，就是将刷机包放在sd卡上，然后在recovery中刷机的模式。
+
+fastboot使用方法
+从字面上来看是【快速启动】的意思，也算是一个刷机界面，不过比recovery更加底层.这个底层是更加接近硬件层的意思.
+两个都很重要，不过fastboot更为主要.当你不能进入recovery的时候，不要紧张，你还能进fastboot挽救，不过当你连fastboot都不能进入的时候，那可真就是砖了.手机需要送厂才能维修了。
+为了使用Fastboot功能, 应获得__S-OFF的SPL__.你的电脑还必须装有ADB驱动.
+
+进入Fastboot的方式是关机状态下按返回+开机.
+
+Fastboot使用方式: fastboot [ <选项> ] <命令>
+解释:
+[]括起来表示这个是可选的.
+<>括起来表示这个是必须的.
+
+可用命令:
+update <文件名> 从官方update.zip升级系统.该update.zip必须是官方的
+flashall 'flash boot' +'flash system'
+flash <分区名> [ <文件名> ] 将文件写入分区.文件必须正确的格式.分区名有但不限于system,recovery,boot,splash1,hboot,radio,userdata,cache
+erase <分区名> 清空一个分区.
+getvar <参数名> 显示一个启动参数
+boot <内核文件> [ <ramdisk文件> ] 将电脑上的内核下载到手机并用该内核启动系统.
+flash:raw boot <内核文件> [ <ramdisk文件> ] 创建boot.img并下载到手机启动系统.
+devices 列出所有与电脑连接的设备.
+reboot 正常启动系统
+reboot-bootloader 启动系统到hboot
+
+选项:
+-w 清空用户数据分区和缓存分区.相当于recovery中的"wipe data/factoryreset"
+-s <串口号> 指定要操作的设备的串口号
+-p <产品名> 指定要操作的设备的产品名.比如hero,bravo,dream...
+-c <命令行> 用命令行替换系统的启动命令行.
+
+分区解释:
+system:系统分区.我们刷机器一般就是刷的这个分区.
+userdata:数据分区.
+cache:缓存分区
+recovery:Recovery分区.
+boot:存放内核和ramdisk的分区.
+hboot:这个是SPL所在的分区.很重要哦.也是fastboot所在的分区.刷错就真的变砖了.
+splash1:这个就是开机第一屏幕了.
+radio:这个是基带所在的分区.
+
+如何进入fastboot模式
+不同型号的手机进入fastboot的方式都不尽相同，最好的方法是在百度上搜索自己手机进入fastboot的方法，下面介绍一种多数手机都支持的方式。
+如何进入fastboot模式：
+1 将手机关机
+2 同时按住音量-键和电源键开机
+3 当看到 界面上有fastboot选项时，按电源键点击进入fastboot模式。
+4fastboot刷boot、recovery命令编辑
+
+准备工具：1.fastboot工具(安卓工具箱中有提供)、
+                      2.自己手机能用的boot.img、recovery.img文件。
+
+具体步骤：
+一、手机进入fastboot模式并用数据线连接电脑，安装好相关驱动程序。
+二、解压下载好的fastboot工具，如解压到D:/fastboot/。
+三、将准备好的boot.img、recovery.img文件文件也放到D:/fastboot/中。
+四、打开命令行工具cmd，执行如下命令进入到fastboot所在目录中
+d: 回车
+cd fastboot 回车
+fastboot devices 回车
+如果它列出了你的手机，如HT*******，说明手机连接好了
+
+执行以下命令刷入boot与recovery：
+fastboot flash recovery recovery.img 回车
+等待OKAY （这里是刷新recovery）
+fastboot flash boot boot.img 回车
+等待OKAY （这里是刷新boot）
+

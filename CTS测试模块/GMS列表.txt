@@ -1,0 +1,13 @@
+Content-Type: text/x-zim-wiki
+Wiki-Format: zim 0.4
+Creation-Date: 2014-03-27T14:24:26+08:00
+
+====== GMS列表 ======
+Created Thursday 27 March 2014
+
+
+
+GoogleQuickSearchBox.apk     4.1后删除  语音搜索  蓝色  （。。    cmp=com.google.android.googlequicksearchbox/.VoiceSearchActivity）
+
+Velvet.apk     4.1 后新增  语音搜索  红色 （桌面顶部Google搜索栏  cmp=com.google.android.googlequicksearchbox/.VoiceSearchActivity）
+

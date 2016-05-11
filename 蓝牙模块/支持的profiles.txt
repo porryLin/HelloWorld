@@ -1,0 +1,346 @@
+===================================================================
+VEGETA-86    FW_VEGETA_6582_0.0.1
+
+The device should support the next Bluetooth profiles:
+
+AVRCP/AVRCP Version 15
+HOGP GATT for HID
+CIP
+CTP
+DIP
+DUN
+FAX
+GAVDP
+ICP
+LAP
+PXP
+HCRP:
+SYNCH
+SPP
+
+
+Sonnen _ added a comment - 05/Mar/14 7:23 AM
+
+Dear Eduardo Paz,
+We have submitted this issue to MTK, e-service id: ALPS01449658 ,
+MTK replied as below:
+
+AVRCP/AVRCP Version 15£º just support AVRCP 1.3£¨google default£©
+HOGP GATT for HID£ºsupport
+CIP£ºwhat is this profile£¿
+CTP£ºwhat is this profile£¿
+DIP£ºsupport
+DUN£ºnot support
+FAX£ºnot support
+GAVDP£ºsupport
+ICP£ºwhat is this profile£¿
+LAP£ºnot support
+PXP£ºnot support
+HCRP£ºnot support
+SYNCH£ºnot support
+SPP£ºsupport
+HFP£ºsupport
+HSP£ºsupport
+A2DP £ºsupport
+SAP£ºnot support
+FTP £ºnot support
+OPP£ºsupport
+BIP£ºnot support
+BPP£ºnot support
+PBAP£ºsupport
+HID£ºsupport
+PAN£ºsupport
+MAP£ºsupport
+
+please help to confirm CIP/CTP/ICP.profiles
+
+Thanks!
+
+
+Eduardo Paz added a comment - 07/Mar/14 3:44 AM
+
+Dear Sonnen _
+
+Please check:
+CIP: http://en.wikipedia.org/wiki/Bluetooth_profile#Common_ISDN_Access_Profile_.28CIP.29
+CTP: http://en.wikipedia.org/wiki/Bluetooth_profile#Cordless_Telephony_Profile_.28CTP.29
+ICP: http://en.wikipedia.org/wiki/Bluetooth_profile#Intercom_Profile_.28ICP.29
+
+Regards.
+
+
+ fan.yang _ added a comment - 10/Mar/14 3:21 AM
+
+Dear Eduardo Paz:
+about profile CIP, CTP and ICP, mtk have replied that the three profile has been repealed by bluetooth official organization long ago,please confirm,thanks.
+
+
+Eduardo Paz added a comment - 10/Mar/14 11:51 AM
+
+Dear Ivan Castro.
+
+Please take a look at fan.yang _ reply.
+
+Thanks.
+
+
+
+Ivan Castro added a comment - 10/Mar/14 12:13 PM
+
+Dear Eduardo,
+
+DUN: We should support it.
+PXP: We should support it.
+FTP: We should support it.
+BPP: We should support it.
+
+Regards.
+
+
+
+Eduardo Paz added a comment - 11/Mar/14 10:06 AM
+
+Dear Ivan Castro.
+
+According to MTK's reply, these are the profiles supported:
+
+VRCP/AVRCP Version 15£º just support AVRCP 1.3£¨google default£©
+HOGP GATT for HID
+DIP
+GAVDP
+SPP
+HFP
+HSP
+A2DP
+OPP
+PBAP
+HID
+PAN
+MAP
+
+Regards.
+
+
+
+
+fan.yang _ added a comment - 11/Mar/14 2:03 PM
+
+Dear Eduardo Paz:
+I have double check with mtk, they can't support DUN£¬PXP£¬FTP£¬BPP, they keep same with google version, please understand.
+
+
+
+
+Eduardo Paz added a comment - 12/Mar/14 4:48 AM
+
+Dear fan.yang _.
+
+We can accept this SHOULD profiles:
+
+VRCP/AVRCP Version 15£º just support AVRCP 1.3£¨google default£©
+HOGP GATT for HID
+DIP
+GAVDP
+SPP
+HFP
+HSP
+A2DP
+OPP
+PBAP
+HID
+PAN
+MAP
+
+Thanks.
+
+
+
+
+ fan.yang _ added a comment - 14/Mar/14 3:23 AM
+
+as your feedback£¬please check and close it£¬ thanks.
+
+
+
+Cristina Esteban added a comment - 18/Mar/14 4:42 PM
+
+Please Ivan Castro, could you confirm the BT profiles are OK?
+
+
+
+Javier Vit¨®n added a comment - 18/Mar/14 5:44 PM
+
+Hi all,
+
+We have been testing AVRCP/A2DP bluetooth profile with Parrot car MKi9200 kit and it does not work as expected.
+It is a erratic behaviour and sometimes works the play/pause button and some times not.
+In the other hand, making reference to music titles, they are never displayed on car kit screen.
+
+Please try to solve this issue to next version.
+
+Best regards,
+
+
+
+
+
+
+
+ Juan Ruiz added a comment - 28/Mar/14 1:30 PM
+
+Hi,
+
+The issue with the music titles in the Parrot MKi9200 kit is fixed now (tested in fw 0.0.2-20140327-08:45). The music titles is correctly shown.
+
+Regards.
+
+
+
+
+
+fan.yang _ added a comment - 09/Apr/14 5:23 AM
+
+Dear Javier Vit¨®n and Juan Ruiz:
+how about this issue, which point is not ok or you mean it's no problem? hope your reply,thank.
+
+
+
+
+
+ Cristina Esteban added a comment - 09/Apr/14 9:22 AM
+
+Dear fan.yang _,
+
+We are waiting for our PM Ivan Castro to confirm supported BT profiles.
+
+Thanks for your effort!
+Regards,
+Cristina.
+
+
+
+
+Ivan Castro added a comment - 10/Apr/14 6:56 PM
+
+We can accept it?.
+
+Regards.
+
+
+
+
+
+===================================================================
+VEGETA-26   FW_VEGETA_6592_0.0.1 
+
+The device should support the next Bluetooth profiles:
+
+AVRCP/AVRCP Version 15
+HOGP GATT for HID
+CIP
+CTP
+DIP
+DUN
+FAX
+GAVDP
+ICP
+LAP
+PXP
+HCRP
+SYNCH
+SPP
+
+fan.yang _ added a comment - 10/Mar/14 3:24 AM
+
+Dear Eduardo Paz:
+mtk replied that the bluetooth profile is same with FW_6582_0.0.1,please check VEGETA-86,thanks.
+
+
+
+Eduardo Paz added a comment - 11/Mar/14 10:07 AM - edited
+
+Dear Ivan Castro.
+
+According to MTK's reply, these are the profiles supported:
+
+VRCP/AVRCP Version 15£º just support AVRCP 1.3£¨google default£©
+HOGP GATT for HID
+DIP
+GAVDP
+SPP
+
+Is this acceptable?
+
+Regards.
+
+
+
+Eduardo Paz added a comment - 12/Mar/14 4:49 AM
+
+Dear fan.yang _.
+
+We can accept this SHOULD profiles:
+
+VRCP/AVRCP Version 15£º just support AVRCP 1.3£¨google default£©
+HOGP GATT for HID
+DIP
+GAVDP
+SPP
+HFP
+HSP
+A2DP
+OPP
+PBAP
+HID
+PAN
+MAP
+
+Thanks.
+
+
+
+Juan Ruiz added a comment - 20/Mar/14 6:08 PM
+
+We have been testing AVRCP/A2DP bluetooth profile with Parrot car MKi9200 kit and it does not work as expected. We reproduced music files and the title of the song not be displayed on the BT car kit screen. Please resolve this issue in the next FW version-
+
+Thanks!
+
+
+
+fan.yang _ added a comment - 25/Mar/14 8:45 AM
+
+Dear Juan Ruiz:
+could you catch a log for debugging?
+
+
+
+fan.yang _ added a comment - 10/Apr/14 4:27 AM
+
+Dear Juan Ruiz:
+how about this issue?hope your reply.
+
+
+
+
+Cristina Esteban added a comment - 10/Apr/14 9:26 AM
+
+Dear fan.yang _,
+
+The issue with the music titles in the Parrot MKi9200 kit is fixed now (tested in fw #20 0.0.3_20140408-1715_vegetafhd_bq_user). The music titles are correctly shown.
+
+We are waiting for our PM Ivan Castro to confirm supported BT profiles.
+
+Thanks for your effort!
+Regards,
+Cristina.
+
+
+
+
+Ivan Castro added a comment - 10/Apr/14 6:56 PM
+
+We can accept it?.
+
+Regards.
+
+==================================================================

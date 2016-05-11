@@ -1,0 +1,40 @@
+1.
+device/idsbg/common/hardware/audio/audio_policy.conf
+  primary {
+    outputs {
+      primary {
+        sampling_rates 44100
+ //这里的44100是不是芯片默认支持的输入采样频率，芯片是否支持其它的输入采样率，如48000？
+ //芯片最后输出的声音是44100采样率还是再经过一次SRC转换为其它采样率再输出？
+
+2.device/idsbg/common/hardware/audio/audio_hw.c
+  #define DEFAULT_OUT_SAMPLING_RATE SAMPLING_RATE_44K
+  #define MM_SAMPLING_RATE SAMPLING_RATE_44K
+//这两个宏定义有什么区别，DEFAULT_OUT_SAMPLING_RATE可不可以根据音频源的采样率来动态定义，比如44.1kHZ的使用44100，48kHZ或96kHZ,192kHZ的使用48000。
+
+3.framework/av/services/audioflinger/AudioMixer.cpp
+   bool AudioMixer::track_t::setResampler(uint32_t value, uint32_t devSampleRate)
+   { 
+       ...
+       resampler = AudioResampler::create(
+                 format,
+                 // the resampler sees the number of channels after the downmixer, if any
+                 downmixerBufferProvider != NULL ? MAX_NUM_CHANNELS : channelCount,
+                 devSampleRate, quality);
+       resampler->setLocalTimeFreq(localTimeFreq);
+       ...
+    }
+//resampler的create()参数中，devSampleRate值是根据DEFAULT_OUT_SAMPLING_RATE？如果DEFAULT_OUT_SAMPLING_RATE可以动态改变，那么有没有支持48000采样率的算法。
+
+4. 如何得到HALL层最终输出给Kernel层的音频流的采样率？
+
+5. 最小缓冲大小 minBuffSize = minFrameCount * (audioFormat == jaaAudioTrackFields.PCM16 >2 :1) * nbChannels
+   nbChannels 为声道数
+   那么每个声道的音频流是否都一样，是共享同一个缓冲还是给每个声道创建一个缓冲
+
+
+
+
+
+
+

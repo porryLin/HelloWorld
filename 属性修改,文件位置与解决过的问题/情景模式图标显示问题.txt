@@ -1,0 +1,210 @@
+设置中切换情景模式时，在“户外”模式时，状态栏没有相应的图标显示
+
+静音和会议模式时会有相应图标显示，可能是音量变为静音和震动时的显示，而不是和情景模式有关
+将音量控制的显示图标的地方注释掉，再去变动模式，试验还会不会显示图标，如果不会显示图标，
+则可以确定是和音量控制有关，而不是和情景模式变动有关。
+如果会显示图标，则和情景模式有关，需要找到情景模式显示图标的地方。
+
+经过验证，右上角静音和震动的图标与音量调节有关，与情景模式无关。
+可以仿照静音震动图标添加
+
+=======================================================================================
+
+ 控制右上角状态栏图标的代码
+ PhoneStatusBarPolicy.java
+ 
+ -->PhoneStatusBarPolicy()
+   {
+        IntentFilter filter = new IntentFilter();
+        filter.addAction(Intent.ACTION_ALARM_CHANGED);
+        filter.addAction(Intent.ACTION_SYNC_STATE_CHANGED);
+        filter.addAction(AudioManager.RINGER_MODE_CHANGED_ACTION);
+        filter.addAction(BluetoothAdapter.ACTION_STATE_CHANGED);
+        filter.addAction(BluetoothAdapter.ACTION_CONNECTION_STATE_CHANGED);
+        filter.addAction(TelephonyIntents.ACTION_SIM_STATE_CHANGED);
+        filter.addAction(TtyIntent.TTY_ENABLED_CHANGE_ACTION);
+        /// M: [SystemUI] Support "Headset icon". @{
+        filter.addAction(Intent.ACTION_HEADSET_PLUG);
+        /// @}
+        mContext.registerReceiver(mIntentReceiver, filter, null, mHandler);
+
+        // TTY status
+        mService.setIcon("tty",  R.drawable.stat_sys_tty_mode, 0, null);
+        mService.setIconVisibility("tty", false);
+
+        // Cdma Roaming Indicator, ERI
+        mService.setIcon("cdma_eri", R.drawable.stat_sys_roaming_cdma_0, 0, null);
+        mService.setIconVisibility("cdma_eri", false);
+
+        // bluetooth status
+        BluetoothAdapter adapter = BluetoothAdapter.getDefaultAdapter();
+        int bluetoothIcon = R.drawable.stat_sys_data_bluetooth;
+        if (adapter != null) {
+            mBluetoothEnabled = (adapter.getState() == BluetoothAdapter.STATE_ON);
+            if (adapter.getConnectionState() == BluetoothAdapter.STATE_CONNECTED) {
+                bluetoothIcon = R.drawable.stat_sys_data_bluetooth_connected;
+            }
+        }
+        Log.v(TAG, "updateBluetooth, init: mBluetoothEnabled = " + mBluetoothEnabled);
+        mService.setIcon("bluetooth", bluetoothIcon, 0, null);
+        mService.setIconVisibility("bluetooth", mBluetoothEnabled);
+
+        // Alarm clock
+        mService.setIcon("alarm_clock", R.drawable.stat_sys_alarm, 0, null);
+        mService.setIconVisibility("alarm_clock", false);
+
+        // Sync state
+        mService.setIcon("sync_active", R.drawable.stat_sys_sync, 0, null);
+        mService.setIconVisibility("sync_active", false);
+        // "sync_failing" is obsolete: b/1297963
+
+        // volume
+        mService.setIcon("volume", R.drawable.stat_sys_ringer_silent, 0, null);
+        mService.setIconVisibility("volume", false);
+        updateVolume();
+
+        /// M: [SystemUI] Support "Headset icon". @{
+        mService.setIcon("headset", R.drawable.stat_sys_headset_with_mic, 0, null);
+        mService.setIconVisibility("headset", false);
+        /// @}
+    }
+ 
+-->updateVolume()
+   {
+        AudioManager audioManager = (AudioManager) mContext.getSystemService(Context.AUDIO_SERVICE);
+        final int ringerMode = audioManager.getRingerMode();
+        final boolean visible = ringerMode == AudioManager.RINGER_MODE_SILENT ||
+                ringerMode == AudioManager.RINGER_MODE_VIBRATE;
+
+        final int iconId;
+        String contentDescription = null;
+        if (ringerMode == AudioManager.RINGER_MODE_VIBRATE) {
+            iconId = R.drawable.stat_sys_ringer_vibrate;
+            contentDescription = mContext.getString(R.string.accessibility_ringer_vibrate);
+        } else {
+            iconId =  R.drawable.stat_sys_ringer_silent;
+            contentDescription = mContext.getString(R.string.accessibility_ringer_silent);
+        }
+
+        if (visible) {
+            mService.setIcon("volume", iconId, 0, contentDescription); //同下
+        }
+        if (visible != mVolumeVisible) {
+            mService.setIconVisibility("volume", visible); //将这两句注释掉后，右上角状态栏不显示静音震动图标
+            mVolumeVisible = visible;
+        }
+    }
+    
+    
+=======================================================================================
+情景模式随音量状态变化而变化
+
+AudioProfileSettings.java
+
+／／如果audioprofile变化了，则相应的模式会变化，新模式被选中。
+-->private final AudioProfileListener mListener = new AudioProfileListener() {
+        @Override
+        public void onAudioProfileChanged(String profileKey) {
+            super.onAudioProfileChanged(profileKey);
+            Xlog.d(XLOGTAG, TAG + "onAudioPerfileChanged:key " + profileKey);
+            AudioProfilePreference activePreference = 
+                (AudioProfilePreference) findPreference(profileKey == null ? mDefaultKey
+                    : profileKey);            
+            if (activePreference != null) {
+                activePreference.setChecked();
+            }
+        }
+    };
+    
+//控制下拉菜单快速切换栏的图标
+QuickSettingsConnectionModel.java
+
+-->private void updateProfileView(Scenario scenario) {  
+        loadDisabledProfileResouceForAll();
+        loadEnabledProfileResource(scenario);
+    }
+    
+    
+
+=======================================================================================
+
+
+按键调节音量的流程为：
+AudioManager.java
+
+--> handleKeyDown();   
+  int keyCode = event.getKeyCode(); // 获得按键事件
+  if (mUseMasterVolume){
+     adjustMasterVolume(); //调节主要音量（如通话，铃声等）
+  else {
+     adjustSuggestedStreamVolume(); //调节推荐的音量(如音乐，视频等)，走这个流程
+  }
+
+========================master 的流程=====================
+--> handleKeyUp(); 
+ adjustMasterVolume(ADJUST_SAME, FLAG_PLAY_SOUND); //调节音量为SAME，主要是播放按键升
+ 
+--> adjustMasterVolume();
+ service.adjustMasterVolume(steps, flags, mContext.getOpPackageName());
+ 
+ 
+ AudioService.java
+ 
+--> adjustMasterVolume();
+ int volume = Math.round(AudioSystem.getMasterVolume() * MAX_MASTER_VOLUME); //当前音量
+ delta = findVolumeDelta(direction, volume); // 调节的音量大小，正增负减
+ volume += delta;
+ 
+--> setMasterVolume();
+
+--> doSetMasterVolume();
+ sendMsg(mAudioHandler, MSG_PERSIST_MASTER_VOLUME, SENDMSG_REPLACE,
+                        Math.round(volume * (float)1000.0), 0, null, PERSIST_DELAY);
+ sendMasterVolumeUpdate(flags, oldVolume, newVolume);                       
+                        
+--> handleMessage();
+         Settings.System.putFloatForUser(mContentResolver,
+                                                    Settings.System.VOLUME_MASTER,
+                                                    (float)msg.arg1 / (float)1000.0,
+                                                    UserHandle.USER_CURRENT);
+
+--> sendMasterVolumeUpdate();
+ mVolumePanel.postMasterVolumeChanged(flags);   //音量条显示
+ Intent intent = new Intent(AudioManager.MASTER_VOLUME_CHANGED_ACTION);
+        intent.putExtra(AudioManager.EXTRA_PREV_MASTER_VOLUME_VALUE, oldVolume);
+        intent.putExtra(AudioManager.EXTRA_MASTER_VOLUME_VALUE, newVolume);
+ sendBroadcastToAll(intent);
+ 
+========================suggest strem 的流程=====================
+--> adjustSuggestedStreamVolume();
+  service.adjustSuggestedStreamVolume(direction, suggestedStreamType, flags,
+                        mContext.getOpPackageName());
+    
+    
+    AudioService.java
+    
+--> adjustSuggestedStreamVolume();
+
+--> adjustStreamVolume();
+ sendMsg(mAudioHandler,
+                        MSG_SET_DEVICE_VOLUME,
+                        SENDMSG_QUEUE,
+                        device,
+                        0,
+                        streamState,
+                        0);
+ int index = mStreamStates[streamType].getIndex(device);
+ sendVolumeUpdate(streamType, oldIndex, index, flags);
+ 
+ --> sendVolumeUpdate();
+ mVolumePanel.postVolumeChanged(streamType, flags);
+ Intent intent = new Intent(AudioManager.VOLUME_CHANGED_ACTION);
+        intent.putExtra(AudioManager.EXTRA_VOLUME_STREAM_TYPE, streamType);
+        intent.putExtra(AudioManager.EXTRA_VOLUME_STREAM_VALUE, index);
+        intent.putExtra(AudioManager.EXTRA_PREV_VOLUME_STREAM_VALUE, oldIndex);
+ sendBroadcastToAll(intent);
+ 
+ 
+ 
+
+　

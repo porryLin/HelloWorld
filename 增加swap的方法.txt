@@ -1,0 +1,96 @@
+Content-Type: text/x-zim-wiki
+Wiki-Format: zim 0.4
+Creation-Date: 2014-02-26T09:49:25+08:00
+
+====== 增加swap的方法 ======
+Created Wednesday 26 February 2014
+
+一般情况下，Linux会优先使用内存，当swap使用频繁时要考虑增加内存。某些特殊情况下，如果出现swap不够的情况，需要临时增加swap空间。
+
+1、查看内存占用情况：
+
+  #free -m
+
+  查看第四行“Swap”的free列，如果数值已经很小，而物理内存占用也很大的情况下，需要临时增加swap空间，按下面的步骤进行：
+
+ 
+
+2、建立一个给swap使用的文件设置一定的大小
+
+  #dd if=/dev/zero of=/tmp/swap bs=1M count=10240
+
+  在/tmp目录下建立一个10G大小的文件swap，以0填充。
+
+ 
+
+  #ll –h /tmp/swap
+
+  查看文件详情。
+
+ 
+
+3、将文件转换为swap格式
+
+  #mkswap /tmp/swap
+
+  特别注意不要打错命令字符，如果命令错误可能导致文件系统挂掉！
+
+ 
+
+4、用swapon命令启动swap文件
+
+  #free
+
+  查看当前swap大小
+
+ 
+
+  #swapon /tmp/swap
+
+  启用/tmp/swap文件作为swap
+
+ 
+
+  #free
+
+  查看增加后的swap大小
+
+ 
+
+  #swapon –s
+
+  查看swap优先级，数量（负数）越大（负数的绝对值越小）优先级越高
+
+ 
+
+5、关闭临时swap文件
+
+  #swapoff /tmp/swap
+
+  在swap列表里面关闭/tmp/swap文件
+
+ 
+
+  #rm /tmp/swap
+
+  彻底删除该swap文件
+
+ 
+
+  #free
+
+  查看关闭swap文件后，swap的大小
+
+ 
+
+6、永久添加swap文件
+
+  Swap文件增加进swap后，默认重启电脑就会自动失效。需要添加到fstab里面随系统启动时启用。
+
+  #vi /etc/fstab
+
+  在/etc/fstab文件最后增加一行：
+
+/tmp/swap swap   swap   defaults   0   0
+
+保存/etc/fstab文件后，下次系统重启后增加的swap还在。

@@ -1,0 +1,22 @@
+Content-Type: text/x-zim-wiki
+Wiki-Format: zim 0.4
+Creation-Date: 2014-04-14T11:38:08+08:00
+
+====== ubuntu使用mtp ======
+Created Monday 14 April 2014
+
+Android 3.0+开始支持MTP挂载方式，米2也支持，但是米2的操作说明却好像有些问题。
+正确的方法如下：
+1.将MTP设备连接至PC机
+2.如果是第一次使用MTP设备需要安装以下软件，否则可以跳过此步骤：
+$ sudo apt-get install mtpfs libfuse-dev libmad0-dev
+3.建立挂载点
+$ sudo mkdir /media/mtp
+4.修改权限（小米的说明中少了这一步，所以打不开）
+$ sudo chmod 775 /media/mtp
+5.挂载MTP设备
+$ sudo mtpfs -o allow_other /media/mtp
+挂载完成后可以用文件浏览器像查看本地的磁盘一样查看文件，也可以用命令传输文件（和本地的命令一样），如：
+$ cp video.mp4 /media/mtp/Movies/
+6.卸载设备
+$ sudo umount /media/mtp

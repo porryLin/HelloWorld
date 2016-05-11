@@ -1,0 +1,42 @@
+1.将repo放在 ~/bin/目录下面
+2.git clone --no-checkout szgit@10.240.2.41:msm8939_kk_modem
+  执行完后目录仍是空的
+  进入msm8939_kk_modem目录
+  git checkout -b cd_a_baseline origin/cd_a_baseline
+ 
+3.下载android
+  创建android目录
+  repo init -u szgit@10.240.2.41:msm/platform/manifest.git  --repo-url=szgit@10.240.2.41:git-repo.git  -b release -m cd_a_baseline_LNX.LA.3.7.3.1-02710-8939.0.xml
+  执行完后目录仍是空的
+
+4. repo sync
+  将msm8939_kk_modem/LINUX/android/vendor下目录拷贝到android/vendor
+  
+5.fatal: git 1.7.2 or later required
+  升级git 
+  sudo apt-add-repository ppa:git-core/ppa
+  sudo apt-get update
+  sudo apt-get install git
+  
+  
+  
+  
+  
+ckt@ckt-desktop:$ git config -l
+user.name=chunhui.lin
+user.email=chunhui.lin@ck-telecom.com
+core.quotepath=false
+color.ui=true
+alias.lg=log --graph --pretty=formar:'%Cred%h%Creset-%C(yellow)%d%Creset %s %Cgreen(%cr) %C(bold blue)<%an>%Creset' --abbrev-commit --
+alias.ediff=difftool -y -t bc3
+alias.lsg=log --graph --pretty=format:'%Cred%h%Creset-%C(yellow)%d%Creset %s %Cgreen(%cr) %C(bold blue)<%an>%Creset' --abbrev-commit
+core.repositoryformatversion=0
+core.filemode=true
+core.bare=false
+core.logallrefupdates=true
+remote.origin.fetch=+refs/heads/*:refs/remotes/origin/*
+remote.origin.url=cktdev@10.240.3.5:workspace/ckt-mtk-6592
+branch.master.remote=origin
+branch.master.merge=refs/heads/master
+branch.stable.remote=origin
+branch.stable.merge=refs/heads/stable

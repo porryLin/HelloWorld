@@ -1,0 +1,255 @@
+Content-Type: text/x-zim-wiki
+Wiki-Format: zim 0.4
+Creation-Date: 2014-04-23T11:32:29+08:00
+
+====== 复制APK到SD卡无法安装 ======
+Created Wednesday 23 April 2014
+
+== 问题描述： ==
+[ES文件流覽器]從內存複製APK文件到外部SD卡提示成功後拔出SD卡，APK文件出錯，無法安裝。
+
+Steps:
+1.插入外部SD卡
+2.進入ES文件瀏覽器複製APK文件到外部SD卡
+3.提示成功後拔出SD卡
+4.插入SD卡查看SD卡中已複製的APK文件
+
+Expected Result:
+SD卡已複製的APK顯示正常，並且APK可正常安裝。
+
+Actual Result:
+SD卡已複製的APK顯示圖標為安卓默認圖標，點擊安裝時提示解析錯誤（解析程序包時出現問題）。
+
+備註：
+相同的操作圖片及音頻文件無此問題。
+
+==================================================================================
+经过验证：
+1.复制APK文件到SD卡中
+2.提示复制成功后马上拔出SD卡
+3. 在PC端打开SD卡里的APK，无法打开，显示大小为0 byte
+
+4. 提示复制成功，等待9秒后再拔出SD卡，则该APK文件可以打开
+
+5.通过在adb shell 中使用cp 指令复制apk文件 也有问题
+6. 通过FileManager复制apk文件 也有问题
+
+== Log信息如下： ==
+
+复制粘帖APK文件并拔出SD卡：
+
+D/bsthal  ( 2269): mPendingEvent.light = 320.000000
+V/codec_audio_pad( 8834): in normal mode, headset or speaker on,****LINE:54,FUNC:set_normal_path
+W/ResourceType( 4090): No package identifier when getting value for resource number 0x00000000
+W/ResourceType( 4090): No package identifier when getting value for resource number 0x00000000
+W/ResourceType( 4090): No package identifier when getting value for resource number 0x00000000
+W/ResourceType( 4090): No package identifier when getting value for resource number 0x00000000
+W/ResourceType( 4090): No package identifier when getting value for resource number 0x00000000
+W/ResourceType( 4090): No package identifier when getting value for resource number 0x00000000
+W/ResourceType( 4090): No package identifier when getting value for resource number 0x00000000
+W/ResourceType( 4090): No package identifier when getting value for resource number 0x00000000
+W/ResourceType( 4090): No package identifier when getting value for resource number 0x00000000
+W/ResourceType( 4090): No package identifier when getting value for resource number 0x00000000
+W/ResourceType( 4090): No package identifier when getting value for resource number 0x00000000
+W/ResourceType( 4090): No package identifier when getting value for resource number 0x00000000
+D/dalvikvm( 4090): GC_FOR_ALLOC freed 1270K, 16% free 14847K/17604K, paused 65ms, total 66ms
+D/bsthal  ( 2269): mPendingEvent.light = 640.000000
+D/DirectVolume( 1339): Volume extsd /mnt/extsd partition 179:49 removed
+D/Vold    ( 1339): Volume extsd state changing 4 (Mounted) -> 5 (Unmounting)
+D/MediaProvider( 3127): __deleting all entries for storage StorageVolume__ [mStorageId=131073 mPath=/mnt/extsd mDescriptionId=17040659 mPrimary=false mRemovable=true mEmulated=false mMtpReserveSpace=0 mAllowMassStorage=true mMaxFileSize=0 mOwner=null]
+D/MountService( 2269): sendStorageIntent Intent { act=android.intent.action.MEDIA_EJECT dat=file:///mnt/extsd (has extras) } to UserHandle{-1}
+E/Vold    ( 1339): mPartIdx = -1, mMountedPartNum= 1
+W/Vold    ( 1339): Failed to unmount /mnt/extsd (Device or resource busy, retries 4, action 0)
+E/ProcessKiller( 1339): Process /system/bin/mediaserver (8834) has open file /mnt/extsd/3gp/TRIM_20140120_115334.mp4
+W/Vold    ( 1339): Failed to unmount /mnt/extsd (Device or resource busy, retries 3, action 0)
+E/ProcessKiller( 1339): Process /system/bin/mediaserver (8834) has open file /mnt/extsd/3gp/TRIM_20140120_115334.mp4
+W/Vold    ( 1339): Failed to unmount /mnt/extsd (Device or resource busy, retries 2, action 1)
+E/ProcessKiller( 1339): Process /system/bin/mediaserver (8834) has open file /mnt/extsd/3gp/TRIM_20140120_115334.mp4
+W/ProcessKiller( 1339): Sending SIGHUP to process 8834
+I/ServiceManager( 1338): service 'media.audio_flinger' died
+I/ServiceManager( 1338): service 'media.player' died
+I/ServiceManager( 1338): service 'media.camera' died
+I/ServiceManager( 1338): service 'media.audio_policy' died
+W/AudioSystem( 2761): AudioFlinger server died!
+W/AudioSystem( 2761): AudioPolicyService server died!
+W/AudioSystem( 2269): AudioFlinger server died!
+E/AudioService( 2269): Media server died.
+W/AudioSystem( 2269): AudioPolicyService server died!
+W/MediaMetadataRetriever( 3127): MediaMetadataRetriever server died!
+W/linker  ( 9830): libve.so has text relocations. This is wasting memory and is a security risk. Please fix.
+I/mediaserver( 9830): ServiceManager: 0xb79384c8
+I/AudioFlinger( 9830): Using default 3000 mSec as standby time.
+I/CameraService( 9830): CameraService started (pid=9830)
+D/HALCameraFactory( 9830): camera hal version: 3000130327_V1.0
+I/CameraService( 9830): Loaded "V4L2Camera Module" camera module
+D/HALCameraFactory( 9830): There is 2 attached cameras and 0 removable cameras
+I/AudioPolicyManagerBase( 9830): loadAudioPolicyConfig() loaded /system/etc/audio_policy.conf
+D/codec_audio( 9830): get ro.sw.audio.codec_plan_name =0
+D/codec_audio( 9830): get index =0
+V/codec_audio_pad( 9830): ****LINE:171,FUNC:pad_init
+V/codec_audio_plan_record( 9830): record manager thread sleep
+D/codec_audio( 9830): key_name:PHONE_EARPIECE 
+D/codec_audio( 9830): key_name:PHONE_HEADSET 
+D/codec_audio( 9830): key_name:PHONE_SPEAKER 
+D/codec_audio( 9830): key_name:BLUETOOTH_UP 
+D/codec_audio( 9830): key_name:FM_HEADSET 
+D/codec_audio( 9830): key_name:FM_SPEAKER 
+D/codec_audio( 9830): get_volume_config pcm_vol: 8
+D/bp_audio( 9830): get ro.sw.audio.bp_device_name=0
+D/bp_audio( 9830): bp_device_detect index=0
+I/AudioFlinger( 9830): loadHwModule() Loaded primary audio interface from sunxi audio HW HAL (audio) handle 1
+I/AudioFlinger( 9830): HAL output buffer size 1056 frames, normal mix buffer size 1056 frames
+I/AudioMixer( 9830): found effect "Multichannel Downmix To Stereo" from The Android Open Source Project
+I/AudioFlinger( 9830): Using module 1 has the primary audio interface
+I/AudioFlinger( 9830): AudioFlinger's thread 0xb5080008 ready to run
+I/audio_a2dp_hw( 9830): adev_open:  adev_open in A2dp_hw module
+I/AudioFlinger( 9830): loadHwModule() Loaded a2dp audio interface from A2DP Audio HW HAL (audio) handle 3
+I/AudioFlinger( 9830): loadHwModule() Loaded usb audio interface from USB audio HW HAL (audio) handle 4
+I/r_submix( 9830): adev_open(name=audio_hw_if)
+I/r_submix( 9830): adev_init_check()
+I/AudioFlinger( 9830): loadHwModule() Loaded r_submix audio interface from Wifi Display audio HAL (audio) handle 5
+I/AudioPolicyService( 9830): Loaded audio policy from LEGACY Audio Policy HAL (audio_policy)
+E/AudioService( 2269): Media server started.
+W/AudioPolicyManagerBase( 9830): setPhoneState() setting same state 0
+I/Vold    ( 1339): /mnt/extsd sucessfully unmounted
+I/Vold    ( 1339): /mnt/extsd unmounted successfully
+D/Vold    ( 1339): Volume extsd state changing 5 (Unmounting) -> 1 (Idle-Unmounted)
+D/DirectVolume( 1339): Crisis averted
+D/DirectVolume( 1339): Volume extsd /mnt/extsd disk 179:48 removed
+E/Vold    ( 1339): Volume extsd unmount request when not mounted
+D/MtpService( 3127): onStorageStateChanged /mnt/extsd mounted -> unmounted
+D/MtpService( 3127): removeStorageLocked 131073 /mnt/extsd
+D/Vold    ( 1339): Volume extsd state changing 1 (Idle-Unmounted) -> 0 (No-Media)
+D/MountService( 2269): volume state changed for /mnt/extsd (mounted -> unmounted)
+D/MountService( 2269): sendStorageIntent Intent { act=android.intent.action.MEDIA_UNMOUNTED dat=file:///mnt/extsd (has extras) } to UserHandle{-1}
+W/MountService( 2269): Duplicate state transition (unmounted -> unmounted) for /mnt/extsd
+D/MountService( 2269): sendStorageIntent Intent { act=unmounted dat=file:///mnt/extsd (has extras) } to UserHandle{-1}
+D/MountService( 2269): volume state changed for /mnt/extsd (unmounted -> removed)
+D/MountService( 2269): sendStorageIntent Intent { act=android.intent.action.MEDIA_REMOVED dat=file:///mnt/extsd (has extras) } to UserHandle{-1}
+D/MediaScannerReceiver( 3127): action: android.intent.action.MEDIA_UNMOUNTED path: /mnt/extsd
+D/MtpService( 3127): onStorageStateChanged /mnt/extsd unmounted -> removed
+D/UsbDeviceManager( 2269): mBootFastReceiver reveived ACTION_BATTERY_CHANGE
+
+
+
+
+插入SD卡：
+
+D/bsthal  ( 2269): mPendingEvent.light = 640.000000
+D/Vold    ( 1339): Volume extsd state changing 0 (No-Media) -> 2 (Pending)
+D/Vold    ( 1339): Volume extsd state changing 2 (Pending) -> 1 (Idle-Unmounted)
+D/MtpService( 3127): onStorageStateChanged /mnt/extsd removed -> unmounted
+D/MountService( 2269): volume state changed for /mnt/extsd (removed -> unmounted)
+D/MountService( 2269): sendStorageIntent Intent { act=android.intent.action.MEDIA_UNMOUNTED dat=file:///mnt/extsd (has extras) } to UserHandle{-1}
+D/Vold    ( 1339): mountVol /mnt/extsd
+D/Vold    ( 1339): storage_type =  primaryStorage = 1
+I/Vold    ( 1339): /dev/block/vold/179:49 being considered for volume extsd
+D/Vold    ( 1339): Volume extsd state changing 1 (Idle-Unmounted) -> 3 (Checking)
+I/Vold    ( 1339): Exfat::check
+D/MediaScannerReceiver( 3127): action: android.intent.action.MEDIA_UNMOUNTED path: /mnt/extsd
+I/fsck.exfat( 1339): exfatfsck 0.9.5
+D/MountService( 2269): volume state changed for /mnt/extsd (unmounted -> checking)
+D/MtpService( 3127): onStorageStateChanged /mnt/extsd unmounted -> checking
+D/MountService( 2269): sendStorageIntent Intent { act=android.intent.action.MEDIA_CHECKING dat=file:///mnt/extsd (has extras) } to UserHandle{-1}
+I/fsck.exfat( 1339): ERROR: exFAT file system is not found.
+I/fsck.exfat( 1339): fsck.exfat terminated by exit(1)
+E/Vold    ( 1339): Filesystem check failed (unknown exit code 1)
+I/Vold    ( 1339): Fat::check /dev/block/vold/179:49
+I/fsck_msdos( 1339): ** /dev/block/vold/179:49
+I/fsck_msdos( 1339): ** Phase 1 - Read and Compare FATs
+I/fsck_msdos( 1339): Attempting to allocate 472 KB for FAT
+I/fsck_msdos( 1339): Attempting to allocate 472 KB for FAT
+I/fsck_msdos( 1339): ** Phase 2 - Check Cluster Chains
+I/fsck_msdos( 1339): ** Phase 3 - Checking Directories
+I/fsck_msdos( 1339): ** Phase 4 - Checking for Lost Files
+I/fsck_msdos( 1339): 122 files, 1772288 free (55384 clusters)
+I/Vold    ( 1339): Filesystem check completed OK
+D/Vold    ( 1339): Volume extsd state changing 3 (Checking) -> 4 (Mounted)
+I/Vold    ( 1339): Volume::mountVol: getState=4, State_Mounted=4
+D/MtpService( 3127): onStorageStateChanged /mnt/extsd checking -> mounted
+D/MtpService( 3127): addStorageLocked 131073 /mnt/extsd
+D/MountService( 2269): volume state changed for /mnt/extsd (checking -> mounted)
+D/MountService( 2269): sendStorageIntent Intent { act=android.intent.action.MEDIA_MOUNTED dat=file:///mnt/extsd (has extras) } to UserHandle{-1}
+V/PanelView( 2761): animationTick called with dtms=0; nothing to do (h=0.91703224 v=0.0)
+D/PhoneStatusBar( 2761): disable: < expand icons alerts TICKER* SYSTEM_INFO* back home recent clock search >
+V/PanelView( 2761): animationTick called with dtms=-13; nothing to do (h=0.91703224 v=0.0)
+W/ResourceType( 2761): No known package when getting value for resource number 0x7f0a00c0
+D/MediaScannerReceiver( 3127): action: android.intent.action.MEDIA_MOUNTED path: /mnt/extsd
+D/PhoneStatusBar( 2761): disable: < expand icons alerts ticker* system_info* back home recent clock search >
+I/MediaScannerService( 3127): mExternalStoragePaths = [Ljava.lang.String;@42514878
+D/MediaScannerService( 3127): start scanning volume external: [/storage/emulated/0, /mnt/extsd, /mnt/usbhost1]
+D/asset   ( 4090): failed to open Zip archive '/mnt/extsd/com.yipiao_2.0.7_liqucn.com.apk'
+W/PackageParser( 4090): Unable to read AndroidManifest.xml of /mnt/extsd/com.yipiao_2.0.7_liqucn.com.apk
+W/PackageParser( 4090): java.io.FileNotFoundException: AndroidManifest.xml
+W/PackageParser( 4090): 	at android.content.res.AssetManager.openXmlAssetNative(Native Method)
+W/PackageParser( 4090): 	at android.content.res.AssetManager.openXmlBlockAsset(AssetManager.java:488)
+W/PackageParser( 4090): 	at android.content.res.AssetManager.openXmlResourceParser(AssetManager.java:456)
+W/PackageParser( 4090): 	at android.content.pm.PackageParser.parsePackage(PackageParser.java:524)
+W/PackageParser( 4090): 	at android.content.pm.PackageManager.getPackageArchiveInfo(PackageManager.java:2620)
+W/PackageParser( 4090): 	at com.estrongs.android.d.c.c(Unknown Source)
+W/PackageParser( 4090): 	at com.estrongs.android.d.a.a(Unknown Source)
+W/PackageParser( 4090): 	at com.estrongs.android.d.d.a(Unknown Source)
+W/PackageParser( 4090): 	at com.estrongs.android.d.l.run(Unknown Source)
+W/PackageParser( 4090): 	at java.lang.Thread.run(Thread.java:841)
+D/bsthal  ( 2269): mPendingEvent.light = 640.000000
+W/InputMethodManagerService( 2269): Window already focused, ignoring focus gain of: com.android.internal.view.IInputMethodClient$Stub$Proxy@42c74c88 attribute=null, token = android.os.BinderProxy@428b91b8
+V/MediaPlayerFactory( 9830): MediaPlayerFactory::getPlayerType: url = /mnt/extsd/岁月如歌.mp3
+V/MediaPlayerFactory( 9830): MediaPlayerFactory::getPlayerType: url = /mnt/extsd/3gp/TRIM_20140120_115334.mp4
+D/cedarx_demux( 9830): cedarx_demux_create: 0x7
+E/mov_parser_oal( 9830): open mov/mp4 reader failed@
+E/CDX_Player( 9830): cedar demuxer open error
+V/MediaPlayerFactory( 9830): MediaPlayerFactory::getPlayerType: url = /mnt/extsd/3gp/TRIM_20140120_123134.mp4
+D/cedarx_demux( 9830): cedarx_demux_create: 0x7
+E/mov_parser_oal( 9830): open mov/mp4 reader failed@
+E/CDX_Player( 9830): cedar demuxer open error
+V/MediaPlayerFactory( 9830): MediaPlayerFactory::getPlayerType: url = /mnt/extsd/3gp/MUTE_20140120_115745.mp4
+D/cedarx_demux( 9830): cedarx_demux_create: 0x7
+E/mov_parser_oal( 9830): open mov/mp4 reader failed@
+E/CDX_Player( 9830): cedar demuxer open error
+V/MediaPlayerFactory( 9830): MediaPlayerFactory::getPlayerType: url = /mnt/extsd/3gp/MUTE_20140120_121137.mp4
+D/cedarx_demux( 9830): cedarx_demux_create: 0x7
+E/mov_parser_oal( 9830): open mov/mp4 reader failed@
+E/CDX_Player( 9830): cedar demuxer open error
+V/MediaPlayerFactory( 9830): MediaPlayerFactory::getPlayerType: url = /mnt/extsd/3gp/MUTE_20140120_121153.mp4
+D/cedarx_demux( 9830): cedarx_demux_create: 0x7
+E/mov_parser_oal( 9830): open mov/mp4 reader failed@
+E/CDX_Player( 9830): cedar demuxer open error
+V/MediaPlayerFactory( 9830): MediaPlayerFactory::getPlayerType: url = /mnt/extsd/3gp/MUTE_20140120_121153副本.mp4
+D/cedarx_demux( 9830): cedarx_demux_create: 0x7
+E/mov_parser_oal( 9830): open mov/mp4 reader failed@
+E/CDX_Player( 9830): cedar demuxer open error
+V/MediaPlayerFactory( 9830): MediaPlayerFactory::getPlayerType: url = /mnt/extsd/3gp/MUTE_20140120_121153副本 2.mp4
+D/cedarx_demux( 9830): cedarx_demux_create: 0x7
+E/mov_parser_oal( 9830): open mov/mp4 reader failed@
+E/CDX_Player( 9830): cedar demuxer open error
+V/MediaPlayerFactory( 9830): MediaPlayerFactory::getPlayerType: url = /mnt/extsd/3gp/MUTE_20140120_122015.mp4
+D/cedarx_demux( 9830): cedarx_demux_create: 0x7
+E/mov_parser_oal( 9830): open mov/mp4 reader failed@
+E/CDX_Player( 9830): cedar demuxer open error
+D/dalvikvm( 3127): GC_FOR_ALLOC freed 263K, 17% free 6691K/7972K, paused 16ms, total 16ms
+V/MediaPlayerFactory( 9830): MediaPlayerFactory::getPlayerType: url = /mnt/extsd/一吻天荒.mp3
+W/MediaScanner( 3127): Error opening directory '/mnt/usbhost1/', skipping: Permission denied.
+D/dalvikvm( 3127): GC_CONCURRENT freed 332K, 16% free 6760K/7972K, paused 2ms+3ms, total 23ms
+V/MediaScanner( 3127): pruneDeadThumbnailFiles... android.database.sqlite.SQLiteCursor@425aa220
+V/MediaScanner( 3127): /pruneDeadThumbnailFiles... android.database.sqlite.SQLiteCursor@425aa220
+D/MediaScannerService( 3127): done scanning volume external
+D/dalvikvm( 3127): GC_CONCURRENT freed 553K, 18% free 6595K/7972K, paused 3ms+1ms, total 19ms
+D/bsthal  ( 2269): mPendingEvent.light = 320.000000
+D/bsthal  ( 2269): mPendingEvent.light = 320.000000
+D/bsthal  ( 2269): mPendingEvent.light = 320.000000
+D/bsthal  ( 2269): mPendingEvent.light = 320.000000
+D/UsbDeviceManager( 2269): mBootFastReceiver reveived ACTION_BATTERY_CHANGE
+D/dalvikvm( 2269): GC_CONCURRENT freed 1322K, 16% free 12706K/15072K, paused 4ms+7ms, total 66ms
+D/bsthal  ( 2269): mPendingEvent.light = 640.000000
+D/bsthal  ( 2269): mPendingEvent.light = 640.000000
+D/UsbDeviceManager( 2269): mBootFastReceiver reveived ACTION_BATTERY_CHANGE
+D/UsbDeviceManager( 2269): mBootFastReceiver reveived ACTION_BATTERY_CHANGE
+D/bsthal  ( 2269): activate, handle: 2, enabled: 0
+I/PowerManagerService( 2269): Going to sleep due to screen timeout...
+D/bsthal  ( 2269): activate, handle: 1598182229, enabled: 0
+I/bsthal  ( 2269): <BST> disable sensor <BOSCH Acceleration Sensor>
+D/SurfaceFlinger( 1344): Screen released, type=0 flinger=0xb7013450
+E/IMGSRV  ( 1344): :0: ####hwc_device_blank: disp:0 blank:1
+D/KeyguardViewMediator( 2761): Lock in the future
+D/NfcService( 3093): applyRouting: We are off, nothing to do
+D/PowerManagerService-JNI( 2269): Excessive delay in autosuspend_enable() while turning screen off: 422ms

@@ -1,0 +1,21 @@
+Content-Type: text/x-zim-wiki
+Wiki-Format: zim 0.4
+Creation-Date: 2014-04-16T09:30:11+08:00
+
+====== addVolumeLocked ======
+Created Wednesday 16 April 2014
+
+I/SystemServer( 2193): Mount Service
+D/MountService( 2193): got storage path: /mnt/sdcard description: 内存设备 primary: true removable: false emulated: true mtpReserve: 100 allowMassStorage: false maxFileSize: 0
+D/MountService( 2193): addVolumeLocked() StorageVolume [mStorageId=65537 mPath=/storage/emulated/0 mDescriptionId=17040658 mPrimary=true mRemovable=false mEmulated=true mMtpReserveSpace=100 mAllowMassStorage=false mMaxFileSize=0 mOwner=UserHandle{0}]
+
+D/MountService( 2193): got storage path: /mnt/extsd description: SD 卡 primary: false removable: true emulated: false mtpReserve: 0 allowMassStorage: true maxFileSize: 0
+D/MountService( 2193): addVolumeLocked() StorageVolume [mStorageId=0 mPath=/mnt/extsd mDescriptionId=17040659 mPrimary=false mRemovable=true mEmulated=false mMtpReserveSpace=0 mAllowMassStorage=true mMaxFileSize=0 mOwner=null]
+
+D/MountService( 2193): got storage path: /mnt/usbhost1 description: USB 存储器 primary: false removable: true emulated: false mtpReserve: 0 allowMassStorage: false maxFileSize: 0
+D/MountService( 2193): addVolumeLocked() StorageVolume [mStorageId=0 mPath=/mnt/usbhost1 mDescriptionId=17040660 mPrimary=false mRemovable=true mEmulated=false mMtpReserveSpace=0 mAllowMassStorage=false mMaxFileSize=0 mOwner=null]
+
+I/SystemServer( 2193): LockSettingsService
+I/SystemServer( 2193): Device Policy
+I/SystemServer( 2193): Status Bar
+I/SystemServer( 2193): Clipboard Service

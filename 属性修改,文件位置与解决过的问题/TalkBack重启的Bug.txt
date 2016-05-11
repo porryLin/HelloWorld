@@ -1,0 +1,1091 @@
+Content-Type: text/x-zim-wiki
+Wiki-Format: zim 0.4
+Creation-Date: 2014-03-08T18:36:40+08:00
+
+====== TalkBack重启的Bug ======
+Created Saturday 08 March 2014
+
+=== 问题描述： ===
+打开Talk Back功能后，在输入Wifi 密码和浏览器输入网址时很容易死机重启
+
+=== log信息： ===
+
+I/ActivityManager( 2437): Start proc com.android.chrome:sandboxed_process0 for service com.android.chrome/org.chromium.content.app.SandboxedProcessService0: pid=6954 uid=99000 gids={} 
+
+== 打开Chrome浏览器 ==
+I/LibraryLoader( 6889): loading: chromeview
+D/dalvikvm( 1319): GC_EXPLICIT freed 41K, 9% free 4365K/4796K, paused 3ms+5ms, total 34ms
+D/OpenGLRenderer( 6889): Enabling debug mode 0
+D/dalvikvm( 1319): GC_EXPLICIT freed <1K, 9% free 4365K/4796K, paused 2ms+3ms, total 25ms
+I/ResourceExtractor( 6889): Extracting resource chrome_100_percent.pak
+I/ChildProcessService( 6954): Creating new ChildProcessService pid=6954
+I/LibraryLoader( 6954): loading: chromeview
+D/dalvikvm( 1319): GC_EXPLICIT freed <1K, 9% free 4365K/4796K, paused 2ms+3ms, total 24ms
+I/ResourceExtractor( 6889): Extracting resource en-GB.pak
+I/LibraryLoader( 6889): loaded: chromeview
+I/LibraryLoader( 6954): loaded: chromeview
+I/ResourceExtractor( 6889): Extracting resource en-US.pak
+I/ResourceExtractor( 6889): Extracting resource resources.pak
+I/chromium( 6889): [INFO:library_loader_hooks.cc(70)] Chromium logging enabled: level = 0, default verbosity = 0
+I/ActivityManager( 2437): Displayed com.android.chrome/com.google.android.apps.chrome.Main: +4s411ms
+I/BrowserStartupController( 6889): Initializing chromium process, renderers=9
+I/Sensorsmpltiger( 2437): **** No Motion ****
+I/Choreographer( 6889): Skipped 62 frames!  The application may be doing too much work on its main thread.
+V/codec_audio_pad( 1321): in normal mode, headset or speaker on,****LINE:54,FUNC:set_normal_path
+D/dalvikvm( 6148): GC_CONCURRENT freed 452K, 13% free 5694K/6544K, paused 1ms+3ms, total 25ms
+I/chromium( 6889): [INFO:async_pixel_transfer_manager_android.cc(60)] Async pixel transfers not supported
+D/dalvikvm( 6889): GC_CONCURRENT freed 300K, 13% free 4968K/5656K, paused 3ms+3ms, total 20ms
+W/NewTabPageUtil( 6889): Unable to determine NTP section: chrome://newtab/
+D/ChildProcessLauncher( 6889): Setting up connection to process: slot=0
+I/chromium( 6954): [INFO:library_loader_hooks.cc(70)] Chromium logging enabled: level = 0, default verbosity = 0
+D/ChildProcessLauncher( 6889): on connect callback, pid=6954 context=1785706464
+I/TextToSpeech( 6889): Sucessfully bound to com.google.android.tts
+E/d       ( 6889): Failed to bind to service
+W/ActivityManager( 2437): Unable to start service Intent { act=com.googlecode.eyesfree.braille.service.ACTION_SELF_BRAILLE_SERVICE pkg=com.googlecode.eyesfree.brailleback } U=0: not found
+I/TextToSpeech( 6889): Connected to ComponentInfo{com.google.android.tts/com.google.android.tts.service.GoogleTTSService}
+I/TextToSpeech( 6889): Set up connection to ComponentInfo{com.google.android.tts/com.google.android.tts.service.GoogleTTSService}
+D/dalvikvm( 6889): GC_CONCURRENT freed 236K, 11% free 5159K/5780K, paused 3ms+3ms, total 20ms
+I/chromium( 6889): [INFO:async_pixel_transfer_manager_android.cc(60)] Async pixel transfers not supported
+I/ActivityManager( 2437): START u0 {flg=0x4000000 cmp=com.android.chrome/com.google.android.apps.chrome.firstrun.FirstRunExperienceActivityTablet (has extras)} from pid 6889
+D/dalvikvm( 2437): GC_FOR_ALLOC freed 504K, 15% free 9385K/11032K, paused 47ms, total 47ms
+D/dalvikvm( 2437): GC_FOR_ALLOC freed 232K, 15% free 9397K/11032K, paused 46ms, total 46ms
+D/ChildProcessLauncher( 6889): Setting up connection to process: slot=1
+I/ActivityManager( 2437): Start proc com.android.chrome:sandboxed_process1 for service com.android.chrome/org.chromium.content.app.SandboxedProcessService1: pid=7048 uid=99001 gids={}
+I/ActivityManager( 2437): Killing 7048:com.android.chrome:sandboxed_process1/u0a29i1 (adj 9): isolated not needed
+E/JavaBinder( 2437): !!! FAILED BINDER TRANSACTION !!!
+W/ActivityManager( 2437): Scheduling restart of crashed service com.android.chrome/org.chromium.content.app.SandboxedProcessService1 in 5000ms
+I/TextToSpeech( 6889): Sucessfully bound to com.google.android.tts
+E/d       ( 6889): Failed to bind to service
+W/ActivityManager( 2437): Unable to start service Intent { act=com.googlecode.eyesfree.braille.service.ACTION_SELF_BRAILLE_SERVICE pkg=com.googlecode.eyesfree.brailleback } U=0: not found
+W/InputMethodManagerService( 2437): Starting input on non-focused client com.android.internal.view.IInputMethodClient$Stub$Proxy@41ada558 (uid=10029 pid=6889)
+W/InputMethodManagerService( 2437): Starting input on non-focused client com.android.internal.view.IInputMethodClient$Stub$Proxy@41ada558 (uid=10029 pid=6889)
+I/Choreographer( 6889): Skipped 72 frames!  The application may be doing too much work on its main thread.
+E/d       ( 6889): Failed to bind to service
+W/ActivityManager( 2437): Unable to start service Intent { act=com.googlecode.eyesfree.braille.service.ACTION_SELF_BRAILLE_SERVICE pkg=com.googlecode.eyesfree.brailleback } U=0: not found
+D/dalvikvm( 6889): GC_CONCURRENT freed 414K, 14% free 5205K/6008K, paused 2ms+3ms, total 23ms
+V/GoogleServicesManager( 6889): Ignoring pref change because user is not signed in to Chrome
+D/dalvikvm( 6889): GC_FOR_ALLOC freed 75K, 14% free 5191K/6008K, paused 18ms, total 18ms
+I/dalvikvm-heap( 6889): Grow heap (frag case) to 5.960MB for 540816-byte allocation
+D/dalvikvm( 6889): GC_FOR_ALLOC freed 1K, 13% free 5718K/6540K, paused 18ms, total 18ms
+I/chromium( 6889): [INFO:async_pixel_transfer_manager_android.cc(60)] Async pixel transfers not supported
+D/dalvikvm( 6889): GC_CONCURRENT freed <1K, 13% free 5718K/6540K, paused 3ms+2ms, total 20ms
+W/TextToSpeech( 6889): stop failed: not bound to TTS engine
+I/TextToSpeech( 6889): Connected to ComponentInfo{com.google.android.tts/com.google.android.tts.service.GoogleTTSService}
+I/TextToSpeech( 6889): Set up connection to ComponentInfo{com.google.android.tts/com.google.android.tts.service.GoogleTTSService}
+E/chromium( 6889): [ERROR:CONSOLE(1)] "Uncaught ReferenceError: ntp is not defined", source:  (1)
+E/ActivityThread( 6889): Performing stop of activity that is not resumed: {com.android.chrome/com.google.android.apps.chrome.Main}
+E/ActivityThread( 6889): java.lang.RuntimeException: Performing stop of activity that is not resumed: {com.android.chrome/com.google.android.apps.chrome.Main}
+E/ActivityThread( 6889): 	at android.app.ActivityThread.performStopActivityInner(ActivityThread.java:3128)
+E/ActivityThread( 6889): 	at android.app.ActivityThread.handleStopActivity(ActivityThread.java:3215)
+E/ActivityThread( 6889): 	at android.app.ActivityThread.access$1000(ActivityThread.java:135)
+E/ActivityThread( 6889): 	at android.app.ActivityThread$H.handleMessage(ActivityThread.java:1424)
+E/ActivityThread( 6889): 	at android.os.Handler.dispatchMessage(Handler.java:102)
+E/ActivityThread( 6889): 	at android.os.Looper.loop(Looper.java:137)
+E/ActivityThread( 6889): 	at android.app.ActivityThread.main(ActivityThread.java:4998)
+E/ActivityThread( 6889): 	at java.lang.reflect.Method.invokeNative(Native Method)
+E/ActivityThread( 6889): 	at java.lang.reflect.Method.invoke(Method.java:515)
+E/ActivityThread( 6889): 	at com.android.internal.os.ZygoteInit$MethodAndArgsCaller.run(ZygoteInit.java:811)
+E/ActivityThread( 6889): 	at com.android.internal.os.ZygoteInit.main(ZygoteInit.java:627)
+E/ActivityThread( 6889): 	at dalvik.system.NativeStart.main(Native Method)
+E/d       ( 6889): Failed to bind to service
+W/ActivityManager( 2437): Unable to start service Intent { act=com.googlecode.eyesfree.braille.service.ACTION_SELF_BRAILLE_SERVICE pkg=com.googlecode.eyesfree.brailleback } U=0: not found
+I/ActivityManager( 2437): Displayed com.android.chrome/com.google.android.apps.chrome.firstrun.FirstRunExperienceActivityTablet: +837ms
+I/ActivityManager( 2437): Activity reported stop, but no longer stopping: ActivityRecord{41b1c080 u0 com.android.chrome/com.google.android.apps.chrome.Main t10}
+W/chromium( 6889): [WARNING:CONSOLE(4368)] "i18n-values: Missing value for "syncLoading"", source: chrome://newtab/#most_visited (4368)
+E/d       ( 6889): Failed to bind to service
+W/ActivityManager( 2437): Unable to start service Intent { act=com.googlecode.eyesfree.braille.service.ACTION_SELF_BRAILLE_SERVICE pkg=com.googlecode.eyesfree.brailleback } U=0: not found
+E/d       ( 6889): Failed to bind to service
+W/ActivityManager( 2437): Unable to start service Intent { act=com.googlecode.eyesfree.braille.service.ACTION_SELF_BRAILLE_SERVICE pkg=com.googlecode.eyesfree.brailleback } U=0: not found
+E/SpeechController( 6148): Completed speech while already completed!
+V/NFC     ( 6889): this device does not have NFC support
+I/MinidumpUploadService( 6889): Attempting to upload accumulated crash dumps.
+I/ActivityManager( 2437): Start proc com.android.providers.partnerbookmarks for content provider com.android.providers.partnerbookmarks/.PartnerBookmarksProvider: pid=7157 uid=10054 gids={50054}
+I/SnapshotSettingsMigrator( 6889): Running one-time migration of settings for Chrome to Mobile
+I/PackageManager( 2437): Running dexopt on: com.android.providers.partnerbookmarks
+
+E/PartnerBookmarksReader( 6889): ATTENTION: not using partner bookmarks as none were provided
+E/SpeechController( 6148): Completed speech while already completed!
+
+I/chromium( 6889): [INFO:async_pixel_transfer_manager_android.cc(60)] Async pixel transfers not supported
+W/ResourceType( 2437): Skipping entry 0x7f060005 in package table 0 because it is not complex!
+W/ResourceType( 2437): Skipping entry 0x7f060006 in package table 0 because it is not complex!
+E/d       ( 6889): Failed to bind to service
+W/ActivityManager( 2437): Unable to start service Intent { act=com.googlecode.eyesfree.braille.service.ACTION_SELF_BRAILLE_SERVICE pkg=com.googlecode.eyesfree.brailleback } U=0: not found
+E/d       ( 6889): Failed to bind to service
+W/ActivityManager( 2437): Unable to start service Intent { act=com.googlecode.eyesfree.braille.service.ACTION_SELF_BRAILLE_SERVICE pkg=com.googlecode.eyesfree.brailleback } U=0: not found
+W/SurfaceFlinger( 1318): couldn't log to binary event log: overflow.
+I/ActivityManager( 2437): Start proc com.android.chrome:sandboxed_process1 for service com.android.chrome/org.chromium.content.app.SandboxedProcessService1: pid=7272 uid=99002 gids={}
+I/ChildProcessService( 7272): Creating new ChildProcessService pid=7272
+I/LibraryLoader( 7272): loading: chromeview
+D/ChildProcessLauncher( 6889): on connect callback, pid=7272 context=1892824568
+I/LibraryLoader( 7272): loaded: chromeview
+I/chromium( 7272): [INFO:library_loader_hooks.cc(70)] Chromium logging enabled: level = 0, default verbosity = 0
+I/ActivityManager( 2437): Killing 4937:com.android.musicfx/u0a12 (adj 15): empty #17
+I/chromium( 6889): [INFO:async_pixel_transfer_manager_android.cc(60)] Async pixel transfers not supported
+I/chromium( 7272): [INFO:SkUtilsArm.cpp(177)] Device supports ARM NEON instructions!
+I/chromium( 7272): 
+E/chromium( 6889): [ERROR:CONSOLE(0)] "Refused to load the script 'https://ssl.gstatic.com/accessibility/javascript/android/chromeandroidvox.js' because it violates the following Content Security Policy directive: "script-src chrome://resources 'self' 'unsafe-eval'".
+E/chromium( 6889): ", source: chrome://welcome/ (0)
+D/dalvikvm( 6148): GC_CONCURRENT freed 371K, 13% free 5715K/6544K, paused 4ms+4ms, total 39ms
+E/SpeechController( 6148): Completed speech while already completed!
+I/chromium( 6954): [INFO:SkUtilsArm.cpp(177)] Device supports ARM NEON instructions!
+I/chromium( 6954): 
+W/MediaCaptureNotificationService( 6889): Error parsing the webrtc url chrome://welcome/
+I/ActivityManager( 2437): Process com.android.chrome:sandboxed_process1 (pid 7272) has died.
+W/ActivityManager( 2437): Scheduling restart of crashed service com.android.chrome/org.chromium.content.app.SandboxedProcessService1 in 5000ms
+E/AccessibilityInteractionClient( 6148): Duplicate node.
+W/ChildProcessConnection( 6889): onServiceDisconnected (crash or killed by oom): pid=7272
+D/ChildProcessLauncher( 6889): stopping child connection: pid=7272
+E/AccessibilityNodeInfoCache( 6148): Disconneced node: android.view.accessibility.AccessibilityNodeInfo@b05d; boundsInParent: Rect(0, 0 - 1280, 727); boundsInScreen: Rect(0, 25 - 1280, 752); packageName: com.android.chrome; className: android.widget.FrameLayout; text: null; contentDescription: null; viewIdResName: com.android.chrome:id/compositor_view_holder; checkable: false; checked: false; focusable: false; focused: false; selected: false; clickable: false; longClickable: false; enabled: true; password: false; scrollable: false; [ACTION_SELECT, ACTION_CLEAR_SELECTION, ACTION_ACCESSIBILITY_FOCUS]
+E/AccessibilityNodeInfoCache( 6148): Disconneced node: android.view.accessibility.AccessibilityNodeInfo@b05d; boundsInParent: Rect(0, 0 - 1280, 727); boundsInScreen: Rect(0, 25 - 1280, 752); packageName: com.android.chrome; className: android.widget.FrameLayout; text: null; contentDescription: null; viewIdResName: com.android.chrome:id/compositor_view_holder; checkable: false; checked: false; focusable: false; focused: false; selected: false; clickable: false; longClickable: false; enabled: true; password: false; scrollable: false; [ACTION_SELECT, ACTION_CLEAR_SELECTION, ACTION_ACCESSIBILITY_FOCUS]
+E/AccessibilityNodeInfoCache( 6148): Disconneced node: android.view.accessibility.AccessibilityNodeInfo@b05d; boundsInParent: Rect(0, 0 - 1280, 727); boundsInScreen: Rect(0, 25 - 1280, 752); packageName: com.android.chrome; className: android.widget.FrameLayout; text: null; contentDescription: null; viewIdResName: com.android.chrome:id/compositor_view_holder; checkable: false; checked: false; focusable: false; focused: false; selected: false; clickable: false; longClickable: false; enabled: true; password: false; scrollable: false; [ACTION_SELECT, ACTION_CLEAR_SELECTION, ACTION_ACCESSIBILITY_FOCUS]
+E/AccessibilityNodeInfoCache( 6148): Disconneced node: android.view.accessibility.AccessibilityNodeInfo@b05d; boundsInParent: Rect(0, 0 - 1280, 727); boundsInScreen: Rect(0, 25 - 1280, 752); packageName: com.android.chrome; className: android.widget.FrameLayout; text: null; contentDescription: null; viewIdResName: com.android.chrome:id/compositor_view_holder; checkable: false; checked: false; focusable: false; focused: false; selected: false; clickable: false; longClickable: false; enabled: true; password: false; scrollable: false; [ACTION_SELECT, ACTION_CLEAR_SELECTION, ACTION_ACCESSIBILITY_FOCUS]
+D/StrictMode( 6889): StrictMode policy violation; ~duration=20 ms: android.os.StrictMode$StrictModeDiskReadViolation: policy=2847 violation=2
+D/StrictMode( 6889): 	at android.os.StrictMode$AndroidBlockGuardPolicy.onReadFromDisk(StrictMode.java:1135)
+D/StrictMode( 6889): 	at libcore.io.BlockGuardOs.open(BlockGuardOs.java:106)
+D/StrictMode( 6889): 	at libcore.io.IoBridge.open(IoBridge.java:401)
+D/StrictMode( 6889): 	at java.io.FileOutputStream.<init>(FileOutputStream.java:88)
+D/StrictMode( 6889): 	at java.io.FileOutputStream.<init>(FileOutputStream.java:73)
+D/StrictMode( 6889): 	at android.app.SharedPreferencesImpl.createFileOutputStream(SharedPreferencesImpl.java:543)
+D/StrictMode( 6889): 	at android.app.SharedPreferencesImpl.writeToFile(SharedPreferencesImpl.java:591)
+D/StrictMode( 6889): 	at android.app.SharedPreferencesImpl.access$800(SharedPreferencesImpl.java:52)
+D/StrictMode( 6889): 	at android.app.SharedPreferencesImpl$2.run(SharedPreferencesImpl.java:511)
+D/StrictMode( 6889): 	at android.app.SharedPreferencesImpl.enqueueDiskWrite(SharedPreferencesImpl.java:532)
+D/StrictMode( 6889): 	at android.app.SharedPreferencesImpl.access$100(SharedPreferencesImpl.java:52)
+D/StrictMode( 6889): 	at android.app.SharedPreferencesImpl$EditorImpl.commit(SharedPreferencesImpl.java:454)
+D/StrictMode( 6889): 	at cge.a(SourceFile:126)
+D/StrictMode( 6889): 	at cge.a(SourceFile:305)
+D/StrictMode( 6889): 	at chi.a(SourceFile:430)
+D/StrictMode( 6889): 	at chi.a(SourceFile:398)
+D/StrictMode( 6889): 	at atc.onTransact(SourceFile:103)
+D/StrictMode( 6889): 	at android.os.Binder.execTransact(Binder.java:404)
+D/StrictMode( 6889): 	at dalvik.system.NativeStart.run(Native Method)
+D/StrictMode( 6889): # via Binder call with stack:
+D/StrictMode( 6889): android.os.StrictMode$LogStackTrace
+D/StrictMode( 6889): 	at android.os.StrictMode.readAndHandleBinderCallViolations(StrictMode.java:1705)
+D/StrictMode( 6889): 	at android.os.Parcel.readExceptionCode(Parcel.java:1443)
+D/StrictMode( 6889): 	at android.os.Parcel.readException(Parcel.java:1412)
+D/StrictMode( 6889): 	at com.google.android.gms.internal.Z.a(Unknown Source)
+D/StrictMode( 6889): 	at com.google.android.gms.internal.D.a(Unknown Source)
+D/StrictMode( 6889): 	at com.google.android.gms.internal.L.b(Unknown Source)
+D/StrictMode( 6889): 	at com.google.android.gms.internal.P.onServiceConnected(Unknown Source)
+D/StrictMode( 6889): 	at com.google.android.gms.internal.S.onServiceConnected(Unknown Source)
+D/StrictMode( 6889): 	at android.app.LoadedApk$ServiceDispatcher.doConnected(LoadedApk.java:1110)
+D/StrictMode( 6889): 	at android.app.LoadedApk$ServiceDispatcher$RunConnection.run(LoadedApk.java:1127)
+D/StrictMode( 6889): 	at android.os.Handler.handleCallback(Handler.java:733)
+D/StrictMode( 6889): 	at android.os.Handler.dispatchMessage(Handler.java:95)
+D/StrictMode( 6889): 	at android.os.Looper.loop(Looper.java:137)
+D/StrictMode( 6889): 	at android.app.ActivityThread.main(ActivityThread.java:4998)
+D/StrictMode( 6889): 	at java.lang.reflect.Method.invokeNative(Native Method)
+D/StrictMode( 6889): 	at java.lang.reflect.Method.invoke(Method.java:515)
+D/StrictMode( 6889): 	at com.android.internal.os.ZygoteInit$MethodAndArgsCaller.run(ZygoteInit.java:811)
+D/StrictMode( 6889): 	at com.android.internal.os.ZygoteInit.main(ZygoteInit.java:627)
+D/StrictMode( 6889): 	at dalvik.system.NativeStart.main(Native Method)
+D/StrictMode( 6889): StrictMode policy violation; ~duration=17 ms: android.os.StrictMode$StrictModeDiskWriteViolation: policy=2847 violation=1
+D/StrictMode( 6889): 	at android.os.StrictMode$AndroidBlockGuardPolicy.onWriteToDisk(StrictMode.java:1109)
+D/StrictMode( 6889): 	at libcore.io.BlockGuardOs.write(BlockGuardOs.java:196)
+D/StrictMode( 6889): 	at libcore.io.IoBridge.write(IoBridge.java:458)
+D/StrictMode( 6889): 	at java.io.FileOutputStream.write(FileOutputStream.java:187)
+D/StrictMode( 6889): 	at com.android.internal.util.FastXmlSerializer.flushBytes(FastXmlSerializer.java:232)
+D/StrictMode( 6889): 	at com.android.internal.util.FastXmlSerializer.flush(FastXmlSerializer.java:253)
+D/StrictMode( 6889): 	at com.android.internal.util.FastXmlSerializer.endDocument(FastXmlSerializer.java:198)
+D/StrictMode( 6889): 	at com.android.internal.util.XmlUtils.writeMapXml(XmlUtils.java:182)
+D/StrictMode( 6889): 	at android.app.SharedPreferencesImpl.writeToFile(SharedPreferencesImpl.java:596)
+D/StrictMode( 6889): 	at android.app.SharedPreferencesImpl.access$800(SharedPreferencesImpl.java:52)
+D/StrictMode( 6889): 	at android.app.SharedPreferencesImpl$2.run(SharedPreferencesImpl.java:511)
+D/StrictMode( 6889): 	at android.app.SharedPreferencesImpl.enqueueDiskWrite(SharedPreferencesImpl.java:532)
+D/StrictMode( 6889): 	at android.app.SharedPreferencesImpl.access$100(SharedPreferencesImpl.java:52)
+D/StrictMode( 6889): 	at android.app.SharedPreferencesImpl$EditorImpl.commit(SharedPreferencesImpl.java:454)
+D/StrictMode( 6889): 	at cge.a(SourceFile:126)
+D/StrictMode( 6889): 	at cge.a(SourceFile:305)
+D/StrictMode( 6889): 	at chi.a(SourceFile:430)
+D/StrictMode( 6889): 	at chi.a(SourceFile:398)
+D/StrictMode( 6889): 	at atc.onTransact(SourceFile:103)
+D/StrictMode( 6889): 	at android.os.Binder.execTransact(Binder.java:404)
+D/StrictMode( 6889): 	at dalvik.system.NativeStart.run(Native Method)
+D/StrictMode( 6889): # via Binder call with stack:
+D/StrictMode( 6889): android.os.StrictMode$LogStackTrace
+D/StrictMode( 6889): 	at android.os.StrictMode.readAndHandleBinderCallViolations(StrictMode.java:1705)
+D/StrictMode( 6889): 	at android.os.Parcel.readExceptionCode(Parcel.java:1443)
+D/StrictMode( 6889): 	at android.os.Parcel.readException(Parcel.java:1412)
+D/StrictMode( 6889): 	at com.google.android.gms.internal.Z.a(Unknown Source)
+D/StrictMode( 6889): 	at com.google.android.gms.internal.D.a(Unknown Source)
+D/StrictMode( 6889): 	at com.google.android.gms.internal.L.b(Unknown Source)
+D/StrictMode( 6889): 	at com.google.android.gms.internal.P.onServiceConnected(Unknown Source)
+D/StrictMode( 6889): 	at com.google.android.gms.internal.S.onServiceConnected(Unknown Source)
+D/StrictMode( 6889): 	at android.app.LoadedApk$ServiceDispatcher.doConnected(LoadedApk.java:1110)
+D/StrictMode( 6889): 	at android.app.LoadedApk$ServiceDispatcher$RunConnection.run(LoadedApk.java:1127)
+D/StrictMode( 6889): 	at android.os.Handler.handleCallback(Handler.java:733)
+D/StrictMode( 6889): 	at android.os.Handler.dispatchMessage(Handler.java:95)
+D/StrictMode( 6889): 	at android.os.Looper.loop(Looper.java:137)
+D/StrictMode( 6889): 	at android.app.ActivityThread.main(ActivityThread.java:4998)
+D/StrictMode( 6889): 	at java.lang.reflect.Method.invokeNative(Native Method)
+D/StrictMode( 6889): 	at java.lang.reflect.Method.invoke(Method.java:515)
+D/StrictMode( 6889): 	at com.android.internal.os.ZygoteInit$MethodAndArgsCaller.run(ZygoteInit.java:811)
+D/StrictMode( 6889): 	at com.android.internal.os.ZygoteInit.main(ZygoteInit.java:627)
+D/StrictMode( 6889): 	at dalvik.system.NativeStart.main(Native Method)
+D/StrictMode( 6889): StrictMode policy violation; ~duration=13 ms: android.os.StrictMode$StrictModeDiskWriteViolation: policy=2847 violation=1
+D/StrictMode( 6889): 	at android.os.StrictMode$AndroidBlockGuardPolicy.onWriteToDisk(StrictMode.java:1109)
+D/StrictMode( 6889): 	at libcore.io.BlockGuardOs.fsync(BlockGuardOs.java:96)
+D/StrictMode( 6889): 	at java.io.FileDescriptor.sync(FileDescriptor.java:74)
+D/StrictMode( 6889): 	at android.os.FileUtils.sync(FileUtils.java:161)
+D/StrictMode( 6889): 	at android.app.SharedPreferencesImpl.writeToFile(SharedPreferencesImpl.java:597)
+D/StrictMode( 6889): 	at android.app.SharedPreferencesImpl.access$800(SharedPreferencesImpl.java:52)
+D/StrictMode( 6889): 	at android.app.SharedPreferencesImpl$2.run(SharedPreferencesImpl.java:511)
+D/StrictMode( 6889): 	at android.app.SharedPreferencesImpl.enqueueDiskWrite(SharedPreferencesImpl.java:532)
+D/StrictMode( 6889): 	at android.app.SharedPreferencesImpl.access$100(SharedPreferencesImpl.java:52)
+D/StrictMode( 6889): 	at android.app.SharedPreferencesImpl$EditorImpl.commit(SharedPreferencesImpl.java:454)
+D/StrictMode( 6889): 	at cge.a(SourceFile:126)
+D/StrictMode( 6889): 	at cge.a(SourceFile:305)
+D/StrictMode( 6889): 	at chi.a(SourceFile:430)
+D/StrictMode( 6889): 	at chi.a(SourceFile:398)
+D/StrictMode( 6889): 	at atc.onTransact(SourceFile:103)
+D/StrictMode( 6889): 	at android.os.Binder.execTransact(Binder.java:404)
+D/StrictMode( 6889): 	at dalvik.system.NativeStart.run(Native Method)
+D/StrictMode( 6889): # via Binder call with stack:
+D/StrictMode( 6889): android.os.StrictMode$LogStackTrace
+D/StrictMode( 6889): 	at android.os.StrictMode.readAndHandleBinderCallViolations(StrictMode.java:1705)
+D/StrictMode( 6889): 	at android.os.Parcel.readExceptionCode(Parcel.java:1443)
+D/StrictMode( 6889): 	at android.os.Parcel.readException(Parcel.java:1412)
+D/StrictMode( 6889): 	at com.google.android.gms.internal.Z.a(Unknown Source)
+D/StrictMode( 6889): 	at com.google.android.gms.internal.D.a(Unknown Source)
+D/StrictMode( 6889): 	at com.google.android.gms.internal.L.b(Unknown Source)
+D/StrictMode( 6889): 	at com.google.android.gms.internal.P.onServiceConnected(Unknown Source)
+D/StrictMode( 6889): 	at com.google.android.gms.internal.S.onServiceConnected(Unknown Source)
+D/StrictMode( 6889): 	at android.app.LoadedApk$ServiceDispatcher.doConnected(LoadedApk.java:1110)
+D/StrictMode( 6889): 	at android.app.LoadedApk$ServiceDispatcher$RunConnection.run(LoadedApk.java:1127)
+D/StrictMode( 6889): 	at android.os.Handler.handleCallback(Handler.java:733)
+D/StrictMode( 6889): 	at android.os.Handler.dispatchMessage(Handler.java:95)
+D/StrictMode( 6889): 	at android.os.Looper.loop(Looper.java:137)
+D/StrictMode( 6889): 	at android.app.ActivityThread.main(ActivityThread.java:4998)
+D/StrictMode( 6889): 	at java.lang.reflect.Method.invokeNative(Native Method)
+D/StrictMode( 6889): 	at java.lang.reflect.Method.invoke(Method.java:515)
+D/StrictMode( 6889): 	at com.android.internal.os.ZygoteInit$MethodAndArgsCaller.run(ZygoteInit.java:811)
+D/StrictMode( 6889): 	at com.android.internal.os.ZygoteInit.main(ZygoteInit.java:627)
+D/StrictMode( 6889): 	at dalvik.system.NativeStart.main(Native Method)
+E/AccessibilityNodeInfoCache( 6148): Disconneced node: android.view.accessibility.AccessibilityNodeInfo@b05d; boundsInParent: Rect(0, 0 - 1280, 727); boundsInScreen: Rect(0, 25 - 1280, 752); packageName: com.android.chrome; className: android.widget.FrameLayout; text: null; contentDescription: null; viewIdResName: com.android.chrome:id/compositor_view_holder; checkable: false; checked: false; focusable: false; focused: false; selected: false; clickable: false; longClickable: false; enabled: true; password: false; scrollable: false; [ACTION_SELECT, ACTION_CLEAR_SELECTION, ACTION_ACCESSIBILITY_FOCUS]
+E/AccessibilityNodeInfoCache( 6148): Disconneced node: android.view.accessibility.AccessibilityNodeInfo@b05d; boundsInParent: Rect(0, 0 - 1280, 727); boundsInScreen: Rect(0, 25 - 1280, 752); packageName: com.android.chrome; className: android.widget.FrameLayout; text: null; contentDescription: null; viewIdResName: com.android.chrome:id/compositor_view_holder; checkable: false; checked: false; focusable: false; focused: false; selected: false; clickable: false; longClickable: false; enabled: true; password: false; scrollable: false; [ACTION_SELECT, ACTION_CLEAR_SELECTION, ACTION_ACCESSIBILITY_FOCUS]
+E/AccessibilityNodeInfoCache( 6148): Disconneced node: android.view.accessibility.AccessibilityNodeInfo@b05d; boundsInParent: Rect(0, 0 - 1280, 727); boundsInScreen: Rect(0, 25 - 1280, 752); packageName: com.android.chrome; className: android.widget.FrameLayout; text: null; contentDescription: null; viewIdResName: com.android.chrome:id/compositor_view_holder; checkable: false; checked: false; focusable: false; focused: false; selected: false; clickable: false; longClickable: false; enabled: true; password: false; scrollable: false; [ACTION_SELECT, ACTION_CLEAR_SELECTION, ACTION_ACCESSIBILITY_FOCUS]
+E/AccessibilityNodeInfoCache( 6148): Disconneced node: android.view.accessibility.AccessibilityNodeInfo@b05d; boundsInParent: Rect(0, 0 - 1280, 727); boundsInScreen: Rect(0, 25 - 1280, 752); packageName: com.android.chrome; className: android.widget.FrameLayout; text: null; contentDescription: null; viewIdResName: com.android.chrome:id/compositor_view_holder; checkable: false; checked: false; focusable: false; focused: false; selected: false; clickable: false; longClickable: false; enabled: true; password: false; scrollable: false; [ACTION_SELECT, ACTION_CLEAR_SELECTION, ACTION_ACCESSIBILITY_FOCUS]
+D/dalvikvm( 3965): GC_CONCURRENT freed 399K, 16% free 4900K/5796K, paused 2ms+2ms, total 23ms
+E/AccessibilityNodeInfoCache( 6148): Disconneced node: android.view.accessibility.AccessibilityNodeInfo@b05d; boundsInParent: Rect(0, 0 - 1280, 727); boundsInScreen: Rect(0, 25 - 1280, 752); packageName: com.android.chrome; className: android.widget.FrameLayout; text: null; contentDescription: null; viewIdResName: com.android.chrome:id/compositor_view_holder; checkable: false; checked: false; focusable: false; focused: false; selected: false; clickable: false; longClickable: false; enabled: true; password: false; scrollable: false; [ACTION_SELECT, ACTION_CLEAR_SELECTION, ACTION_ACCESSIBILITY_FOCUS]
+E/SpeechController( 6148): Completed speech while already completed!
+E/d       ( 6889): Failed to bind to service
+W/ActivityManager( 2437): Unable to start service Intent { act=com.googlecode.eyesfree.braille.service.ACTION_SELF_BRAILLE_SERVICE pkg=com.googlecode.eyesfree.brailleback } U=0: not found
+E/AccessibilityNodeInfoCache( 6148): Disconneced node: android.view.accessibility.AccessibilityNodeInfo@b05d; boundsInParent: Rect(0, 0 - 1280, 727); boundsInScreen: Rect(0, 25 - 1280, 752); packageName: com.android.chrome; className: android.widget.FrameLayout; text: null; contentDescription: null; viewIdResName: com.android.chrome:id/compositor_view_holder; checkable: false; checked: false; focusable: false; focused: false; selected: false; clickable: false; longClickable: false; enabled: true; password: false; scrollable: false; [ACTION_SELECT, ACTION_CLEAR_SELECTION, ACTION_ACCESSIBILITY_FOCUS]
+E/AccessibilityNodeInfoCache( 6148): Disconneced node: android.view.accessibility.AccessibilityNodeInfo@b05d; boundsInParent: Rect(0, 0 - 1280, 727); boundsInScreen: Rect(0, 25 - 1280, 752); packageName: com.android.chrome; className: android.widget.FrameLayout; text: null; contentDescription: null; viewIdResName: com.android.chrome:id/compositor_view_holder; checkable: false; checked: false; focusable: false; focused: false; selected: false; clickable: false; longClickable: false; enabled: true; password: false; scrollable: false; [ACTION_SELECT, ACTION_CLEAR_SELECTION, ACTION_ACCESSIBILITY_FOCUS]
+D/dalvikvm( 6148): GC_CONCURRENT freed 389K, 13% free 5719K/6544K, paused 2ms+3ms, total 24ms
+E/AccessibilityNodeInfoCache( 6148): Disconneced node: android.view.accessibility.AccessibilityNodeInfo@b05d; boundsInParent: Rect(0, 0 - 1280, 727); boundsInScreen: Rect(0, 25 - 1280, 752); packageName: com.android.chrome; className: android.widget.FrameLayout; text: null; contentDescription: null; viewIdResName: com.android.chrome:id/compositor_view_holder; checkable: false; checked: false; focusable: false; focused: false; selected: false; clickable: false; longClickable: false; enabled: true; password: false; scrollable: false; [ACTION_SELECT, ACTION_CLEAR_SELECTION, ACTION_ACCESSIBILITY_FOCUS]
+E/d       ( 6889): Failed to bind to service
+W/ActivityManager( 2437): Unable to start service Intent { act=com.googlecode.eyesfree.braille.service.ACTION_SELF_BRAILLE_SERVICE pkg=com.googlecode.eyesfree.brailleback } U=0: not found
+D/dalvikvm( 6889): GC_CONCURRENT freed 459K, 12% free 6383K/7232K, paused 8ms+3ms, total 28ms
+D/dalvikvm( 6889): WAIT_FOR_CONCURRENT_GC blocked 19ms
+I/dalvikvm-heap( 6889): Grow heap (frag case) to 9.734MB for 3276816-byte allocation
+D/dalvikvm( 6889): GC_FOR_ALLOC freed 615K, 15% free 8968K/10436K, paused 18ms, total 18ms
+D/dalvikvm( 6889): GC_CONCURRENT freed 23K, 15% free 8944K/10436K, paused 2ms+2ms, total 21ms
+D/DelayedSyncController( 6889): No delayed sync.
+D/dalvikvm( 6889): GC_FOR_ALLOC freed 7K, 15% free 8950K/10436K, paused 20ms, total 20ms
+I/dalvikvm-heap( 6889): Grow heap (frag case) to 10.116MB for 1048592-byte allocation
+D/dalvikvm( 6889): GC_FOR_ALLOC freed 0K, 13% free 9974K/11464K, paused 17ms, total 17ms
+E/OmahaClient( 6889): Failed to contact server: 
+V/ExponentialBackoffScheduler( 6889): now(Sun Mar 09 17:57:35 PDT 2014) refiringAt(Sun Mar 09 18:57:35 PDT 2014)
+E/Icing   ( 3965): Column tag was not returned by client, refusing to index
+V/GmsNetworkLocationProvi( 3943): onSetRequest: ProviderRequestUnbundled, reportLocation is true and interval is 0
+V/GmsNetworkLocationProvi( 3943): SET-REQUEST
+V/GmsNetworkLocationProvi( 3943): in Handler: ProviderRequestUnbundled, reportLocation is true and interval is 0
+D/dalvikvm( 3420): GC_FOR_ALLOC freed 2548K, 14% free 5552K/6452K, paused 42ms, total 42ms
+I/dalvikvm-heap( 3420): Grow heap (frag case) to 7.898MB for 2206736-byte allocation
+D/dalvikvm( 3420): GC_CONCURRENT freed 24K, 11% free 7682K/8608K, paused 9ms+5ms, total 39ms
+D/dalvikvm( 3420): WAIT_FOR_CONCURRENT_GC blocked 27ms
+E/SpeechController( 6148): Completed speech while already completed!
+E/d       ( 6889): Failed to bind to service
+W/ActivityManager( 2437): Unable to start service Intent { act=com.googlecode.eyesfree.braille.service.ACTION_SELF_BRAILLE_SERVICE pkg=com.googlecode.eyesfree.brailleback } U=0: not found
+D/dalvikvm( 6148): GC_CONCURRENT freed 398K, 13% free 5705K/6544K, paused 2ms+2ms, total 24ms
+E/d       ( 6889): Failed to bind to service
+W/ActivityManager( 2437): Unable to start service Intent { act=com.googlecode.eyesfree.braille.service.ACTION_SELF_BRAILLE_SERVICE pkg=com.googlecode.eyesfree.brailleback } U=0: not found
+I/InputDispatcher( 2437): Dropped event because it is stale.
+D/dalvikvm( 4119): GC_CONCURRENT freed 398K, 15% free 4632K/5420K, paused 2ms+2ms, total 21ms
+E/SpeechController( 6148): Completed speech while already completed!
+D/dalvikvm( 6148): GC_CONCURRENT freed 393K, 13% free 5728K/6544K, paused 1ms+4ms, total 33ms
+E/SpeechController( 6148): Completed speech while already completed!
+E/SpeechController( 6148): Completed speech while already completed!
+D/dalvikvm( 6148): GC_CONCURRENT freed 432K, 13% free 5705K/6544K, paused 3ms+5ms, total 36ms
+E/SpeechController( 6148): Completed speech while already completed!
+V/codec_audio_pad( 1321): in normal mode, headset or speaker on,****LINE:54,FUNC:set_normal_path
+E/SpeechController( 6148): Completed speech while already completed!
+D/dalvikvm( 6148): GC_CONCURRENT freed 393K, 13% free 5722K/6544K, paused 2ms+4ms, total 38ms
+D/dalvikvm( 2437): GC_CONCURRENT freed 1096K, 15% free 9605K/11280K, paused 3ms+9ms, total 74ms
+E/SpeechController( 6148): Completed speech while already completed!
+E/SpeechController( 6148): Completed speech while already completed!
+E/SpeechController( 6148): Completed speech while already completed!
+D/dalvikvm( 6148): GC_CONCURRENT freed 403K, 13% free 5724K/6544K, paused 2ms+4ms, total 33ms
+E/SpeechController( 6148): Completed speech while already completed!
+D/AndroidRuntime( 2437): Shutting down VM
+W/dalvikvm( 2437): threadid=1: thread exiting with uncaught exception (group=0x415c1b90)
+E/AndroidRuntime( 2437): *** FATAL EXCEPTION IN SYSTEM PROCESS: main
+
+== E/AndroidRuntime( 2437): java.lang.IllegalArgumentException: idBits did not match any ids in the event            //导致重启的原因 ==
+E/AndroidRuntime( 2437): 	at android.view.MotionEvent.split(MotionEvent.java:2928)
+E/AndroidRuntime( 2437): 	at com.android.server.accessibility.TouchExplorer.sendMotionEvent(TouchExplorer.java:947)
+E/AndroidRuntime( 2437): 	at com.android.server.accessibility.TouchExplorer.access$3000(TouchExplorer.java:66)
+E/AndroidRuntime( 2437): 	at com.android.server.accessibility.TouchExplorer$SendHoverEnterAndMoveDelayed.run(TouchExplorer.java:1415)
+E/AndroidRuntime( 2437): 	at android.os.Handler.handleCallback(Handler.java:733)
+E/AndroidRuntime( 2437): 	at android.os.Handler.dispatchMessage(Handler.java:95)
+E/AndroidRuntime( 2437): 	at android.os.Looper.loop(Looper.java:137)
+E/AndroidRuntime( 2437): 	at com.android.server.ServerThread.initAndLoop(SystemServer.java:1096)
+E/AndroidRuntime( 2437): 	at com.android.server.SystemServer.main(SystemServer.java:1182)
+E/AndroidRuntime( 2437): 	at java.lang.reflect.Method.invokeNative(Native Method)
+E/AndroidRuntime( 2437): 	at java.lang.reflect.Method.invoke(Method.java:515)
+E/AndroidRuntime( 2437): 	at com.android.internal.os.ZygoteInit$MethodAndArgsCaller.run(ZygoteInit.java:811)
+E/AndroidRuntime( 2437): 	at com.android.internal.os.ZygoteInit.main(ZygoteInit.java:627)
+E/AndroidRuntime( 2437): 	at dalvik.system.NativeStart.main(Native Method)
+I/Process ( 2437): Sending signal. PID: 2437 SIG: 9
+W/Sensors ( 6148): sensorservice died [0x6a1ba4d8]
+W/Sensors ( 3943): sensorservice died [0x6a52a2e8]
+I/ServiceManager( 1313): service 'vibrator' died
+I/ServiceManager( 1313): service 'activity' died
+I/ServiceManager( 1313): service 'batterystats' died
+I/ServiceManager( 1313): service 'usagestats' died
+I/ServiceManager( 1313): service 'sensorservice' died
+I/ServiceManager( 1313): service 'gfxinfo' died
+I/ServiceManager( 1313): service 'power' died
+I/ServiceManager( 1313): service 'appops' died
+I/ServiceManager( 1313): service 'display' died
+I/ServiceManager( 1313): service 'telephony.registry' died
+I/ServiceManager( 1313): service 'scheduling_policy' died
+I/ServiceManager( 1313): service 'window' died
+I/ServiceManager( 1313): service 'input' died
+I/ServiceManager( 1313): service 'textservices' died
+I/ServiceManager( 1313): service 'package' died
+I/ServiceManager( 1313): service 'meminfo' died
+I/ServiceManager( 1313): service 'dbinfo' died
+I/ServiceManager( 1313): service 'cpuinfo' died
+I/ServiceManager( 1313): service 'entropy' died
+I/ServiceManager( 1313): service 'procstats' died
+I/ServiceManager( 1313): service 'battery' died
+I/ServiceManager( 1313): service 'consumer_ir' died
+I/ServiceManager( 1313): service 'hardware' died
+I/ServiceManager( 1313): service 'DynamicPManager' died
+I/ServiceManager( 1313): service 'mount' died
+I/ServiceManager( 1313): service 'lock_settings' died
+I/ServiceManager( 1313): service 'usb' died
+I/ServiceManager( 1313): service 'device_policy' died
+I/ServiceManager( 1313): service 'statusbar' died
+I/ServiceManager( 1313): service 'clipboard' died
+I/ServiceManager( 1313): service 'network_management' died
+I/ServiceManager( 1313): service 'bluetooth_manager' died
+I/ServiceManager( 1313): service 'netstats' died
+I/ServiceManager( 1313): service 'netpolicy' died
+I/ServiceManager( 1313): service 'backup' died
+I/ServiceManager( 1313): service 'appwidget' died
+I/ServiceManager( 1313): service 'diskstats' died
+I/ServiceManager( 1313): service 'samplingprofiler' died
+I/ServiceManager( 1313): service 'commontime_management' died
+I/ServiceManager( 1313): service 'dreams' died
+I/ServiceManager( 1313): service 'assetatlas' died
+I/ServiceManager( 1313): service 'print' died
+I/ServiceManager( 1313): service 'servicediscovery' died
+I/ServiceManager( 1313): service 'updatelock' died
+I/ServiceManager( 1313): service 'notification' died
+I/ServiceManager( 1313): service 'devicestoragemonitor' died
+I/ServiceManager( 1313): service 'location' died
+I/ServiceManager( 1313): service 'country_detector' died
+I/ServiceManager( 1313): service 'search' died
+I/ServiceManager( 1313): service 'dropbox' died
+I/ServiceManager( 1313): service 'wallpaper' died
+I/ServiceManager( 1313): service 'serial' died
+I/ServiceManager( 1313): service 'ethernet' died
+I/ServiceManager( 1313): service 'audio' died
+I/ServiceManager( 1313): service 'connectivity' died
+I/ServiceManager( 1313): service 'wifi' died
+I/ServiceManager( 1313): service 'uimode' died
+I/ServiceManager( 1313): service 'input_method' died
+I/ServiceManager( 1313): service 'accessibility' died
+I/ServiceManager( 1313): service 'wifip2p' died
+I/ServiceManager( 1313): service 'user' died
+I/ServiceManager( 1313): service 'account' died
+I/ServiceManager( 1313): service 'content' died
+I/ServiceManager( 1313): service 'alarm' died
+I/ServiceManager( 1313): service 'permission' died
+E/WifiManager( 4897): Channel connection lost
+E/WifiManager( 3023): Channel connection lost
+D/SurfaceFlinger( 1318): Screen acquired, type=0 flinger=0xb782f450
+D/SurfaceFlinger( 1318):  screen was previously acquired
+W/AudioFlinger( 1321): power manager service died !!!
+E/WifiManager( 3943): Channel connection lost
+E/AccessibilityManager( 3420): Error during sending EventType: TYPE_VIEW_HOVER_EXIT; EventTime: 276921; PackageName: com.google.android.inputmethod.latin; MovementGranularity: 0; Action: 0 [ ClassName: com.android.inputmethod.keyboard.Key; Text: []; ContentDescription: g; ItemCount: -1; CurrentItemIndex: -1; IsEnabled: true; IsPassword: false; IsChecked: false; IsFullScreen: false; Scrollable: false; BeforeText: null; FromIndex: -1; ToIndex: -1; ScrollX: -1; ScrollY: -1; MaxScrollX: -1; MaxScrollY: -1; AddedCount: -1; RemovedCount: -1; ParcelableData: null ]; recordCount: 0 
+E/AccessibilityManager( 3420): android.os.DeadObjectException
+E/AccessibilityManager( 3420): 	at android.os.BinderProxy.transact(Native Method)
+E/AccessibilityManager( 3420): 	at android.view.accessibility.IAccessibilityManager$Stub$Proxy.sendAccessibilityEvent(IAccessibilityManager.java:229)
+E/AccessibilityManager( 3420): 	at android.view.accessibility.AccessibilityManager.sendAccessibilityEvent(AccessibilityManager.java:267)
+E/AccessibilityManager( 3420): 	at com.android.inputmethod.accessibility.AccessibilityUtils.requestSendAccessibilityEvent(AccessibilityUtils.java:262)
+E/AccessibilityManager( 3420): 	at com.android.inputmethod.accessibility.AccessibilityEntityProvider.sendAccessibilityEventForKey(AccessibilityEntityProvider.java:278)
+E/AccessibilityManager( 3420): 	at com.android.inputmethod.accessibility.AccessibleKeyboardViewProxy.onHoverKey(AccessibleKeyboardViewProxy.java:332)
+E/AccessibilityManager( 3420): 	at com.android.inputmethod.accessibility.AccessibleKeyboardViewProxy.onTransitionKey(AccessibleKeyboardViewProxy.java:300)
+E/AccessibilityManager( 3420): 	at com.android.inputmethod.accessibility.AccessibleKeyboardViewProxy.dispatchHoverEvent(AccessibleKeyboardViewProxy.java:254)
+E/AccessibilityManager( 3420): 	at com.android.inputmethod.keyboard.MainKeyboardView.dispatchHoverEvent(MainKeyboardView.java:1103)
+E/AccessibilityManager( 3420): 	at android.view.View.dispatchGenericMotionEvent(View.java:7756)
+E/AccessibilityManager( 3420): 	at android.view.ViewGroup.dispatchTransformedGenericPointerEvent(ViewGroup.java:1824)
+E/AccessibilityManager( 3420): 	at android.view.ViewGroup.dispatchHoverEvent(ViewGroup.java:1551)
+E/AccessibilityManager( 3420): 	at android.view.View.dispatchGenericMotionEvent(View.java:7756)
+E/AccessibilityManager( 3420): 	at android.view.ViewGroup.dispatchTransformedGenericPointerEvent(ViewGroup.java:1824)
+E/AccessibilityManager( 3420): 	at android.view.ViewGroup.dispatchHoverEvent(ViewGroup.java:1551)
+E/AccessibilityManager( 3420): 	at android.view.View.dispatchGenericMotionEvent(View.java:7756)
+E/AccessibilityManager( 3420): 	at android.view.ViewGroup.dispatchTransformedGenericPointerEvent(ViewGroup.java:1824)
+E/AccessibilityManager( 3420): 	at android.view.ViewGroup.dispatchHoverEvent(ViewGroup.java:1551)
+E/AccessibilityManager( 3420): 	at android.view.View.dispatchGenericMotionEvent(View.java:7756)
+E/AccessibilityManager( 3420): 	at android.view.ViewGroup.dispatchTransformedGenericPointerEvent(ViewGroup.java:1824)
+E/AccessibilityManager( 3420): 	at android.view.ViewGroup.dispatchHoverEvent(ViewGroup.java:1551)
+E/AccessibilityManager( 3420): 	at android.view.View.dispatchGenericMotionEvent(View.java:7756)
+E/AccessibilityManager( 3420): 	at android.view.ViewGroup.dispatchTransformedGenericPointerEvent(ViewGroup.java:1824)
+E/AccessibilityManager( 3420): 	at android.view.ViewGroup.dispatchHoverEvent(ViewGroup.java:1551)
+E/AccessibilityManager( 3420): 	at android.view.View.dispatchGenericMotionEvent(View.java:7756)
+E/AccessibilityManager( 3420): 	at android.view.ViewGroup.dispatchTransformedGenericPointerEvent(ViewGroup.java:1824)
+E/AccessibilityManager( 3420): 	at android.view.ViewGroup.dispatchHoverEvent(ViewGroup.java:1551)
+E/AccessibilityManager( 3420): 	at android.view.View.dispatchGenericMotionEvent(View.java:7756)
+E/AccessibilityManager( 3420): 	at android.view.ViewGroup.dispatchTransformedGenericPointerEvent(ViewGroup.java:1824)
+E/AccessibilityManager( 3420): 	at android.view.ViewGroup.dispatchHoverEvent(ViewGroup.java:1551)
+E/AccessibilityManager( 3420): 	at android.view.View.dispatchGenericMotionEvent(View.java:7756)
+E/AccessibilityManager( 3420): 	at com.android.internal.policy.impl.PhoneWindow$DecorView.superDispatchGenericMotionEvent(PhoneWindow.java:2074)
+E/AccessibilityManager( 3420): 	at com.android.internal.policy.impl.PhoneWindow.superDispatchGenericMotionEvent(PhoneWindow.java:1525)
+E/AccessibilityManager( 3420): 	at android.app.Dialog.dispatchGenericMotionEvent(Dialog.java:780)
+E/AccessibilityManager( 3420): 	at com.android.internal.policy.impl.PhoneWindow$DecorView.dispatchGenericMotionEvent(PhoneWindow.java:2028)
+E/AccessibilityManager( 3420): 	at android.view.View.dispatchPointerEvent(View.java:7872)
+E/AccessibilityManager( 3420): 	at android.view.ViewRootImpl$ViewPostImeInputStage.processPointerEvent(ViewRootImpl.java:3940)
+E/AccessibilityManager( 3420): 	at android.view.ViewRootImpl$ViewPostImeInputStage.onProcess(ViewRootImpl.java:3829)
+E/AccessibilityManager( 3420): 	at android.view.ViewRootImpl$InputStage.deliver(ViewRootImpl.java:3425)
+E/AccessibilityManager( 3420): 	at android.view.ViewRootImpl$InputStage.onDeliverToNext(ViewRootImpl.java:3475)
+E/AccessibilityManager( 3420): 	at android.view.ViewRootImpl$InputStage.forward(ViewRootImpl.java:3444)
+E/AccessibilityManager( 3420): 	at and
+E/AccessibilityManager( 3420): Error during sending EventType: TYPE_VIEW_HOVER_ENTER; EventTime: 276952; PackageName: com.google.android.inputmethod.latin; MovementGranularity: 0; Action: 0 [ ClassName: com.android.inputmethod.keyboard.Key; Text: []; ContentDescription: h; ItemCount: -1; CurrentItemIndex: -1; IsEnabled: true; IsPassword: false; IsChecked: false; IsFullScreen: false; Scrollable: false; BeforeText: null; FromIndex: -1; ToIndex: -1; ScrollX: -1; ScrollY: -1; MaxScrollX: -1; MaxScrollY: -1; AddedCount: -1; RemovedCount: -1; ParcelableData: null ]; recordCount: 0 
+E/AccessibilityManager( 3420): android.os.DeadObjectException
+E/AccessibilityManager( 3420): 	at android.os.BinderProxy.transact(Native Method)
+E/AccessibilityManager( 3420): 	at android.view.accessibility.IAccessibilityManager$Stub$Proxy.sendAccessibilityEvent(IAccessibilityManager.java:229)
+E/AccessibilityManager( 3420): 	at android.view.accessibility.AccessibilityManager.sendAccessibilityEvent(AccessibilityManager.java:267)
+E/AccessibilityManager( 3420): 	at com.android.inputmethod.accessibility.AccessibilityUtils.requestSendAccessibilityEvent(AccessibilityUtils.java:262)
+E/AccessibilityManager( 3420): 	at com.android.inputmethod.accessibility.AccessibilityEntityProvider.sendAccessibilityEventForKey(AccessibilityEntityProvider.java:278)
+E/AccessibilityManager( 3420): 	at com.android.inputmethod.accessibility.AccessibleKeyboardViewProxy.onHoverKey(AccessibleKeyboardViewProxy.java:326)
+E/AccessibilityManager( 3420): 	at com.android.inputmethod.accessibility.AccessibleKeyboardViewProxy.onTransitionKey(AccessibleKeyboardViewProxy.java:302)
+E/AccessibilityManager( 3420): 	at com.android.inputmethod.accessibility.AccessibleKeyboardViewProxy.dispatchHoverEvent(AccessibleKeyboardViewProxy.java:254)
+E/AccessibilityManager( 3420): 	at com.android.inputmethod.keyboard.MainKeyboardView.dispatchHoverEvent(MainKeyboardView.java:1103)
+E/AccessibilityManager( 3420): 	at android.view.View.dispatchGenericMotionEvent(View.java:7756)
+E/AccessibilityManager( 3420): 	at android.view.ViewGroup.dispatchTransformedGenericPointerEvent(ViewGroup.java:1824)
+E/AccessibilityManager( 3420): 	at android.view.ViewGroup.dispatchHoverEvent(ViewGroup.java:1551)
+E/AccessibilityManager( 3420): 	at android.view.View.dispatchGenericMotionEvent(View.java:7756)
+E/AccessibilityManager( 3420): 	at android.view.ViewGroup.dispatchTransformedGenericPointerEvent(ViewGroup.java:1824)
+E/AccessibilityManager( 3420): 	at android.view.ViewGroup.dispatchHoverEvent(ViewGroup.java:1551)
+E/AccessibilityManager( 3420): 	at android.view.View.dispatchGenericMotionEvent(View.java:7756)
+E/AccessibilityManager( 3420): 	at android.view.ViewGroup.dispatchTransformedGenericPointerEvent(ViewGroup.java:1824)
+E/AccessibilityManager( 3420): 	at android.view.ViewGroup.dispatchHoverEvent(ViewGroup.java:1551)
+E/AccessibilityManager( 3420): 	at android.view.View.dispatchGenericMotionEvent(View.java:7756)
+E/AccessibilityManager( 3420): 	at android.view.ViewGroup.dispatchTransformedGenericPointerEvent(ViewGroup.java:1824)
+E/AccessibilityManager( 3420): 	at android.view.ViewGroup.dispatchHoverEvent(ViewGroup.java:1551)
+E/AccessibilityManager( 3420): 	at android.view.View.dispatchGenericMotionEvent(View.java:7756)
+E/AccessibilityManager( 3420): 	at android.view.ViewGroup.dispatchTransformedGenericPointerEvent(ViewGroup.java:1824)
+E/AccessibilityManager( 3420): 	at android.view.ViewGroup.dispatchHoverEvent(ViewGroup.java:1551)
+E/AccessibilityManager( 3420): 	at android.view.View.dispatchGenericMotionEvent(View.java:7756)
+E/AccessibilityManager( 3420): 	at android.view.ViewGroup.dispatchTransformedGenericPointerEvent(ViewGroup.java:1824)
+E/AccessibilityManager( 3420): 	at android.view.ViewGroup.dispatchHoverEvent(ViewGroup.java:1551)
+E/AccessibilityManager( 3420): 	at android.view.View.dispatchGenericMotionEvent(View.java:7756)
+E/AccessibilityManager( 3420): 	at android.view.ViewGroup.dispatchTransformedGenericPointerEvent(ViewGroup.java:1824)
+E/AccessibilityManager( 3420): 	at android.view.ViewGroup.dispatchHoverEvent(ViewGroup.java:1551)
+E/AccessibilityManager( 3420): 	at android.view.View.dispatchGenericMotionEvent(View.java:7756)
+E/AccessibilityManager( 3420): 	at com.android.internal.policy.impl.PhoneWindow$DecorView.superDispatchGenericMotionEvent(PhoneWindow.java:2074)
+E/AccessibilityManager( 3420): 	at com.android.internal.policy.impl.PhoneWindow.superDispatchGenericMotionEvent(PhoneWindow.java:1525)
+E/AccessibilityManager( 3420): 	at android.app.Dialog.dispatchGenericMotionEvent(Dialog.java:780)
+E/AccessibilityManager( 3420): 	at com.android.internal.policy.impl.PhoneWindow$DecorView.dispatchGenericMotionEvent(PhoneWindow.java:2028)
+E/AccessibilityManager( 3420): 	at android.view.View.dispatchPointerEvent(View.java:7872)
+E/AccessibilityManager( 3420): 	at android.view.ViewRootImpl$ViewPostImeInputStage.processPointerEvent(ViewRootImpl.java:3940)
+E/AccessibilityManager( 3420): 	at android.view.ViewRootImpl$ViewPostImeInputStage.onProcess(ViewRootImpl.java:3829)
+E/AccessibilityManager( 3420): 	at android.view.ViewRootImpl$InputStage.deliver(ViewRootImpl.java:3425)
+E/AccessibilityManager( 3420): 	at android.view.ViewRootImpl$InputStage.onDeliverToNext(ViewRootImpl.java:3475)
+E/AccessibilityManager( 3420): 	at android.view.ViewRootImpl$InputStage.forward(ViewRootImpl.java:3444)
+E/AccessibilityManager( 3420): 	at an
+E/AccessibilityManager( 3420): Error during sending EventType: TYPE_VIEW_ACCESSIBILITY_FOCUSED; EventTime: 276967; PackageName: com.google.android.inputmethod.latin; MovementGranularity: 0; Action: 0 [ ClassName: com.android.inputmethod.keyboard.Key; Text: []; ContentDescription: h; ItemCount: -1; CurrentItemIndex: -1; IsEnabled: true; IsPassword: false; IsChecked: false; IsFullScreen: false; Scrollable: false; BeforeText: null; FromIndex: -1; ToIndex: -1; ScrollX: -1; ScrollY: -1; MaxScrollX: -1; MaxScrollY: -1; AddedCount: -1; RemovedCount: -1; ParcelableData: null ]; recordCount: 0 
+E/AccessibilityManager( 3420): android.os.DeadObjectException
+E/AccessibilityManager( 3420): 	at android.os.BinderProxy.transact(Native Method)
+E/AccessibilityManager( 3420): 	at android.view.accessibility.IAccessibilityManager$Stub$Proxy.sendAccessibilityEvent(IAccessibilityManager.java:229)
+E/AccessibilityManager( 3420): 	at android.view.accessibility.AccessibilityManager.sendAccessibilityEvent(AccessibilityManager.java:267)
+E/AccessibilityManager( 3420): 	at com.android.inputmethod.accessibility.AccessibilityUtils.requestSendAccessibilityEvent(AccessibilityUtils.java:262)
+E/AccessibilityManager( 3420): 	at com.android.inputmethod.accessibility.AccessibilityEntityProvider.sendAccessibilityEventForKey(AccessibilityEntityProvider.java:278)
+E/AccessibilityManager( 3420): 	at com.android.inputmethod.accessibility.AccessibilityEntityProvider.performActionForKey(AccessibilityEntityProvider.java:254)
+E/AccessibilityManager( 3420): 	at com.android.inputmethod.accessibility.AccessibleKeyboardViewProxy.onHoverKey(AccessibleKeyboardViewProxy.java:328)
+E/AccessibilityManager( 3420): 	at com.android.inputmethod.accessibility.AccessibleKeyboardViewProxy.onTransitionKey(AccessibleKeyboardViewProxy.java:302)
+E/AccessibilityManager( 3420): 	at com.android.inputmethod.accessibility.AccessibleKeyboardViewProxy.dispatchHoverEvent(AccessibleKeyboardViewProxy.java:254)
+E/AccessibilityManager( 3420): 	at com.android.inputmethod.keyboard.MainKeyboardView.dispatchHoverEvent(MainKeyboardView.java:1103)
+E/AccessibilityManager( 3420): 	at android.view.View.dispatchGenericMotionEvent(View.java:7756)
+E/AccessibilityManager( 3420): 	at android.view.ViewGroup.dispatchTransformedGenericPointerEvent(ViewGroup.java:1824)
+E/AccessibilityManager( 3420): 	at android.view.ViewGroup.dispatchHoverEvent(ViewGroup.java:1551)
+E/AccessibilityManager( 3420): 	at android.view.View.dispatchGenericMotionEvent(View.java:7756)
+E/AccessibilityManager( 3420): 	at android.view.ViewGroup.dispatchTransformedGenericPointerEvent(ViewGroup.java:1824)
+E/AccessibilityManager( 3420): 	at android.view.ViewGroup.dispatchHoverEvent(ViewGroup.java:1551)
+E/AccessibilityManager( 3420): 	at android.view.View.dispatchGenericMotionEvent(View.java:7756)
+E/AccessibilityManager( 3420): 	at android.view.ViewGroup.dispatchTransformedGenericPointerEvent(ViewGroup.java:1824)
+E/AccessibilityManager( 3420): 	at android.view.ViewGroup.dispatchHoverEvent(ViewGroup.java:1551)
+E/AccessibilityManager( 3420): 	at android.view.View.dispatchGenericMotionEvent(View.java:7756)
+E/AccessibilityManager( 3420): 	at android.view.ViewGroup.dispatchTransformedGenericPointerEvent(ViewGroup.java:1824)
+E/AccessibilityManager( 3420): 	at android.view.ViewGroup.dispatchHoverEvent(ViewGroup.java:1551)
+E/AccessibilityManager( 3420): 	at android.view.View.dispatchGenericMotionEvent(View.java:7756)
+E/AccessibilityManager( 3420): 	at android.view.ViewGroup.dispatchTransformedGenericPointerEvent(ViewGroup.java:1824)
+E/AccessibilityManager( 3420): 	at android.view.ViewGroup.dispatchHoverEvent(ViewGroup.java:1551)
+E/AccessibilityManager( 3420): 	at android.view.View.dispatchGenericMotionEvent(View.java:7756)
+E/AccessibilityManager( 3420): 	at android.view.ViewGroup.dispatchTransformedGenericPointerEvent(ViewGroup.java:1824)
+E/AccessibilityManager( 3420): 	at android.view.ViewGroup.dispatchHoverEvent(ViewGroup.java:1551)
+E/AccessibilityManager( 3420): 	at android.view.View.dispatchGenericMotionEvent(View.java:7756)
+E/AccessibilityManager( 3420): 	at android.view.ViewGroup.dispatchTransformedGenericPointerEvent(ViewGroup.java:1824)
+E/AccessibilityManager( 3420): 	at android.view.ViewGroup.dispatchHoverEvent(ViewGroup.java:1551)
+E/AccessibilityManager( 3420): 	at android.view.View.dispatchGenericMotionEvent(View.java:7756)
+E/AccessibilityManager( 3420): 	at com.android.internal.policy.impl.PhoneWindow$DecorView.superDispatchGenericMotionEvent(PhoneWindow.java:2074)
+E/AccessibilityManager( 3420): 	at com.android.internal.policy.impl.PhoneWindow.superDispatchGenericMotionEvent(PhoneWindow.java:1525)
+E/AccessibilityManager( 3420): 	at android.app.Dialog.dispatchGenericMotionEvent(Dialog.java:780)
+E/AccessibilityManager( 3420): 	at com.android.internal.policy.impl.PhoneWindow$DecorView.dispatchGenericMotionEvent(PhoneWindow.java:2028)
+E/AccessibilityManager( 3420): 	at android.view.View.dispatchPointerEvent(View.java:7872)
+E/AccessibilityManager( 3420): 	at android.view.ViewRootImpl$ViewPostImeInputStage.processPointerEvent(ViewRootImpl.java:3940)
+E/AccessibilityManager( 3420): 	at android.view.ViewRootImpl$ViewPostImeInputStage.onProcess(ViewRootImpl.java:3829)
+E/AccessibilityManager( 3420): 	at android.view.ViewRootImpl$InputStage.deliver(ViewRootImpl.java:3425)
+E/AccessibilityManager( 3420): 	at android.view.ViewR
+V/MediaPlayerFactory( 1321): MediaPlayerFactory::getPlayerType: url = /system/media/boot.wav
+V/MediaPlayerFactory( 1321):  create StagefrightPlayer
+I/AwesomePlayer( 1321): setDataSource_l(URL suppressed)
+W/TimedEventQueue( 1321): cannot connect to the power manager service
+D/libEGL  ( 7772): loaded /vendor/lib/egl/libEGL_POWERVR_SGX544_115.so
+D/libEGL  ( 7772): loaded /vendor/lib/egl/libGLESv1_CM_POWERVR_SGX544_115.so
+D/libEGL  ( 7772): loaded /vendor/lib/egl/libGLESv2_POWERVR_SGX544_115.so
+W/TimedEventQueue( 1321): cannot connect to the power manager service
+E/BufferQueue( 1318): [com.android.chrome/com.google.android.apps.chrome.Main] dequeueBuffer: BufferQueue has been abandoned!
+E/IMGSRV  ( 6889): :0: DequeueBufferWrapper: Failed to de-queue buffer
+E/IMGSRV  ( 6889): :0: KEGLGetDrawableParameters: Native window is invalid
+E/BufferQueue( 1318): [com.android.chrome/com.google.android.apps.chrome.Main] dequeueBuffer: BufferQueue has been abandoned!
+E/IMGSRV  ( 6889): :0: DequeueBufferWrapper: Failed to de-queue buffer
+E/IMGSRV  ( 6889): :0: KEGLGetDrawableParameters: Native window is invalid
+E/BufferQueue( 1318): [com.android.chrome/com.google.android.apps.chrome.Main] dequeueBuffer: BufferQueue has been abandoned!
+E/IMGSRV  ( 6889): :0: DequeueBufferWrapper: Failed to de-queue buffer
+E/IMGSRV  ( 6889): :0: KEGLGetDrawableParameters: Native window is invalid
+E/IMGSRV  ( 6889): :0: PrepareToDraw: Invalid drawable
+E/IMGSRV  ( 6889): :0: glDrawArrays: Can't prepare to draw
+E/BufferQueue( 1318): [com.android.chrome/com.google.android.apps.chrome.Main] dequeueBuffer: BufferQueue has been abandoned!
+E/IMGSRV  ( 6889): :0: DequeueBufferWrapper: Failed to de-queue buffer
+E/IMGSRV  ( 6889): :0: KEGLGetDrawableParameters: Native window is invalid
+E/IMGSRV  ( 6889): :0: PrepareToDraw: Invalid drawable
+E/IMGSRV  ( 6889): :0: glDrawArrays: Can't prepare to draw
+E/BufferQueue( 1318): [com.android.chrome/com.google.android.apps.chrome.Main] dequeueBuffer: BufferQueue has been abandoned!
+E/IMGSRV  ( 6889): :0: DequeueBufferWrapper: Failed to de-queue buffer
+E/IMGSRV  ( 6889): :0: KEGLGetDrawableParameters: Native window is invalid
+E/IMGSRV  ( 6889): :0: PrepareToDraw: Invalid drawable
+E/IMGSRV  ( 6889): :0: glDrawArrays: Can't prepare to draw
+E/BufferQueue( 1318): [com.android.chrome/com.google.android.apps.chrome.Main] dequeueBuffer: BufferQueue has been abandoned!
+E/IMGSRV  ( 6889): :0: DequeueBufferWrapper: Failed to de-queue buffer
+E/IMGSRV  ( 6889): :0: KEGLGetDrawableParameters: Native window is invalid
+E/IMGSRV  ( 6889): :0: PrepareToDraw: Invalid drawable
+E/IMGSRV  ( 6889): :0: glDrawArrays: Can't prepare to draw
+E/BufferQueue( 1318): [com.android.chrome/com.google.android.apps.chrome.Main] dequeueBuffer: BufferQueue has been abandoned!
+E/IMGSRV  ( 6889): :0: DequeueBufferWrapper: Failed to de-queue buffer
+E/IMGSRV  ( 6889): :0: KEGLGetDrawableParameters: Native window is invalid
+E/IMGSRV  ( 6889): :0: PrepareToDraw: Invalid drawable
+E/IMGSRV  ( 6889): :0: glDrawElements: Can't prepare to draw
+E/BufferQueue( 1318): [com.android.chrome/com.google.android.apps.chrome.Main] dequeueBuffer: BufferQueue has been abandoned!
+E/IMGSRV  ( 6889): :0: DequeueBufferWrapper: Failed to de-queue buffer
+E/IMGSRV  ( 6889): :0: KEGLGetDrawableParameters: Native window is invalid
+E/IMGSRV  ( 6889): :0: PrepareToDraw: Invalid drawable
+E/IMGSRV  ( 6889): :0: glDrawArrays: Can't prepare to draw
+E/BufferQueue( 1318): [com.android.chrome/com.google.android.apps.chrome.Main] dequeueBuffer: BufferQueue has been abandoned!
+E/IMGSRV  ( 6889): :0: DequeueBufferWrapper: Failed to de-queue buffer
+E/IMGSRV  ( 6889): :0: KEGLGetDrawableParameters: Native window is invalid
+E/IMGSRV  ( 6889): :0: PrepareToDraw: Invalid drawable
+E/IMGSRV  ( 6889): :0: glDrawArrays: Can't prepare to draw
+E/BufferQueue( 1318): [com.android.chrome/com.google.android.apps.chrome.Main] dequeueBuffer: BufferQueue has been abandoned!
+E/IMGSRV  ( 6889): :0: DequeueBufferWrapper: Failed to de-queue buffer
+E/IMGSRV  ( 6889): :0: KEGLGetDrawableParameters: Native window is invalid
+E/IMGSRV  ( 6889): :0: PrepareToDraw: Invalid drawable
+E/IMGSRV  ( 6889): :0: glDrawElements: Can't prepare to draw
+E/BufferQueue( 1318): [com.android.chrome/com.google.android.apps.chrome.Main] dequeueBuffer: BufferQueue has been abandoned!
+E/IMGSRV  ( 6889): :0: DequeueBufferWrapper: Failed to de-queue buffer
+E/IMGSRV  ( 6889): :0: KEGLGetDrawableParameters: Native window is invalid
+E/IMGSRV  ( 6889): :0: PrepareToDraw: Invalid drawable
+E/IMGSRV  ( 6889): :0: glDrawArrays: Can't prepare to draw
+E/BufferQueue( 1318): [com.android.chrome/com.google.android.apps.chrome.Main] dequeueBuffer: BufferQueue has been abandoned!
+E/IMGSRV  ( 6889): :0: DequeueBufferWrapper: Failed to de-queue buffer
+E/IMGSRV  ( 6889): :0: KEGLGetDrawableParameters: Native window is invalid
+E/IMGSRV  ( 6889): :0: PrepareToDraw: Invalid drawable
+E/IMGSRV  ( 6889): :0: glDrawArrays: Can't prepare to draw
+E/BufferQueue( 1318): [com.android.chrome/com.google.android.apps.chrome.Main] dequeueBuffer: BufferQueue has been abandoned!
+E/IMGSRV  ( 6889): :0: DequeueBufferWrapper: Failed to de-queue buffer
+E/IMGSRV  ( 6889): :0: KEGLGetDrawableParameters: Native window is invalid
+E/IMGSRV  ( 6889): :0: PrepareToDraw: Invalid drawable
+E/IMGSRV  ( 6889): :0: glDrawArrays: Can't prepare to draw
+E/BufferQueue( 1318): [com.android.chrome/com.google.android.apps.chrome.Main] dequeueBuffer: BufferQueue has been abandoned!
+E/IMGSRV  ( 6889): :0: DequeueBufferWrapper: Failed to de-queue buffer
+E/IMGSRV  ( 6889): :0: KEGLGetDrawableParameters: Native window is invalid
+E/IMGSRV  ( 6889): :0: PrepareToDraw: Invalid drawable
+E/IMGSRV  ( 6889): :0: glDrawElements: Can't prepare to draw
+E/BufferQueue( 1318): [com.android.chrome/com.google.android.apps.chrome.Main] dequeueBuffer: BufferQueue has been abandoned!
+E/IMGSRV  ( 6889): :0: DequeueBufferWrapper: Failed to de-queue buffer
+E/IMGSRV  ( 6889): :0: KEGLGetDrawableParameters: Native window is invalid
+E/IMGSRV  ( 6889): :0: PrepareToDraw: Invalid drawable
+E/IMGSRV  ( 6889): :0: glDrawElements: Can't prepare to draw
+E/BufferQueue( 1318): [com.android.chrome/com.google.android.apps.chrome.Main] dequeueBuffer: BufferQueue has been abandoned!
+E/IMGSRV  ( 6889): :0: DequeueBufferWrapper: Failed to de-queue buffer
+E/IMGSRV  ( 6889): :0: KEGLGetDrawableParameters: Native window is invalid
+E/IMGSRV  ( 6889): :0: PrepareToDraw: Invalid drawable
+E/IMGSRV  ( 6889): :0: glDrawArrays: Can't prepare to draw
+E/BufferQueue( 1318): [com.android.chrome/com.google.android.apps.chrome.Main] dequeueBuffer: BufferQueue has been abandoned!
+E/IMGSRV  ( 6889): :0: DequeueBufferWrapper: Failed to de-queue buffer
+E/IMGSRV  ( 6889): :0: KEGLGetDrawableParameters: Native window is invalid
+E/IMGSRV  ( 6889): :0: PrepareToDraw: Invalid drawable
+E/IMGSRV  ( 6889): :0: glDrawArrays: Can't prepare to draw
+E/BufferQueue( 1318): [com.android.chrome/com.google.android.apps.chrome.Main] dequeueBuffer: BufferQueue has been abandoned!
+E/IMGSRV  ( 6889): :0: DequeueBufferWrapper: Failed to de-queue buffer
+E/IMGSRV  ( 6889): :0: KEGLGetDrawableParameters: Native window is invalid
+E/IMGSRV  ( 6889): :0: PrepareToDraw: Invalid drawable
+E/IMGSRV  ( 6889): :0: glDrawArrays: Can't prepare to draw
+E/BufferQueue( 1318): [com.android.chrome/com.google.android.apps.chrome.Main] dequeueBuffer: BufferQueue has been abandoned!
+E/IMGSRV  ( 6889): :0: DequeueBufferWrapper: Failed to de-queue buffer
+E/IMGSRV  ( 6889): :0: KEGLGetDrawableParameters: Native window is invalid
+E/IMGSRV  ( 6889): :0: PrepareToDraw: Invalid drawable
+E/IMGSRV  ( 6889): :0: glDrawArrays: Can't prepare to draw
+E/BufferQueue( 1318): [com.android.chrome/com.google.android.apps.chrome.Main] dequeueBuffer: BufferQueue has been abandoned!
+E/IMGSRV  ( 6889): :0: DequeueBufferWrapper: Failed to de-queue buffer
+E/IMGSRV  ( 6889): :0: KEGLGetDrawableParameters: Native window is invalid
+E/IMGSRV  ( 6889): :0: PrepareToDraw: Invalid drawable
+E/IMGSRV  ( 6889): :0: glDrawArrays: Can't prepare to draw
+E/BufferQueue( 1318): [com.android.chrome/com.google.android.apps.chrome.Main] dequeueBuffer: BufferQueue has been abandoned!
+E/IMGSRV  ( 6889): :0: DequeueBufferWrapper: Failed to de-queue buffer
+E/IMGSRV  ( 6889): :0: KEGLGetDrawableParameters: Native window is invalid
+E/IMGSRV  ( 6889): :0: PrepareToDraw: Invalid drawable
+E/IMGSRV  ( 6889): :0: glDrawArrays: Can't prepare to draw
+E/BufferQueue( 1318): [com.android.chrome/com.google.android.apps.chrome.Main] dequeueBuffer: BufferQueue has been abandoned!
+E/IMGSRV  ( 6889): :0: DequeueBufferWrapper: Failed to de-queue buffer
+E/IMGSRV  ( 6889): :0: KEGLGetDrawableParameters: Native window is invalid
+E/IMGSRV  ( 6889): :0: PrepareToDraw: Invalid drawable
+E/IMGSRV  ( 6889): :0: glDrawArrays: Can't prepare to draw
+E/BufferQueue( 1318): [com.android.chrome/com.google.android.apps.chrome.Main] dequeueBuffer: BufferQueue has been abandoned!
+E/IMGSRV  ( 6889): :0: DequeueBufferWrapper: Failed to de-queue buffer
+E/IMGSRV  ( 6889): :0: KEGLGetDrawableParameters: Native window is invalid
+E/IMGSRV  ( 6889): :0: PrepareToDraw: Invalid drawable
+E/IMGSRV  ( 6889): :0: glDrawElements: Can't prepare to draw
+E/BufferQueue( 1318): [com.android.chrome/com.google.android.apps.chrome.Main] dequeueBuffer: BufferQueue has been abandoned!
+E/IMGSRV  ( 6889): :0: DequeueBufferWrapper: Failed to de-queue buffer
+E/IMGSRV  ( 6889): :0: KEGLGetDrawableParameters: Native window is invalid
+E/IMGSRV  ( 6889): :0: PrepareToDraw: Invalid drawable
+E/IMGSRV  ( 6889): :0: glDrawElements: Can't prepare to draw
+E/BufferQueue( 1318): [com.android.chrome/com.google.android.apps.chrome.Main] dequeueBuffer: BufferQueue has been abandoned!
+E/IMGSRV  ( 6889): :0: DequeueBufferWrapper: Failed to de-queue buffer
+E/IMGSRV  ( 6889): :0: KEGLGetDrawableParameters: Native window is invalid
+E/IMGSRV  ( 6889): :0: PrepareToDraw: Invalid drawable
+E/IMGSRV  ( 6889): :0: glDrawElements: Can't prepare to draw
+E/BufferQueue( 1318): [com.android.chrome/com.google.android.apps.chrome.Main] dequeueBuffer: BufferQueue has been abandoned!
+E/IMGSRV  ( 6889): :0: DequeueBufferWrapper: Failed to de-queue buffer
+E/IMGSRV  ( 6889): :0: KEGLGetDrawableParameters: Native window is invalid
+E/IMGSRV  ( 6889): :0: PrepareToDraw: Invalid drawable
+E/IMGSRV  ( 6889): :0: glDrawArrays: Can't prepare to draw
+E/BufferQueue( 1318): [com.android.chrome/com.google.android.apps.chrome.Main] dequeueBuffer: BufferQueue has been abandoned!
+E/IMGSRV  ( 6889): :0: DequeueBufferWrapper: Failed to de-queue buffer
+E/IMGSRV  ( 6889): :0: KEGLGetDrawableParameters: Native window is invalid
+E/IMGSRV  ( 6889): :0: PrepareToDraw: Invalid drawable
+E/IMGSRV  ( 6889): :0: glDrawArrays: Can't prepare to draw
+E/BufferQueue( 1318): [com.android.chrome/com.google.android.apps.chrome.Main] dequeueBuffer: BufferQueue has been abandoned!
+E/IMGSRV  ( 6889): :0: DequeueBufferWrapper: Failed to de-queue buffer
+E/IMGSRV  ( 6889): :0: KEGLGetDrawableParameters: Native window is invalid
+E/IMGSRV  ( 6889): :0: PrepareToDraw: Invalid drawable
+E/IMGSRV  ( 6889): :0: glDrawArrays: Can't prepare to draw
+E/BufferQueue( 1318): [com.android.chrome/com.google.android.apps.chrome.Main] dequeueBuffer: BufferQueue has been abandoned!
+E/IMGSRV  ( 6889): :0: DequeueBufferWrapper: Failed to de-queue buffer
+E/IMGSRV  ( 6889): :0: KEGLGetDrawableParameters: Native window is invalid
+E/IMGSRV  ( 6889): :0: PrepareToDraw: Invalid drawable
+E/IMGSRV  ( 6889): :0: glDrawArrays: Can't prepare to draw
+E/BufferQueue( 1318): [com.android.chrome/com.google.android.apps.chrome.Main] dequeueBuffer: BufferQueue has been abandoned!
+E/IMGSRV  ( 6889): :0: DequeueBufferWrapper: Failed to de-queue buffer
+E/IMGSRV  ( 6889): :0: KEGLGetDrawableParameters: Native window is invalid
+E/IMGSRV  ( 6889): :0: PrepareToDraw: Invalid drawable
+E/IMGSRV  ( 6889): :0: glDrawArrays: Can't prepare to draw
+E/BufferQueue( 1318): [com.android.chrome/com.google.android.apps.chrome.Main] dequeueBuffer: BufferQueue has been abandoned!
+E/IMGSRV  ( 6889): :0: DequeueBufferWrapper: Failed to de-queue buffer
+E/IMGSRV  ( 6889): :0: KEGLGetDrawableParameters: Native window is invalid
+E/IMGSRV  ( 6889): :0: PrepareToDraw: Invalid drawable
+E/IMGSRV  ( 6889): :0: glDrawElements: Can't prepare to draw
+E/BufferQueue( 1318): [com.android.chrome/com.google.android.apps.chrome.Main] dequeueBuffer: BufferQueue has been abandoned!
+E/IMGSRV  ( 6889): :0: DequeueBufferWrapper: Failed to de-queue buffer
+E/IMGSRV  ( 6889): :0: KEGLGetDrawableParameters: Native window is invalid
+E/IMGSRV  ( 6889): :0: PrepareToDraw: Invalid drawable
+E/IMGSRV  ( 6889): :0: glDrawArrays: Can't prepare to draw
+E/BufferQueue( 1318): [com.android.chrome/com.google.android.apps.chrome.Main] dequeueBuffer: BufferQueue has been abandoned!
+E/IMGSRV  ( 6889): :0: DequeueBufferWrapper: Failed to de-queue buffer
+E/IMGSRV  ( 6889): :0: KEGLGetDrawableParameters: Native window is invalid
+W/HardwareRenderer( 6889): EGL error: EGL_BAD_SURFACE
+W/HardwareRenderer( 6889): Mountain View, we've had a problem here. Switching back to software rendering.
+E/installd( 1322): eof
+E/installd( 1322): failed to read size
+I/installd( 1322): closing connection
+E/BufferQueue( 1318): [com.android.chrome/com.google.android.apps.chrome.Main] connect: BufferQueue has been abandoned!
+E/ViewRootImpl( 6889): Could not lock surface
+E/ViewRootImpl( 6889): java.lang.IllegalArgumentException
+E/ViewRootImpl( 6889): 	at android.view.Surface.nativeLockCanvas(Native Method)
+E/ViewRootImpl( 6889): 	at android.view.Surface.lockCanvas(Surface.java:246)
+E/ViewRootImpl( 6889): 	at android.view.ViewRootImpl.drawSoftware(ViewRootImpl.java:2452)
+E/ViewRootImpl( 6889): 	at android.view.ViewRootImpl.draw(ViewRootImpl.java:2426)
+E/ViewRootImpl( 6889): 	at android.view.ViewRootImpl.performDraw(ViewRootImpl.java:2270)
+E/ViewRootImpl( 6889): 	at android.view.ViewRootImpl.performTraversals(ViewRootImpl.java:1900)
+E/ViewRootImpl( 6889): 	at android.view.ViewRootImpl.doTraversal(ViewRootImpl.java:1017)
+E/ViewRootImpl( 6889): 	at android.view.ViewRootImpl$TraversalRunnable.run(ViewRootImpl.java:5603)
+E/ViewRootImpl( 6889): 	at android.view.Choreographer$CallbackRecord.run(Choreographer.java:749)
+E/ViewRootImpl( 6889): 	at android.view.Choreographer.doCallbacks(Choreographer.java:562)
+E/ViewRootImpl( 6889): 	at android.view.Choreographer.doFrame(Choreographer.java:532)
+E/ViewRootImpl( 6889): 	at android.view.Choreographer$FrameDisplayEventReceiver.run(Choreographer.java:735)
+E/ViewRootImpl( 6889): 	at android.os.Handler.handleCallback(Handler.java:733)
+E/ViewRootImpl( 6889): 	at android.os.Handler.dispatchMessage(Handler.java:95)
+E/ViewRootImpl( 6889): 	at android.os.Looper.loop(Looper.java:137)
+E/ViewRootImpl( 6889): 	at android.app.ActivityThread.main(ActivityThread.java:4998)
+E/ViewRootImpl( 6889): 	at java.lang.reflect.Method.invokeNative(Native Method)
+E/ViewRootImpl( 6889): 	at java.lang.reflect.Method.invoke(Method.java:515)
+E/ViewRootImpl( 6889): 	at com.android.internal.os.ZygoteInit$MethodAndArgsCaller.run(ZygoteInit.java:811)
+E/ViewRootImpl( 6889): 	at com.android.internal.os.ZygoteInit.main(ZygoteInit.java:627)
+E/ViewRootImpl( 6889): 	at dalvik.system.NativeStart.main(Native Method)
+E/BufferQueue( 1318): [com.android.chrome/com.google.android.apps.chrome.Main] connect: BufferQueue has been abandoned!
+E/ViewRootImpl( 6889): Could not lock surface
+E/ViewRootImpl( 6889): java.lang.IllegalArgumentException
+E/ViewRootImpl( 6889): 	at android.view.Surface.nativeLockCanvas(Native Method)
+E/ViewRootImpl( 6889): 	at android.view.Surface.lockCanvas(Surface.java:246)
+E/ViewRootImpl( 6889): 	at android.view.ViewRootImpl.drawSoftware(ViewRootImpl.java:2452)
+E/ViewRootImpl( 6889): 	at android.view.ViewRootImpl.draw(ViewRootImpl.java:2426)
+E/ViewRootImpl( 6889): 	at android.view.ViewRootImpl.performDraw(ViewRootImpl.java:2270)
+E/ViewRootImpl( 6889): 	at android.view.ViewRootImpl.performTraversals(ViewRootImpl.java:1900)
+E/ViewRootImpl( 6889): 	at android.view.ViewRootImpl.doTraversal(ViewRootImpl.java:1017)
+E/ViewRootImpl( 6889): 	at android.view.ViewRootImpl$TraversalRunnable.run(ViewRootImpl.java:5603)
+E/ViewRootImpl( 6889): 	at android.view.Choreographer$CallbackRecord.run(Choreographer.java:749)
+E/ViewRootImpl( 6889): 	at android.view.Choreographer.doCallbacks(Choreographer.java:562)
+E/ViewRootImpl( 6889): 	at android.view.Choreographer.doFrame(Choreographer.java:532)
+E/ViewRootImpl( 6889): 	at android.view.Choreographer$FrameDisplayEventReceiver.run(Choreographer.java:735)
+E/ViewRootImpl( 6889): 	at android.os.Handler.handleCallback(Handler.java:733)
+E/ViewRootImpl( 6889): 	at android.os.Handler.dispatchMessage(Handler.java:95)
+E/ViewRootImpl( 6889): 	at android.os.Looper.loop(Looper.java:137)
+E/ViewRootImpl( 6889): 	at android.app.ActivityThread.main(ActivityThread.java:4998)
+E/ViewRootImpl( 6889): 	at java.lang.reflect.Method.invokeNative(Native Method)
+E/ViewRootImpl( 6889): 	at java.lang.reflect.Method.invoke(Method.java:515)
+E/ViewRootImpl( 6889): 	at com.android.internal.os.ZygoteInit$MethodAndArgsCaller.run(ZygoteInit.java:811)
+E/ViewRootImpl( 6889): 	at com.android.internal.os.ZygoteInit.main(ZygoteInit.java:627)
+E/ViewRootImpl( 6889): 	at dalvik.system.NativeStart.main(Native Method)
+E/BufferQueue( 1318): [com.android.chrome/com.google.android.apps.chrome.Main] connect: BufferQueue has been abandoned!
+E/ViewRootImpl( 6889): Could not lock surface
+E/ViewRootImpl( 6889): java.lang.IllegalArgumentException
+E/ViewRootImpl( 6889): 	at android.view.Surface.nativeLockCanvas(Native Method)
+E/ViewRootImpl( 6889): 	at android.view.Surface.lockCanvas(Surface.java:246)
+E/ViewRootImpl( 6889): 	at android.view.ViewRootImpl.drawSoftware(ViewRootImpl.java:2452)
+E/ViewRootImpl( 6889): 	at android.view.ViewRootImpl.draw(ViewRootImpl.java:2426)
+E/ViewRootImpl( 6889): 	at android.view.ViewRootImpl.performDraw(ViewRootImpl.java:2270)
+E/ViewRootImpl( 6889): 	at android.view.ViewRootImpl.performTraversals(ViewRootImpl.java:1900)
+E/ViewRootImpl( 6889): 	at android.view.ViewRootImpl.doTraversal(ViewRootImpl.java:1017)
+E/ViewRootImpl( 6889): 	at android.view.ViewRootImpl$TraversalRunnable.run(ViewRootImpl.java:5603)
+E/ViewRootImpl( 6889): 	at android.view.Choreographer$CallbackRecord.run(Choreographer.java:749)
+E/ViewRootImpl( 6889): 	at android.view.Choreographer.doCallbacks(Choreographer.java:562)
+E/ViewRootImpl( 6889): 	at android.view.Choreographer.doFrame(Choreographer.java:532)
+E/ViewRootImpl( 6889): 	at android.view.Choreographer$FrameDisplayEventReceiver.run(Choreographer.java:735)
+E/ViewRootImpl( 6889): 	at android.os.Handler.handleCallback(Handler.java:733)
+E/ViewRootImpl( 6889): 	at android.os.Handler.dispatchMessage(Handler.java:95)
+E/ViewRootImpl( 6889): 	at android.os.Looper.loop(Looper.java:137)
+E/ViewRootImpl( 6889): 	at android.app.ActivityThread.main(ActivityThread.java:4998)
+E/ViewRootImpl( 6889): 	at java.lang.reflect.Method.invokeNative(Native Method)
+E/ViewRootImpl( 6889): 	at java.lang.reflect.Method.invoke(Method.java:515)
+E/ViewRootImpl( 6889): 	at com.android.internal.os.ZygoteInit$MethodAndArgsCaller.run(ZygoteInit.java:811)
+E/ViewRootImpl( 6889): 	at com.android.internal.os.ZygoteInit.main(ZygoteInit.java:627)
+E/ViewRootImpl( 6889): 	at dalvik.system.NativeStart.main(Native Method)
+E/gpslogd ( 1325): IPC Connection closed by libgps. Restarting GPS daemon...
+I/Zygote  ( 1319): Exit zygote because system server (2437) has terminated
+I/Netd    ( 7809): Netd 1.0 starting
+W/InterfaceController( 7809): Warning (dlopen failed: library "/system/lib/libnetcmdiface.so" not found) while opening the net interface command library
+D/gpsd    ( 7808): main()
+D/gpsd    ( 7808): argv[0] = '/system/bin/glgps'
+D/gpsd    ( 7808): argv[1] = '-c'
+D/gpsd    ( 7808): argv[2] = '/system/etc/gps/gpsconfig.xml'
+I/ServiceManager( 1313): service 'media.audio_policy' died
+I/ServiceManager( 1313): service 'media.audio_flinger' died
+I/ServiceManager( 1313): service 'media.player' died
+I/ServiceManager( 1313): service 'media.camera' died
+W/AudioSystem( 7772): AudioFlinger server died!
+W/IMediaDeathNotifier( 7772): media server died
+E/MediaPlayer( 7772): error (100, 0)
+I/ServiceManager( 7772): Waiting for service media.audio_flinger...
+W/linker  ( 7816): libve.so has text relocations. This is wasting memory and is a security risk. Please fix.
+I/mediaserver( 7816): ServiceManager: 0xb70ba4c8
+I/AudioFlinger( 7816): Using default 3000 mSec as standby time.
+I/CameraService( 7816): CameraService started (pid=7816)
+D/HALCameraFactory( 7816): camera hal version: 3000130327_V1.0
+I/CameraService( 7816): Loaded "V4L2Camera Module" camera module
+D/HALCameraFactory( 7816): There is 2 attached cameras and 0 removable cameras
+I/AudioPolicyManagerBase( 7816): loadAudioPolicyConfig() loaded /system/etc/audio_policy.conf
+D/codec_audio( 7816): get ro.sw.audio.codec_plan_name =0
+D/codec_audio( 7816): get index =0
+V/codec_audio_pad( 7816): ****LINE:171,FUNC:pad_init
+D/codec_audio( 7816): key_name:PHONE_EARPIECE 
+D/codec_audio( 7816): key_name:PHONE_HEADSET 
+D/codec_audio( 7816): key_name:PHONE_SPEAKER 
+D/codec_audio( 7816): key_name:BLUETOOTH_UP 
+D/codec_audio( 7816): key_name:FM_HEADSET 
+D/codec_audio( 7816): key_name:FM_SPEAKER 
+D/codec_audio( 7816): get_volume_config pcm_vol: 8
+D/bp_audio( 7816): get ro.sw.audio.bp_device_name=0
+D/bp_audio( 7816): bp_device_detect index=0
+I/AudioFlinger( 7816): loadHwModule() Loaded primary audio interface from sunxi audio HW HAL (audio) handle 1
+I/AudioFlinger( 7816): HAL output buffer size 1056 frames, normal mix buffer size 1056 frames
+V/codec_audio_plan_record( 7816): record manager thread sleep
+I/AudioMixer( 7816): found effect "Multichannel Downmix To Stereo" from The Android Open Source Project
+I/AudioFlinger( 7816): Using module 1 has the primary audio interface
+I/AudioFlinger( 7816): AudioFlinger's thread 0xb5039008 ready to run
+W/AudioFlinger( 7816): Thread AudioOut_2 cannot connect to the power manager service
+W/AudioFlinger( 7816): Thread AudioOut_2 cannot connect to the power manager service
+I/audio_a2dp_hw( 7816): adev_open:  adev_open in A2dp_hw module
+I/AudioFlinger( 7816): loadHwModule() Loaded a2dp audio interface from A2DP Audio HW HAL (audio) handle 3
+I/AudioFlinger( 7816): loadHwModule() Loaded usb audio interface from USB audio HW HAL (audio) handle 4
+I/r_submix( 7816): adev_open(name=audio_hw_if)
+I/r_submix( 7816): adev_init_check()
+I/AudioFlinger( 7816): loadHwModule() Loaded r_submix audio interface from Wifi Display audio HAL (audio) handle 5
+I/AudioPolicyService( 7816): Loaded audio policy from LEGACY Audio Policy HAL (audio_policy)
+D/AndroidRuntime( 7810): 
+D/AndroidRuntime( 7810): >>>>>> AndroidRuntime START com.android.internal.os.ZygoteInit <<<<<<
+D/AndroidRuntime( 7810): CheckJNI is OFF
+D/dalvikvm( 7810): Trying to load lib libjavacore.so 0x0
+D/dalvikvm( 7810): Added shared lib libjavacore.so 0x0
+D/dalvikvm( 7810): Trying to load lib libnativehelper.so 0x0
+D/dalvikvm( 7810): Added shared lib libnativehelper.so 0x0
+D/dalvikvm( 7810): No JNI_OnLoad found in libnativehelper.so 0x0, skipping init
+D/dalvikvm( 7810): Note: class Landroid/app/ActivityManagerNative; has 180 unimplemented (abstract) methods
+I/ServiceManager( 1313): service 'isms' died
+I/ServiceManager( 1313): service 'iphonesubinfo' died
+I/ServiceManager( 1313): service 'simphonebook' died
+I/ServiceManager( 1313): service 'phone' died
+E/memtrack( 7810): Couldn't load memtrack module (No such file or directory)
+E/android.os.Debug( 7810): failed to load memtrack module: -2
+I/SamplingProfilerIntegration( 7810): Profiling disabled.
+D/libEGL  ( 7810): loaded /vendor/lib/egl/libEGL_POWERVR_SGX544_115.so
+I/Zygote  ( 7810): Preloading classes...
+D/libEGL  ( 7810): loaded /vendor/lib/egl/libGLESv1_CM_POWERVR_SGX544_115.so
+D/dalvikvm( 7810): GC_EXPLICIT freed 42K, 8% free 537K/584K, paused 2ms+1ms, total 5ms
+D/dalvikvm( 7810): WAIT_FOR_CONCURRENT_GC blocked 2ms
+D/dalvikvm( 7810): GC_EXPLICIT freed <1K, 8% free 537K/584K, paused 2ms+1ms, total 4ms
+D/libEGL  ( 7810): loaded /vendor/lib/egl/libGLESv2_POWERVR_SGX544_115.so
+D/dalvikvm( 7810): GC_EXPLICIT freed 1K, 6% free 603K/636K, paused 2ms+1ms, total 5ms
+I/Zygote  ( 7810): Preloading resources...
+D/dalvikvm( 7810): GC_EXPLICIT freed 15K, 4% free 650K/672K, paused 4ms+1ms, total 7ms
+D/dalvikvm( 7810): WAIT_FOR_CONCURRENT_GC blocked 3ms
+D/dalvikvm( 7810): GC_EXPLICIT freed 2K, 4% free 651K/672K, paused 0ms+1ms, total 4ms
+W/AudioFlinger( 7816): session id 199 not found for pid 7772
+D/dalvikvm( 7810): GC_EXPLICIT freed 3K, 2% free 711K/724K, paused 4ms+4ms, total 10ms
+D/dalvikvm( 7810): GC_EXPLICIT freed 5K, 2% free 759K/772K, paused 2ms+8ms, total 12ms
+D/dalvikvm( 7810): GC_EXPLICIT freed 9K, 2% free 803K/816K, paused 2ms+0ms, total 7ms
+D/dalvikvm( 7810): GC_EXPLICIT freed 6K, 2% free 849K/860K, paused 1ms+0ms, total 4ms
+D/dalvikvm( 7810): GC_EXPLICIT freed 12K, 2% free 913K/928K, paused 1ms+1ms, total 4ms
+D/dalvikvm( 7810): WAIT_FOR_CONCURRENT_GC blocked 5ms
+D/dalvikvm( 7810): GC_EXPLICIT freed 2K, 1% free 964K/968K, paused 5ms+1ms, total 19ms
+D/dalvikvm( 7810): WAIT_FOR_CONCURRENT_GC blocked 1ms
+D/dalvikvm( 7810): GC_EXPLICIT freed 4K, 1% free 963K/972K, paused 1ms+2ms, total 6ms
+D/dalvikvm( 7810): GC_EXPLICIT freed 6K, 1% free 1012K/1020K, paused 2ms+5ms, total 10ms
+D/dalvikvm( 7810): GC_EXPLICIT freed <1K, 1% free 1011K/1020K, paused 2ms+1ms, total 7ms
+D/dalvikvm( 7810): GC_EXPLICIT freed 7K, 2% free 1060K/1076K, paused 1ms+0ms, total 5ms
+D/dalvikvm( 7810): WAIT_FOR_CONCURRENT_GC blocked 8ms
+D/dalvikvm( 7810): GC_EXPLICIT freed 7K, 1% free 1065K/1076K, paused 0ms+0ms, total 10ms
+D/dalvikvm( 7810): GC_EXPLICIT freed 11K, 2% free 1110K/1124K, paused 1ms+1ms, total 5ms
+D/dalvikvm( 7810): WAIT_FOR_CONCURRENT_GC blocked 3ms
+D/dalvikvm( 7810): GC_EXPLICIT freed 1K, 2% free 1117K/1132K, paused 1ms+1ms, total 5ms
+D/dalvikvm( 7810): GC_EXPLICIT freed 14K, 2% free 1159K/1176K, paused 0ms+1ms, total 4ms
+D/dalvikvm( 7810): WAIT_FOR_CONCURRENT_GC blocked 4ms
+D/dalvikvm( 7810): GC_EXPLICIT freed <1K, 2% free 1159K/1176K, paused 16ms+1ms, total 21ms
+D/dalvikvm( 7810): GC_EXPLICIT freed 18K, 2% free 1195K/1216K, paused 1ms+3ms, total 8ms
+D/dalvikvm( 7810): WAIT_FOR_CONCURRENT_GC blocked 1ms
+D/dalvikvm( 7810): GC_EXPLICIT freed 5K, 2% free 1197K/1216K, paused 2ms+2ms, total 8ms
+D/dalvikvm( 7810): GC_EXPLICIT freed 12K, 2% free 1246K/1260K, paused 1ms+1ms, total 6ms
+D/dalvikvm( 7810): WAIT_FOR_CONCURRENT_GC blocked 3ms
+D/dalvikvm( 7810): GC_EXPLICIT freed <1K, 2% free 1245K/1260K, paused 0ms+1ms, total 5ms
+D/dalvikvm( 7810): GC_EXPLICIT freed 11K, 2% free 1310K/1324K, paused 0ms+5ms, total 16ms
+D/dalvikvm( 7810): GC_EXPLICIT freed 7K, 1% free 1367K/1380K, paused 0ms+1ms, total 6ms
+D/dalvikvm( 7810): GC_EXPLICIT freed 10K, 1% free 1414K/1428K, paused 1ms+1ms, total 8ms
+D/dalvikvm( 7810): WAIT_FOR_CONCURRENT_GC blocked 7ms
+D/dalvikvm( 7810): GC_EXPLICIT freed 3K, 2% free 1410K/1428K, paused 2ms+1ms, total 7ms
+D/dalvikvm( 7810): GC_EXPLICIT freed 9K, 1% free 1467K/1480K, paused 2ms+1ms, total 8ms
+D/dalvikvm( 7810): WAIT_FOR_CONCURRENT_GC blocked 6ms
+D/dalvikvm( 7810): GC_EXPLICIT freed <1K, 1% free 1467K/1480K, paused 2ms+1ms, total 7ms
+D/dalvikvm( 7810): GC_EXPLICIT freed 15K, 2% free 1514K/1532K, paused 1ms+1ms, total 7ms
+D/dalvikvm( 7810): GC_EXPLICIT freed 2K, 1% free 1790K/1808K, paused 6ms+1ms, total 16ms
+D/dalvikvm( 7810): GC_EXPLICIT freed 1K, 1% free 1790K/1808K, paused 1ms+2ms, total 8ms
+D/dalvikvm( 7810): GC_EXPLICIT freed 5K, 2% free 1859K/1880K, paused 8ms+1ms, total 14ms
+D/dalvikvm( 7810): WAIT_FOR_CONCURRENT_GC blocked 6ms
+D/dalvikvm( 7810): GC_EXPLICIT freed <1K, 2% free 1860K/1880K, paused 1ms+1ms, total 7ms
+D/dalvikvm( 7810): GC_EXPLICIT freed 6K, 1% free 2026K/2040K, paused 0ms+1ms, total 6ms
+D/dalvikvm( 7810): GC_EXPLICIT freed 9K, 1% free 2107K/2120K, paused 1ms+1ms, total 7ms
+D/dalvikvm( 7810): GC_EXPLICIT freed 4K, 1% free 2193K/2200K, paused 1ms+2ms, total 9ms
+D/dalvikvm( 7810): GC_EXPLICIT freed 8K, 1% free 2264K/2276K, paused 2ms+3ms, total 10ms
+D/dalvikvm( 7810): GC_EXPLICIT freed 14K, 1% free 2307K/2328K, paused 8ms+9ms, total 22ms
+D/TextLayoutCache( 7810): Using debug level = 0 - Debug Enabled = 0
+D/dalvikvm( 7810): GC_EXPLICIT freed 10K, 1% free 2350K/2368K, paused 4ms+2ms, total 11ms
+D/dalvikvm( 7810): WAIT_FOR_CONCURRENT_GC blocked 3ms
+D/dalvikvm( 7810): GC_EXPLICIT freed 2K, 1% free 2359K/2372K, paused 2ms+1ms, total 9ms
+D/dalvikvm( 7810): GC_EXPLICIT freed 7K, 1% free 2399K/2408K, paused 2ms+1ms, total 14ms
+D/dalvikvm( 7810): GC_EXPLICIT freed 3K, 1% free 2455K/2472K, paused 1ms+1ms, total 9ms
+I/dalvikvm( 7810): threadid=5: recursive native library load attempt (/system/lib/libmedia_jni.so)
+D/MtpDeviceJNI( 7810): register_android_mtp_MtpDevice
+I/dalvikvm( 7810): threadid=5: recursive native library load attempt (/system/lib/libmedia_jni.so)
+I/dalvikvm( 7810): threadid=5: recursive native library load attempt (/system/lib/libmedia_jni.so)
+I/dalvikvm( 7810): threadid=5: recursive native library load attempt (/system/lib/libmedia_jni.so)
+D/dalvikvm( 7810): GC_EXPLICIT freed 5K, 1% free 2491K/2504K, paused 2ms+1ms, total 10ms
+D/dalvikvm( 7810): GC_EXPLICIT freed 15K, 1% free 2528K/2548K, paused 1ms+2ms, total 9ms
+D/dalvikvm( 7810): WAIT_FOR_CONCURRENT_GC blocked 8ms
+D/dalvikvm( 7810): GC_EXPLICIT freed 4K, 1% free 2571K/2580K, paused 1ms+14ms, total 32ms
+D/dalvikvm( 7810): GC_EXPLICIT freed 20K, 1% free 2635K/2660K, paused 1ms+1ms, total 23ms
+D/dalvikvm( 7810): GC_EXPLICIT freed 8K, 1% free 2695K/2712K, paused 8ms+1ms, total 17ms
+D/dalvikvm( 7810): WAIT_FOR_CONCURRENT_GC blocked 7ms
+D/dalvikvm( 7810): GC_EXPLICIT freed <1K, 1% free 2716K/2736K, paused 2ms+2ms, total 11ms
+D/dalvikvm( 7810): GC_EXPLICIT freed 12K, 1% free 2760K/2776K, paused 2ms+2ms, total 12ms
+D/dalvikvm( 7810): WAIT_FOR_CONCURRENT_GC blocked 8ms
+D/dalvikvm( 7810): GC_EXPLICIT freed 4K, 1% free 2761K/2776K, paused 3ms+2ms, total 13ms
+D/dalvikvm( 7810): GC_EXPLICIT freed 13K, 1% free 2802K/2820K, paused 1ms+2ms, total 10ms
+D/dalvikvm( 7810): WAIT_FOR_CONCURRENT_GC blocked 8ms
+D/dalvikvm( 7810): GC_EXPLICIT freed 17K, 1% free 2806K/2828K, paused 0ms+3ms, total 12ms
+I/Zygote  ( 7810): ...preloaded 274 resources in 1260ms.
+I/Zygote  ( 7810): ...preloaded 31 resources in 21ms.
+E/EmojiFactory_jni( 7810): Failed to load libemoji.so: dlopen failed: library "libemoji.so" not found
+V/NatController( 7809): runCmd(/system/bin/iptables -F natctrl_FORWARD) res=0
+V/NatController( 7809): runCmd(/system/bin/iptables -A natctrl_FORWARD -j DROP) res=0
+V/NatController( 7809): runCmd(/system/bin/iptables -t nat -F natctrl_nat_POSTROUTING) res=0
+V/NatController( 7809): runCmd(/system/bin/ip rule flush) res=0
+I/LibraryLoader( 7810): loading: webviewchromium
+V/NatController( 7809): runCmd(/system/bin/ip -6 rule flush) res=0
+V/NatController( 7809): runCmd(/system/bin/ip rule add from all lookup default prio 32767) res=0
+V/NatController( 7809): runCmd(/system/bin/ip rule add from all lookup main prio 32766) res=0
+V/NatController( 7809): runCmd(/system/bin/ip -6 rule add from all lookup default prio 32767) res=0
+V/NatController( 7809): runCmd(/system/bin/ip -6 rule add from all lookup main prio 32766) res=0
+V/NatController( 7809): runCmd(/system/bin/ip route flush cache) res=0
+I/LibraryLoader( 7810): loaded: webviewchromium
+V/NatController( 7809): runCmd(/system/bin/iptables -F natctrl_tether_counters) res=0
+V/NatController( 7809): runCmd(/system/bin/iptables -X natctrl_tether_counters) res=0
+V/NatController( 7809): runCmd(/system/bin/iptables -N natctrl_tether_counters) res=0
+D/dalvikvm( 7810): GC_FOR_ALLOC freed 190K, 6% free 3321K/3512K, paused 13ms, total 13ms
+D/dalvikvm( 7810): GC_FOR_ALLOC freed 425K, 11% free 3725K/4152K, paused 24ms, total 24ms
+D/dalvikvm( 7810): GC_FOR_ALLOC freed 533K, 12% free 4124K/4660K, paused 23ms, total 23ms
+I/System  ( 7810): Loaded time zone names for "" in 105ms (75ms in ICU)
+I/System  ( 7810): Loaded time zone names for "en_US" in 59ms (51ms in ICU)
+I/Zygote  ( 7810): ...preloaded 2778 classes in 2513ms.
+D/MDnsDS  ( 7809): MDnsSdListener::Hander starting up
+D/MDnsDS  ( 7809): MDnsSdListener starting to monitor
+D/MDnsDS  ( 7809): Going to poll with pollCount 1
+D/dalvikvm( 7810): GC_EXPLICIT freed 287K, 7% free 4353K/4660K, paused 2ms+3ms, total 25ms
+D/dalvikvm( 7810): GC_EXPLICIT freed 2K, 7% free 4351K/4660K, paused 3ms+3ms, total 31ms
+D/dalvikvm( 7810): GC_EXPLICIT freed <1K, 7% free 4351K/4660K, paused 2ms+3ms, total 22ms
+I/dalvikvm( 7810): System server process 8136 has been created
+I/Zygote  ( 7810): Accepting command socket connections
+D/SensorService( 8136): nuSensorService starting...
+I/SystemServer( 8136): Entered the Android system server!
+E/Sensorsmpltiger( 8136): could not open the accel irq device node
+D/Sensorsmpltiger( 8136): MPLSensor falling back to timerirq for accel data
+I/MPL-mlsl( 8136): inv_serial_open: /dev/mpu
+I/Sensorsmpltiger( 8136): InvenSense MPL v4.1.2 Engineering Jan  3 2014 14:58:46
+I/MPL-mldl_cfg_mpu:( 8136): inv_mpu_suspend(,,,,7fff) -> 0000
+E/MPL-mlsl( 8136): Cannot open file "/data/cal.bin" for read
+E/MPL-storeload( 8136): Could not get file calibration length - error 14 - aborting
+V/Sensorsmpltiger( 8136): Calibration file successfully loaded
+W/Sensorsmpltiger( 8136): No compass configured on this platform : mldl_cfg->slave[EXT_SLAVE_TYPE_COMPASS] = NULL
+E/Sensorsmpltiger( 8136): Error : enable 9 axis sensor fusion function not registered
+V/Sensorsmpltiger( 8136): MPLSensor::getFd returning 40
+V/Sensorsmpltiger( 8136): MPLSensor::getAccelFd returning -1
+V/Sensorsmpltiger( 8136): MPLSensor::getTimerFd returning 41
+E/Sensors ( 8136): tiger LightSensor::LightSensor data_fd = 44
+E/Sensors ( 8136): LightSensor: enable fd = 43 , input_sysfs_path = /sys/class/input/event4/device/enable
+E/Sensors ( 8136): LightSensor set flags = 1,mEnabled = 1
+
+
+
+=== 解决方法： ===
+修改 framework/base/core/java/android/view/MotionEvent.java
+
+    public final MotionEvent split(int idBits) {
+           MotionEvent ev = obtain();
+           synchronized (gSharedTempLock) {
+                      final int oldPointerCount = nativeGetPointerCount(mNativePtr);
+                      ensureSharedTempPointerCapacity(oldPointerCount);
+                      final PointerProperties[] pp = gSharedTempPointerProperties;
+                      final PointerCoords[] pc = gSharedTempPointerCoords;
+                      final int[] map = gSharedTempPointerIndexMap;
+
+                      final int oldAction = nativeGetAction(mNativePtr);
+                      final int oldActionMasked = oldAction & ACTION_MASK;
+                      final int oldActionPointerIndex = (oldAction & ACTION_POINTER_INDEX_MASK)  >> ACTION_POINTER_INDEX_SHIFT;
+                      int newActionPointerIndex = -1;
+                      int newPointerCount = 0;
+                      int newIdBits = 0;
+
+                     //xcj:2014-3-7
+                     //Slog.d("MotionEvent", "xcj--MotionEvent.split  oldPointerCount="+ oldPointerCount  );
+
+                      for (int i = 0; i < oldPointerCount; i++) {
+                                    nativeGetPointerProperties(mNativePtr, i, pp[newPointerCount]);
+                                    final int idBit = 1 << pp[newPointerCount].id;
+
+                                    //Slog.d("MotionEvent", "xcj--MotionEvent.split   idBits="+idBits +"  idBit="+idBit);
+                                   if ((idBit & idBits) != 0) {
+                                              //xcj:2014-3-7
+                                             //Slog.d("MotionEvent", "xcj--MotionEvent.split-- ((idBit & idBits) != 0)=true" );
+                                             if (i == oldActionPointerIndex) {
+                                                           newActionPointerIndex = newPointerCount;
+                                              }
+                                              map[newPointerCount] = i;
+                                              newPointerCount += 1;
+                                             newIdBits |= idBit;
+                                   }
+                         }
+
+                         if (newPointerCount == 0) {
+                                        //xcj:2014-3-7
+                                       //Slog.d("MotionEvent", "xcj--MotionEvent.split-- (newPointerCount == 0)=true" );
+                                       //Slog.d("MotionEvent", "xcj--MotionEvent.split--000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000" );
+                                      //Slog.d("MotionEvent", "xcj--MotionEvent.split--000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000" );
+                                      //Slog.d("MotionEvent", "xcj--MotionEvent.split--000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000" );
+                                      __//throw new IllegalArgumentException("idBits did not match any ids in the event");__
+                                      __return  ev;__     
+                            }
+
+                           final int newAction;
+                           if (oldActionMasked == ACTION_POINTER_DOWN || oldActionMasked == ACTION_POINTER_UP) {
+                                           if (newActionPointerIndex < 0) {
+                                                       // An unrelated pointer changed.
+                                                      newAction = ACTION_MOVE;
+                                            } else if (newPointerCount == 1) {
+                                                       // The first/last pointer went down/up.
+                                                      newAction = oldActionMasked == ACTION_POINTER_DOWN  ? ACTION_DOWN : ACTION_UP;
+                                           } else {
+                                                      // A secondary pointer went down/up.
+                                                     newAction = oldActionMasked  | (newActionPointerIndex << ACTION_POINTER_INDEX_SHIFT);
+                                           }
+                           } else {
+                                          // Simple up/down/cancel/move or other motion action.
+                                           newAction = oldAction;
+                          }
+
+                        final int historySize = nativeGetHistorySize(mNativePtr);
+                        for (int h = 0; h <= historySize; h++) {
+                                       final int historyPos = h == historySize ? HISTORY_CURRENT : h;
+
+                                       for (int i = 0; i < newPointerCount; i++) {
+                                                   nativeGetPointerCoords(mNativePtr, map[i], historyPos, pc[i]);
+                                       }
+
+                                       final long eventTimeNanos = nativeGetEventTimeNanos(mNativePtr, historyPos);
+                                       if (h == 0) {
+                                                     ev.mNativePtr = nativeInitialize(ev.mNativePtr,
+                                                     nativeGetDeviceId(mNativePtr), nativeGetSource(mNativePtr),
+                                                     newAction, nativeGetFlags(mNativePtr),
+                                                     nativeGetEdgeFlags(mNativePtr), nativeGetMetaState(mNativePtr),
+                                                     nativeGetButtonState(mNativePtr),
+                                                     nativeGetXOffset(mNativePtr), nativeGetYOffset(mNativePtr),
+                                                     nativeGetXPrecision(mNativePtr), nativeGetYPrecision(mNativePtr),
+                                                     nativeGetDownTimeNanos(mNativePtr), eventTimeNanos,
+                                                     newPointerCount, pp, pc);
+                                        } else {
+                                                     nativeAddBatch(ev.mNativePtr, eventTimeNanos, pc, 0);
+                                         }
+                         }
+                          return ev;
+               }
+    }
+
+=== 总结： ===
+抛出异常时，系统对异常处理不过来，就导致了死机重启。
+
+
+

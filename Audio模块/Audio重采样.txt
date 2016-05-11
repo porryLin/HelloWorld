@@ -1,0 +1,166 @@
+Content-Type: text/x-zim-wiki
+Wiki-Format: zim 0.4
+Creation-Date: 2014-02-26T09:28:48+08:00
+
+====== Audio重采样 ======
+Created Wednesday 26 February 2014
+
+由上往下：
+应用程序
+Audio Flinger(包含SRC、混音器等，SRC强制44.1kHz输出)
+Audio HAL 音频硬件抽象层(包含音频流输入输出，硬件控制功能)
+高通SOC芯片(音频子系统48kHz SRC输出)
+
+
+
+
+hardware目录       （部分厂家开源的硬解适配层HAL代码） 
+/libhardware_legacy  （旧的硬件库）
+/libhardware         （硬件库）
+/qcom                （高通）
+/msm7k               （高通7k处理器开源抽象层）
+--/libaudio             （声音库）
+--/libaudio-qsd8k        (qsd8k的声音相关库)
+
+
+
+===========================================================
+====== 测试区 ======
+在 AudioMixer.cpp :: setResampler()
+1. 添加 quality = AudioResampler::DEFAULT_QUALITY;  // 强制都为default
+2. 添加 quality = AudioResampler::HIGH_QUALITY;  // 48000定为高品质
+3. resampler = AudioResampler::create(
+           format,
+           // the resampler sees the number of channels after the downmixer, if any
+           downmixerBufferProvider != NULL ? MAX_NUM_CHANNELS : channelCount,
+           value/*devSampleRate*/, quality);
+编译烧录后都可以播放视频文件，声音正常输出
+
+修改了audio.h中的 将44K改为48K，已编译待烧录，测试结果感觉声音有变化
+
+
+
+===============================================================
+============================SRC 算法==================================
+
+not enough CPU available for proposed quality level, so try next lowest level
+ 首先因为CPU没有足够的浮点计算能力，所以会先将质量降低一个档次，然后调用不同的算法：
+1. 低等质量将使用线性插值算法实现
+  DEFAULT_QUALITY 3
+  LOW_QUALITY 3
+  MED_QUALITY 6 -> LOW_QUALITY 3
+        resampler = new AudioResamplerOrder1(bitDepth, inChannelCount, sampleRate); //线性插值算法
+
+2. 中等质量将使用立方插值算法实现
+  HIGH_QUALITY 20 -> MED_QUALITY 6
+        resampler = new AudioResamplerCubic(bitDepth, inChannelCount, sampleRate); //立方插值算法
+
+3. 高等质量将使用FIR（有限阶滤波器）实现
+  VERY_HIGH_QUALITY 34 -> HIGH_QUALITY 20
+        resampler = new AudioResamplerSinc(bitDepth, inChannelCount, sampleRate); //FIR算法
+
+4. 超高等质量将使用FIR（有限阶滤波器）实现
+  VERY_HIGH_QUALITY 34
+        resampler = new AudioResamplerSinc(bitDepth, inChannelCount, sampleRate, quality); //FIR算法
+
+
+
+==========================================================================
+==============================SRC采样频率转换流程==================================
+
+->void AudioMixer::setParameter(int name, int target, int param, void *value)
+ {
+    name -= TRACK0;
+    int valueInt = (int)value;
+    track_t& track = mState.tracks[name];
+    ...
+    case RESAMPLE:
+        switch (param) {
+        case SAMPLE_RATE:
+            ALOG_ASSERT(valueInt > 0, "bad sample rate %d", valueInt);
+            if (track.setResampler(uint32_t(valueInt), mSampleRate)) {   // mSampleRate在AudioMixer的初始化中赋值
+                ALOGV("setParameter(RESAMPLE, SAMPLE_RATE, %u)",
+                        uint32_t(valueInt));
+                invalidateState(1 << name);
+            }
+            break;
+         ...
+         }
+     ...
+  }
+->bool AudioMixer::track_t::setResampler(uint32_t value/*音频文件采样率*/, uint32_t devSampleRate/*默认转换采样率*/)
+ {
+     ...
+     // FIXME force lowest quality level resampler if use case isn't music or video .个人感觉太强制性了。
+     if (!((value == 44100 && devSampleRate == 48000) || (value == 48000 && devSampleRate == 44100))) {
+             quality = AudioResampler::LOW_QUALITY;
+     } else {
+             quality = AudioResampler::DEFAULT_QUALITY;
+     }
+     resampler = AudioResampler::create(
+                  format,
+                  // the resampler sees the number of channels after the downmixer, if any
+                  downmixerBufferProvider != NULL ? MAX_NUM_CHANNELS : channelCount,
+                  devSampleRate, quality);     // 此处的devSampleRate = 44100，可否改为与value一致或者是48000
+     resampler->setLocalTimeFreq(localTimeFreq);
+     ...
+  }
+->AudioResampler* AudioResampler::create(int bitDepth, int inChannelCount,
+                                         int32_t sampleRate, src_quality quality)
+ {
+    ...
+    //此处根据音频质量调用不同的算法
+    resampler = new AudioResamplerOrder1(bitDepth, inChannelCount, sampleRate); //线性插值算法
+    resampler = new AudioResamplerCubic(bitDepth, inChannelCount, sampleRate); //立方插值算法
+    resampler = new AudioResamplerSinc(bitDepth, inChannelCount, sampleRate); //FIR算法
+    resampler = new AudioResamplerSinc(bitDepth, inChannelCount, sampleRate, quality); //FIR算法
+
+    resampler->init();
+    ...
+ }
+
+
+
+==============================================================================
+====== 全志的HALL层实现==================================== ======
+hardware/libhardware/include/hardware/audio.h 
+-->struct audio_stream_out {       //定义了一个结构体，里面包含很多未实现的函数指针
+      ...
+      uint32_t (*get_sample_rate)(const struct audio_stream *stream);
+      ssize_t (*write)(struct audio_stream_out *stream, const void* buffer, size_t bytes);
+      ...
+   }
+-->struct audio_hw_device {
+      struct hw_device_t common;
+      ...
+      /** This method creates and opens the audio hardware output stream */
+      int (*open_output_stream)(struct audio_hw_device *dev,
+                              audio_io_handle_t handle,
+                              audio_devices_t devices,
+                              audio_output_flags_t flags,
+                              struct audio_config *config,
+                              struct audio_stream_out **stream_out);
+      ...
+   }
+
+device/idsbg/common/hardware/audio/
+-->static int adev_open_output_stream(struct audio_hw_device *dev,
+                                   audio_io_handle_t handle,
+                                   audio_devices_t devices,
+                                   audio_output_flags_t flags,
+                                   struct audio_config *config,
+                                   struct audio_stream_out **stream_out)
+  {
+     ...
+     out->stream.write 	=   out_write;  // 实现上述结构体中的函数指针
+     ...
+  }
+->static ssize_t out_write(struct audio_stream_out *stream, const void* buffer, size_t bytes)
+  {
+      ...
+      if (out->standby) {
+      ret = start_output_stream(out);
+      ...
+  }
+->static int start_output_stream(struct sunxi_stream_out *out)
+

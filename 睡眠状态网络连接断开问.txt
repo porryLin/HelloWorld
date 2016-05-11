@@ -1,0 +1,157 @@
+修复系统睡眠状态网络连接断开问题(by skay)：
+1. /frameworks/base/api/current.txt
+  public static final class Settings.System extends android.provider.Settings.NameValueTable 
+ {
+   增加
+   field public static final java.lang.String ETHERNET_SLEEP_POLICY = "ethernet_sleep_policy";
+   field public static final int ETHERNET_SLEEP_POLICY_DEFAULT = 0; // 0x0
+   field public static final int ETHERNET_SLEEP_POLICY_NEVER = 1; // 0x1
+  ......
+ }
+2. /frameworks/base/core/java/android/provider/Settings.java
+   增加
+   public static final String ETHERNET_SLEEP_POLICY="ethernet_sleep_policy";
+   public static final int ETHERNET_SLEEP_POLICY_DEFAULT = 0;  
+   public static final int ETHERNET_SLEEP_POLICY_NEVER = 1;
+
+关键类，如果不return,运行下去就会关闭Net
+3. /frameworks/base/ethernet/java/android/net/ethernet/EthernetStateTracker.java 
+  + import android.provider.Settings;
+  public boolean stopInterface(boolean suspend)
+ {
+    在前面增加
+    int EthernetSleepPolicy = Settings.System.getInt(mContext.getContentResolver(),
+                   Settings.System.ETHERNET_SLEEP_POLICY,
+                  Settings.System.ETHERNET_SLEEP_POLICY_NEVER);
+    Log.e("tiger EthernetstateTracker","EthernetSleepPolicy="+EthernetSleepPolicy);
+    if (EthernetSleepPolicy == Settings.System.WIFI_SLEEP_POLICY_DEFAULT) {
+         Log.e("tiger EthernetstateTracker","do not go sleep");
+         // Never sleep
+          return true;
+     }       
+     Log.e("tiger EthernetstateTracker"," go to suspend");
+  ......
+ }
+更改布局：
+4. /packages/apps/Settings/res/values/arrays.xml
+   增加
+   <string-array name="ethernet_sleep_policy_entries">
+        <!-- Always keep Wi-Fi on when screen turns off. -->
+        <item>Always</item>
+        <!-- Do not keep Wi-Fi on when screen turns off. -->
+        <item>Never (increases data usage)</item>
+    </string-array>
+
+    <string-array name="ethernet_sleep_policy_values">
+        <!-- Do not translate. -->
+        <item>0</item>
+        <!-- Do not translate. -->
+        <item>1</item>
+    </string-array>
+5. /packages/apps/Settings/res/xml/ethernet_settings.xml
+   修改为
+   <Preference
+       android:title="@string/eth_conf_perf_title"
+       android:summary="@string/eth_conf_summary"
+       android:key="ethernet_config"
+       android:persistent="false" />
+   增加
+   <ListPreference
+       android:key="ethernet_sleep_policy"
+       android:title="@string/ethernet_setting_sleep_policy_title"
+       android:persistent="false"
+        android:entries="@array/ethernet_sleep_policy_entries"
+        android:entryValues="@array/ethernet_sleep_policy_values" />
+6. /packages/apps/Settings/res/values/strings.xml
+   增加
+   <string name="ethernet_setting_sleep_policy_title">Keep Ethernet on during sleep</string>
+7. /packages/apps/Settings/src/com/android/settings/ethernet/EthernetSettings.java
+
+   增加
+   import android.preference.ListPreference;
+   import android.provider.Settings;
+   import android.widget.Toast;
+   private static final String KEY_ETH_SLEEP_POLICY = "ethernet_sleep_policy"; (在类EthernetSettings中)
+   public boolean onPreferenceTreeClick(PreferenceScreen preferenceScreen, Preference preference) 
+  {
+    ......
+    else if(preference == mEthConfigPref2) {
+          Log.e("tiger setttings **************** ","onPreferenceTreeClick444444444444");
+       }else{
+                mEthConfigDialog.show();
+                Log.e("tiger setttings **************** ","onPreferenceTreeClick555555");  
+       }
+    .....
+  }
+   增加方法
+   private void initPreferences() {
+         
+
+        ListPreference sleepPolicyPref = (ListPreference) findPreference(KEY_ETH_SLEEP_POLICY);
+        Log.e("tiger setttings **************** ","initPreferences2");
+        if (sleepPolicyPref != null) {
+            
+           sleepPolicyPref.setEntries(R.array.ethernet_sleep_policy_entries);
+               
+            sleepPolicyPref.setOnPreferenceChangeListener(this);
+            int value = Settings.System.getInt(getContentResolver(),
+                    Settings.System.ETHERNET_SLEEP_POLICY,
+                    Settings.System.ETHERNET_SLEEP_POLICY_NEVER);
+            String stringValue = String.valueOf(value);
+            Log.e("tiger setttings **************** ","initPreferences1 stringValue="+stringValue);
+            sleepPolicyPref.setValue(stringValue);
+            updateSleepPolicySummary(sleepPolicyPref, stringValue);
+        }
+    }   
+      @Override
+    public boolean onPreferenceChange(Preference preference, Object newValue) {
+        String key = preference.getKey();
+
+     
+        if (KEY_ETH_SLEEP_POLICY.equals(key)) {
+            Log.e("tiger setttings666 onPreferenceChange ","key="+key);
+            try {
+                String stringValue = (String) newValue;
+                 Log.e("tiger setttings onPreferenceChange ","stringValue="+stringValue);
+                Settings.System.putInt(getContentResolver(), Settings.System.ETHERNET_SLEEP_POLICY,
+                        Integer.parseInt(stringValue));
+                updateSleepPolicySummary(preference, stringValue);
+            } catch (NumberFormatException e) {
+               Toast.makeText(getActivity(), R.string.wifi_setting_sleep_policy_error,
+                       Toast.LENGTH_SHORT).show();
+                return false;
+            }
+        }
+
+        return true;
+    }
+
+     private void updateSleepPolicySummary(Preference sleepPolicyPref, String value) {
+        if (value != null) {
+            String[] values ;
+            final int summaryArrayResId;
+        
+              Log.e("tiger setttings updateSleepPolicySummary ","cccccccc");
+              values = getResources().getStringArray(R.array.ethernet_sleep_policy_values);
+              summaryArrayResId = R.array.ethernet_sleep_policy_entries;
+	     
+            String[] summaries = getResources().getStringArray(summaryArrayResId);
+            for (int i = 0; i < values.length; i++) {
+             Log.e("tiger setttings updateSleepPolicySummary ","cccccccc2");
+                if (value.equals(values[i])) {
+                  Log.e("tiger setttings updateSleepPolicySummary ","cccccccc3 value="+value);
+                    if (i < summaries.length) {
+                          Log.e("tiger setttings updateSleepPolicySummary ","cccccccc4 value="+value);
+                        sleepPolicyPref.setSummary(summaries[i]);
+                        return;
+                    }
+                }
+            }
+        }
+
+        sleepPolicyPref.setSummary("");
+        Log.e("EthernetSettings.java tiger", "Invalid sleep policy value: " + value);
+    }
+
+
+    

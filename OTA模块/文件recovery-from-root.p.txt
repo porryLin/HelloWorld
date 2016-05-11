@@ -1,0 +1,55 @@
+Content-Type: text/x-zim-wiki
+Wiki-Format: zim 0.4
+Creation-Date: 2014-06-18T11:53:08+08:00
+
+====== 文件recovery-from-root.p ======
+Created Wednesday 18 June 2014
+
+位置： 
+1. 升级包中 /recovery/recovery-from-boot.p
+2. 设备系统中 /system/recovery-from-boot.p
+
+
+生成 ： 
+install-recovery.sh 脚本和 recovery-from-root.p 在 ota_from_target_files 脚本中生成
+
+def MakeRecoveryPatch(input_tmp, output_zip, recovery_img, boot_img):
+...
+common.ZipWriteStr(output_zip, "recovery/recovery-from-boot.p", patch)
+...
+
+
+作用 ：
+boot.img和recovery.img的补丁(patch),主要用来更新recovery分区，其中etc/目录下的install-recovery.sh是更新脚本。
+如果系统是通过img烧录的，则不存在 install-recovery.sh 脚本 和 recovery-from-root.p 文件
+
+在OTA升级成功后的第一次开机，init进程会去执行 install-recovery.sh 脚本
+init.rc
+service flash_recovery /system/etc/install-recovery.sh
+    class main
+    oneshot
+
+
+生成 IncrementalOTAPackage 过程中：
+  if updating_recovery:
+    # Recovery is generated as a patch using both the boot image (which contains the same linux kernel as recovery) and the file
+    # /system/etc/recovery-resource.dat (which contains all the images used in the recovery UI) as sources.
+    #  This lets us minimize the size of the patch, which must be included in every OTA package.
+    #
+    # For older builds where recovery-resource.dat is not present, we use only the boot image as the source.
+
+    // boot.img和recovery.img包含相同的kernel文件
+    // 该.p文件由boot.img 和 recovery-resource.dat 两个文件生成
+    // recovery-resource.dat 文件包含了recovery UI 中需要的所有图片
+    // 该.p文件在所有OTA 包中都必须存在
+
+    MakeRecoveryPatch(OPTIONS.target_tmp, output_zip,  target_recovery, target_boot)
+    script.DeleteFiles(["/system/recovery-from-boot.p",  "/system/etc/install-recovery.sh"])         //将设备中原先的文件(如果存在的话)删除
+    print "recovery image changed; including as patch from boot."
+  else:
+    print "recovery image unchanged; skipping."
+
+
+生成 FullOTAPackage 过程中：
+  MakeRecoveryPatch(OPTIONS.input_tmp, output_zip, recovery_img, boot_img)
+

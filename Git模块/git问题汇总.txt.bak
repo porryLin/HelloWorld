@@ -1,0 +1,63 @@
+
+== 无分支时处理方法： ==
+
+$ git pull
+You are not currently on a branch, so I cannot use any
+'branch.<branchname>.merge' in your configuration file.
+Please specify which remote branch you want to use on the command
+line and try again (e.g. 'git pull <repository> <refspec>').
+See git-pull(1) for details.
+
+查看分支
+$ git branch -a
+* (no branch)     //绿色字体表示本地分支
+  remotes/origin/BULMA-154
+  remotes/origin/BULMA_262
+  remotes/origin/VEGETA-1141
+  remotes/origin/VEGETA-1215_test
+  remotes/origin/VEGETA-1253
+  remotes/origin/VEGETA-1312
+  remotes/origin/VEGETA-1312-improve
+  remotes/origin/VEGETA-1312-saturation
+  remotes/origin/VEGETA-1312-saturation2
+  remotes/origin/VEGETA-1312-soft
+  remotes/origin/VEGETA-1396
+  remotes/origin/VEGETA-1427
+  remotes/origin/VEGETA-352
+  remotes/origin/VEGETA-689
+  remotes/origin/VEGETA-847
+  remotes/origin/VEGETA-847-GAMMA2.4
+  remotes/origin/VEGETA-bootanimation
+  remotes/origin/VEGETA-dolby
+  remotes/origin/VEGETA_CAMERA
+  remotes/origin/bootanimation_optimization
+  remotes/origin/gmp_test
+  remotes/origin/master
+  remotes/origin/mt6592_cts_R3
+  remotes/origin/mt6592_cts_R3_QA
+  remotes/origin/test-dolby
+  remotes/origin/test-flash
+  remotes/origin/test-patch
+  remotes/origin/test-reboot-issue2
+  remotes/origin/test_BULMA-120
+  remotes/origin/test_BULMA-233
+  remotes/origin/test_BULMA-93
+  remotes/origin/test_BULMA_218
+  remotes/origin/test_BULMA_262
+  remotes/origin/test_nxp
+  remotes/origin/test_phone
+  remotes/origin/test_phone_kk
+  remotes/origin/test_speaker
+  remotes/origin/test_volume
+  remotes/origin/vegetafhd_RC_1.1.0
+
+
+创建本地分支 master 追踪服务器分支 remotes/origin/master
+$ git branch master remotes/origin/master
+Branch master set up to track remote branch master from origin.
+ckt@ckt-desktop:~/work/hostdiskF/sourcecode/ckt-mtk-6592$ git branch
+* (no branch)
+  master
+
+切换到本地分支 master上
+$ git checkout master

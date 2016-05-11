@@ -1,0 +1,61 @@
+Content-Type: text/x-zim-wiki
+Wiki-Format: zim 0.4
+Creation-Date: 2014-03-05T11:03:42+08:00
+
+====== 网上资料 ======
+Created Wednesday 05 March 2014
+
+http://itindex.net/detail/41132-android4.2-%E5%A4%9A%E7%94%A8%E6%88%B7-%E7%BB%93%E6%9E%84
+生活不只是眼前的苟且，还有诗和远方
+
+http://cache.baiducontent.com/c?m=9d78d513d9901df918b0cf281a16a6304e1097634d83975428c0d408cd6b01070124f4ba543f0d5483846b6776fa1d0fb6e73605665e7faac894de0a80e0c43f2ffe20357a1c8d4110c419d9c85125b723875a9ef55fb8e4&p=c3759a46d6c719b149a5ce2d0214cb&newp=91769a47c8d217b108e2977e090895231610db2151d6d01161c5c556&user=baidu&fm=sc&query=android+dev/fuse&qid=&p1=1
+
+
+关于android的4.2的0文件夹的详解
+
+=== ---- android 4.0 ---- ===
+在galaxy nexus（GN）手机上userdata分区很大，被挂在/data目录，用户的数据通常是放在sd卡上，然而gn是没有sd卡的，所以google想了一个办法，就是虚拟一个。
+
+所以，在userdata分区下有个目录叫media，是内置sd卡的数据存储位置，使用fuse技术将/data/media虚拟成为一个叫做/dev/fuse的设备，为了让程序能认出来，被同时挂载在 /mnt/sdcard 目录，
+又为了兼容以前的程序，做了一个快捷方式（linux系统里叫软连接） /sdcard 指向的是 /mnt/sdcard .
+
+当然，这些都是4.0的做法。
+
+=== ---- android 4.1 ---- ===
+在4.1里，同样也会使用fuse技术，/dev/fuse 会被同时挂载到/storage/sdcard0 目录，这个sdcard0表示第一个sd卡（如果有外置sd卡，那会多一个 /storage/sdcard1，比如我的xoom）， /sdcard 软连接会指向 /storage/sdcard0 ，此时/mnt/sdcard 也是个软连接，会指向/storage/sdcard0。
+如果你通过otg线接U盘，会被挂载到 /storage/usb0目录，stickmount这个软件为了让图库、快图、mx player等软件，能看到u盘里的数据，又同时挂载到 /storage/sdcard0/usStorage/sda1.
+
+也许你会问，为什么不是usb0，而是sda1，这是linux的对硬盘的命名方式，如果你的u盘有多个分区，就分别是sda1,sda2这样一直排下去了。
+
+=== ---- android 4.2 ---- ===
+好了，我们开始说4.2系统。
+
+谷歌是不是没事干啊，非要给android搞个多用户，你想想啊，在中国，可能因为经济问题，家里不是每人一个电脑，在美国，几乎需要用电脑的人，都会自己有一台或多台，一台电脑多人用的情况少之又少，这就是为什么叫PC了，顾名思义，个人电脑。像手机和平板这些东西，更加私人化了，很少公用了吧，我想在中国也是如此吧。
+
+当然，谷歌也不完全是抽风，因为他有更大的战略部署，而且平板也的确有多人用的可能。
+
+所以谷歌搞出来一个多用户，那每个人的应用、数据、个性配置都要分开吧。 应用和个性配置好弄，想想啊，通过权限控制，每人只能看自己的应用就行了，桌面也可以用自己的。
+
+那数据怎么办？？？？
+
+好吧，调整用户数据的挂载结构。android 4.2，同样也会使用fuse技术/dev/fuse 会被挂载到/storage/emulated/0 目录，为什么是0呢，你还记得上边的sdcard0吧，第一个的意思。（如果有第二个，应该就是/storage/emulated/1，我们的三儿子没有外置sd卡，所以没法验证）
+
+为了兼容以前，同时挂载到 /storage/emulated/legacy （故名思议，传统的），还建立三个软连接 /storage/sdcard0 ，/sdcard，/mnt/sdcard ，都指向  /storage/emulated/legacy
+
+还有值得一提的是，4.2刚出来，这块变动又比较大，所以stickmount要升级到2.2之后，才可以通过otg挂载u盘了。
+
+所以大家不用为0而苦恼了，这是正常的“生理特征”。
+
+也许你会问，这个0和多用户有什么关系呢，那是因为多用户这个新特性，只在平板上才启用，在手机上会被禁用的。但是底层实现是一致的。 /mnt/shell/emulated 目录和 /storage/emulated 下的文件夹是一样的。（注意，这个/mnt/shell/emulated  不是挂载出来的）
+
+由于我没有平板升级到4.2，所以只是推测，/mnt/shell/ 是为了多用户准备的，因为linux的多用户是基于shell实现的。
+
+----------------2013-01-13-补充------------------------------------------------
+4.2 在平板上的多用户
+我前一段时间给XOOM Wifi刷上了CM10.1的4.2.1，成功开启多用户特性。新建的用户id从10开始。
+默认用户的sdcard目录： /storage/emulated/0
+新建的第一个用户的sdcard目录：  /storage/emulated/10
+新建的第二个用户的sdcard目录：  /storage/emulated/11
+
+关于0/0/0/0文件夹问题
+是旧版本的CMW recovery在执行wipe data时导致建立新的0文件夹，请升级到cmw recovery 6.0.1.9 之后的版本，至于已经出现了多层0目录，请用RootExplorer剪切粘贴回/storage/emulated/0 下，推荐使用最新版CMW recovery 

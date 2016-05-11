@@ -1,0 +1,152 @@
+Content-Type: text/x-zim-wiki
+Wiki-Format: zim 0.4
+Creation-Date: 2014-04-14T12:21:01+08:00
+
+====== browser数据库无法读取bug ======
+Created Monday 14 April 2014
+
+V/codec_audio_pad( 1308): in normal mode, headset or speaker on,****LINE:54,FUNC:set_normal_path
+I/ActivityManager( 2210): START u0 {act=android.intent.action.MAIN cat=[android.intent.category.LAUNCHER] flg=0x10200000 cmp=com.android.browser/.BrowserActivity bnds=[1766,378][1906,518]} from pid 2689
+W/UsageStats( 2210): Failed to persist new stats
+I/ActivityManager( 2210): Start proc com.android.browser for activity com.android.browser/.BrowserActivity: pid=23043 uid=10019 gids={50019, 3003, 1028, 1015}
+V/WebViewChromium(23043): Binding Chromium to the main looper Looper{41ef4f68}
+I/chromium(23043): [INFO:library_loader_hooks.cc(112)] Chromium logging enabled: level = 0, default verbosity = 0
+I/BrowserProcessMain(23043): Initializing chromium process, renderers=0
+W/chromium(23043): [WARNING:proxy_service.cc(888)] PAC support disabled because there is no system implementation
+D/dalvikvm(23043): GC_CONCURRENT freed 284K, 10% free 9247K/10236K, paused 5ms+3ms, total 53ms
+D/dalvikvm(23043): GC_CONCURRENT freed 81K, 9% free 9566K/10456K, paused 1ms+4ms, total 23ms
+D/dalvikvm(23043): WAIT_FOR_CONCURRENT_GC blocked 15ms
+D/dalvikvm(23043): GC_FOR_ALLOC freed 34K, 9% free 9654K/10536K, paused 22ms, total 22ms
+I/dalvikvm-heap(23043): Grow heap (frag case) to 11.050MB for 983056-byte allocation
+D/dalvikvm(23043): GC_FOR_ALLOC freed <1K, 8% free 10613K/11500K, paused 15ms, total 15ms
+D/dalvikvm(23043): GC_CONCURRENT freed <1K, 8% free 10613K/11500K, paused 4ms+1ms, total 24ms
+E/SharedPreferencesImpl(23043): Couldn't rename file /data/data/com.android.browser/shared_prefs/com.android.browser_preferences.xml to backup file /data/data/com.android.browser/shared_prefs/com.android.browser_preferences.xml.bak
+E/SQLiteDatabase(23043): Failed to open database '/data/data/com.android.browser/databases/browser2.db'.
+E/SQLiteDatabase(23043): android.database.sqlite.SQLiteException: not an error (code 0): Could not open the database in read/write mode.
+E/SQLiteDatabase(23043): 	at android.database.sqlite.SQLiteConnection.nativeOpen(Native Method)
+E/SQLiteDatabase(23043): 	at android.database.sqlite.SQLiteConnection.open(SQLiteConnection.java:209)
+E/SQLiteDatabase(23043): 	at android.database.sqlite.SQLiteConnection.open(SQLiteConnection.java:193)
+E/SQLiteDatabase(23043): 	at android.database.sqlite.SQLiteConnectionPool.openConnectionLocked(SQLiteConnectionPool.java:463)
+E/SQLiteDatabase(23043): 	at android.database.sqlite.SQLiteConnectionPool.open(SQLiteConnectionPool.java:185)
+E/SQLiteDatabase(23043): 	at android.database.sqlite.SQLiteConnectionPool.open(SQLiteConnectionPool.java:177)
+E/SQLiteDatabase(23043): 	at android.database.sqlite.SQLiteDatabase.openInner(SQLiteDatabase.java:804)
+E/SQLiteDatabase(23043): 	at android.database.sqlite.SQLiteDatabase.open(SQLiteDatabase.java:789)
+E/SQLiteDatabase(23043): 	at android.database.sqlite.SQLiteDatabase.openDatabase(SQLiteDatabase.java:694)
+E/SQLiteDatabase(23043): 	at android.app.ContextImpl.openOrCreateDatabase(ContextImpl.java:948)
+E/SQLiteDatabase(23043): 	at android.content.ContextWrapper.openOrCreateDatabase(ContextWrapper.java:256)
+E/SQLiteDatabase(23043): 	at android.database.sqlite.SQLiteOpenHelper.getDatabaseLocked(SQLiteOpenHelper.java:224)
+E/SQLiteDatabase(23043): 	at android.database.sqlite.SQLiteOpenHelper.getWritableDatabase(SQLiteOpenHelper.java:164)
+E/SQLiteDatabase(23043): 	at com.android.browser.provider.SQLiteContentProvider.delete(SQLiteContentProvider.java:178)
+E/SQLiteDatabase(23043): 	at android.content.ContentProvider$Transport.delete(ContentProvider.java:273)
+E/SQLiteDatabase(23043): 	at android.content.ContentResolver.delete(ContentResolver.java:1282)
+E/SQLiteDatabase(23043): 	at com.android.browser.DataController$DataControllerHandler.handleMessage(DataController.java:185)
+E/SQLiteDatabase(23043): 	at com.android.browser.DataController$DataControllerHandler.run(DataController.java:146)
+E/SQLiteDatabase(23043): Failed to open database '/data/data/com.android.browser/databases/browser2.db'.
+E/SQLiteDatabase(23043): android.database.sqlite.SQLiteException: not an error (code 0): Could not open the database in read/write mode.
+E/SQLiteDatabase(23043): 	at android.database.sqlite.SQLiteConnection.nativeOpen(Native Method)
+E/SQLiteDatabase(23043): 	at android.database.sqlite.SQLiteConnection.open(SQLiteConnection.java:209)
+E/SQLiteDatabase(23043): 	at android.database.sqlite.SQLiteConnection.open(SQLiteConnection.java:193)
+E/SQLiteDatabase(23043): 	at android.database.sqlite.SQLiteConnectionPool.openConnectionLocked(SQLiteConnectionPool.java:463)
+E/SQLiteDatabase(23043): 	at android.database.sqlite.SQLiteConnectionPool.open(SQLiteConnectionPool.java:185)
+E/SQLiteDatabase(23043): 	at android.database.sqlite.SQLiteConnectionPool.open(SQLiteConnectionPool.java:177)
+E/SQLiteDatabase(23043): 	at android.database.sqlite.SQLiteDatabase.openInner(SQLiteDatabase.java:804)
+E/SQLiteDatabase(23043): 	at android.database.sqlite.SQLiteDatabase.open(SQLiteDatabase.java:789)
+E/SQLiteDatabase(23043): 	at android.database.sqlite.SQLiteDatabase.openDatabase(SQLiteDatabase.java:694)
+E/SQLiteDatabase(23043): 	at android.app.ContextImpl.openOrCreateDatabase(ContextImpl.java:948)
+E/SQLiteDatabase(23043): 	at android.content.ContextWrapper.openOrCreateDatabase(ContextWrapper.java:256)
+E/SQLiteDatabase(23043): 	at android.database.sqlite.SQLiteOpenHelper.getDatabaseLocked(SQLiteOpenHelper.java:224)
+E/SQLiteDatabase(23043): 	at android.database.sqlite.SQLiteOpenHelper.getWritableDatabase(SQLiteOpenHelper.java:164)
+E/SQLiteDatabase(23043): 	at com.android.browser.provider.SQLiteContentProvider.update(SQLiteContentProvider.java:154)
+E/SQLiteDatabase(23043): 	at android.content.ContentProvider$Transport.update(ContentProvider.java:287)
+E/SQLiteDatabase(23043): 	at android.content.ContentResolver.update(ContentResolver.java:1316)
+E/SQLiteDatabase(23043): 	at com.android.browser.DataController$DataControllerHandler.doUpdateHistoryTitle(DataController.java:298)
+E/SQLiteDatabase(23043): 	at com.android.browser.DataController$DataControllerHandler.handleMessage(DataController.java:171)
+E/SQLiteDatabase(23043): 	at com.android.browser.DataController$DataControllerHandler.run(DataController.java:146)
+W/dalvikvm(23043): threadid=18: thread exiting with uncaught exception (group=0x41573b90)
+E/AndroidRuntime(23043): FATAL EXCEPTION: DataControllerHandler
+E/AndroidRuntime(23043): Process: com.android.browser, PID: 23043
+E/AndroidRuntime(23043): android.database.sqlite.SQLiteException: not an error (code 0): Could not open the database in read/write mode.
+E/AndroidRuntime(23043): 	at android.database.sqlite.SQLiteConnection.nativeOpen(Native Method)
+E/AndroidRuntime(23043): 	at android.database.sqlite.SQLiteConnection.open(SQLiteConnection.java:209)
+E/AndroidRuntime(23043): 	at android.database.sqlite.SQLiteConnection.open(SQLiteConnection.java:193)
+E/AndroidRuntime(23043): 	at android.database.sqlite.SQLiteConnectionPool.openConnectionLocked(SQLiteConnectionPool.java:463)
+E/AndroidRuntime(23043): 	at android.database.sqlite.SQLiteConnectionPool.open(SQLiteConnectionPool.java:185)
+E/AndroidRuntime(23043): 	at android.database.sqlite.SQLiteConnectionPool.open(SQLiteConnectionPool.java:177)
+E/AndroidRuntime(23043): 	at android.database.sqlite.SQLiteDatabase.openInner(SQLiteDatabase.java:804)
+E/AndroidRuntime(23043): 	at android.database.sqlite.SQLiteDatabase.open(SQLiteDatabase.java:789)
+E/AndroidRuntime(23043): 	at android.database.sqlite.SQLiteDatabase.openDatabase(SQLiteDatabase.java:694)
+E/AndroidRuntime(23043): 	at android.app.ContextImpl.openOrCreateDatabase(ContextImpl.java:948)
+E/AndroidRuntime(23043): 	at android.content.ContextWrapper.openOrCreateDatabase(ContextWrapper.java:256)
+E/AndroidRuntime(23043): 	at android.database.sqlite.SQLiteOpenHelper.getDatabaseLocked(SQLiteOpenHelper.java:224)
+E/AndroidRuntime(23043): 	at android.database.sqlite.SQLiteOpenHelper.getWritableDatabase(SQLiteOpenHelper.java:164)
+E/AndroidRuntime(23043): 	at com.android.browser.provider.SQLiteContentProvider.update(SQLiteContentProvider.java:154)
+E/AndroidRuntime(23043): 	at android.content.ContentProvider$Transport.update(ContentProvider.java:287)
+E/AndroidRuntime(23043): 	at android.content.ContentResolver.update(ContentResolver.java:1316)
+E/AndroidRuntime(23043): 	at com.android.browser.DataController$DataControllerHandler.doUpdateHistoryTitle(DataController.java:298)
+E/AndroidRuntime(23043): 	at com.android.browser.DataController$DataControllerHandler.handleMessage(DataController.java:171)
+E/AndroidRuntime(23043): 	at com.android.browser.DataController$DataControllerHandler.run(DataController.java:146)
+W/ActivityManager( 2210):   Force finishing activity com.android.browser/.BrowserActivity
+D/dalvikvm(23043): GC_CONCURRENT freed 205K, 8% free 10834K/11744K, paused 3ms+2ms, total 27ms
+E/DropBoxManagerService( 2210): Can't write: system_app_crash
+E/DropBoxManagerService( 2210): java.io.FileNotFoundException: /data/system/dropbox/drop179.tmp: open failed: EROFS (Read-only file system)
+E/DropBoxManagerService( 2210): 	at libcore.io.IoBridge.open(IoBridge.java:417)
+E/DropBoxManagerService( 2210): 	at java.io.FileOutputStream.<init>(FileOutputStream.java:88)
+E/DropBoxManagerService( 2210): 	at java.io.FileOutputStream.<init>(FileOutputStream.java:73)
+E/DropBoxManagerService( 2210): 	at com.android.server.DropBoxManagerService.add(DropBoxManagerService.java:211)
+E/DropBoxManagerService( 2210): 	at android.os.DropBoxManager.addText(DropBoxManager.java:272)
+E/DropBoxManagerService( 2210): 	at com.android.server.am.ActivityManagerService$17.run(ActivityManagerService.java:9937)
+E/DropBoxManagerService( 2210): Caused by: libcore.io.ErrnoException: open failed: EROFS (Read-only file system)
+E/DropBoxManagerService( 2210): 	at libcore.io.Posix.open(Native Method)
+E/DropBoxManagerService( 2210): 	at libcore.io.BlockGuardOs.open(BlockGuardOs.java:110)
+E/DropBoxManagerService( 2210): 	at libcore.io.IoBridge.open(IoBridge.java:401)
+E/DropBoxManagerService( 2210): 	... 5 more
+E/SQLiteDatabase(23043): Failed to open database '/data/data/com.android.browser/databases/browser2.db'.
+E/SQLiteDatabase(23043): android.database.sqlite.SQLiteException: not an error (code 0): Could not open the database in read/write mode.
+E/SQLiteDatabase(23043): 	at android.database.sqlite.SQLiteConnection.nativeOpen(Native Method)
+E/SQLiteDatabase(23043): 	at android.database.sqlite.SQLiteConnection.open(SQLiteConnection.java:209)
+E/SQLiteDatabase(23043): 	at android.database.sqlite.SQLiteConnection.open(SQLiteConnection.java:193)
+E/SQLiteDatabase(23043): 	at android.database.sqlite.SQLiteConnectionPool.openConnectionLocked(SQLiteConnectionPool.java:463)
+E/SQLiteDatabase(23043): 	at android.database.sqlite.SQLiteConnectionPool.open(SQLiteConnectionPool.java:185)
+E/SQLiteDatabase(23043): 	at android.database.sqlite.SQLiteConnectionPool.open(SQLiteConnectionPool.java:177)
+E/SQLiteDatabase(23043): 	at android.database.sqlite.SQLiteDatabase.openInner(SQLiteDatabase.java:804)
+E/SQLiteDatabase(23043): 	at android.database.sqlite.SQLiteDatabase.open(SQLiteDatabase.java:789)
+E/SQLiteDatabase(23043): 	at android.database.sqlite.SQLiteDatabase.openDatabase(SQLiteDatabase.java:694)
+E/SQLiteDatabase(23043): 	at android.app.ContextImpl.openOrCreateDatabase(ContextImpl.java:948)
+E/SQLiteDatabase(23043): 	at android.content.ContextWrapper.openOrCreateDatabase(ContextWrapper.java:256)
+E/SQLiteDatabase(23043): 	at android.database.sqlite.SQLiteOpenHelper.getDatabaseLocked(SQLiteOpenHelper.java:224)
+E/SQLiteDatabase(23043): 	at android.database.sqlite.SQLiteOpenHelper.getWritableDatabase(SQLiteOpenHelper.java:164)
+E/SQLiteDatabase(23043): 	at com.android.browser.provider.SQLiteContentProvider.delete(SQLiteContentProvider.java:178)
+E/SQLiteDatabase(23043): 	at android.content.ContentProvider$Transport.delete(ContentProvider.java:273)
+E/SQLiteDatabase(23043): 	at android.content.ContentResolver.delete(ContentResolver.java:1282)
+E/SQLiteDatabase(23043): 	at com.android.browser.Controller$PruneThumbnails.run(Controller.java:388)
+E/SQLiteDatabase(23043): 	at java.util.concurrent.ThreadPoolExecutor.runWorker(ThreadPoolExecutor.java:1112)
+E/SQLiteDatabase(23043): 	at java.util.concurrent.ThreadPoolExecutor$Worker.run(ThreadPoolExecutor.java:587)
+E/SQLiteDatabase(23043): 	at java.lang.Thread.run(Thread.java:841)
+W/dalvikvm(23043): threadid=12: thread exiting with uncaught exception (group=0x41573b90)
+I/Process (23043): Sending signal. PID: 23043 SIG: 9
+I/WindowManager( 2210): Screenshot max retries 4 of Token{42882690 ActivityRecord{4232e910 u0 com.android.browser/.BrowserActivity t31 f}} appWin=Window{422dc108 u0 Starting com.android.browser} drawState=4
+W/WindowManager( 2210): Screenshot failure taking screenshot for (1920x1200) to layer 21010
+W/UsageStats( 2210): Failed to persist new stats
+W/ActivityManager( 2210): Exception thrown during pause
+W/ActivityManager( 2210): android.os.DeadObjectException
+W/ActivityManager( 2210): 	at android.os.BinderProxy.transact(Native Method)
+W/ActivityManager( 2210): 	at android.app.ApplicationThreadProxy.schedulePauseActivity(ApplicationThreadNative.java:660)
+W/ActivityManager( 2210): 	at com.android.server.am.ActivityStack.startPausingLocked(ActivityStack.java:756)
+W/ActivityManager( 2210): 	at com.android.server.am.ActivityStack.finishActivityLocked(ActivityStack.java:2411)
+W/ActivityManager( 2210): 	at com.android.server.am.ActivityStack.finishTopRunningActivityLocked(ActivityStack.java:2282)
+W/ActivityManager( 2210): 	at com.android.server.am.ActivityStackSupervisor.finishTopRunningActivityLocked(ActivityStackSupervisor.java:2018)
+W/ActivityManager( 2210): 	at com.android.server.am.ActivityManagerService.handleAppCrashLocked(ActivityManagerService.java:9468)
+W/ActivityManager( 2210): 	at com.android.server.am.ActivityManagerService.makeAppCrashingLocked(ActivityManagerService.java:9363)
+W/ActivityManager( 2210): 	at com.android.server.am.ActivityManagerService.crashApplication(ActivityManagerService.java:10005)
+W/ActivityManager( 2210): 	at com.android.server.am.ActivityManagerService.handleApplicationCrashInner(ActivityManagerService.java:9557)
+W/ActivityManager( 2210): 	at com.android.server.am.ActivityManagerService.handleApplicationCrash(ActivityManagerService.java:9539)
+W/ActivityManager( 2210): 	at android.app.ActivityManagerNative.onTransact(ActivityManagerNative.java:1311)
+W/ActivityManager( 2210): 	at com.android.server.am.ActivityManagerService.onTransact(ActivityManagerService.java:2080)
+W/ActivityManager( 2210): 	at android.os.Binder.execTransact(Binder.java:404)
+W/ActivityManager( 2210): 	at dalvik.system.NativeStart.run(Native Method)
+I/ActivityManager( 2210): Process com.android.browser (pid 23043) has died.
+D/bsthal  ( 2210): mPendingEvent.light = 160.000000
+W/AudioFlinger( 1308): write blocked for 589 msecs, 39 delayed writes, thread 0xb501b008
+D/bsthal  ( 2210): mPendingEvent.light = 225.000000
+D/bsthal  ( 2210): mPendingEvent.light = 225.000000
+W/InputMethodManagerService( 2210): Window already focused, ignoring focus gain of: com.android.internal.view.IInputMethodClient$Stub$Proxy@428a4930 attribute=null, token = android.os.BinderProxy@42181bc8

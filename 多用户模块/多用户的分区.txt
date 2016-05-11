@@ -1,0 +1,163 @@
+Content-Type: text/x-zim-wiki
+Wiki-Format: zim 0.4
+Creation-Date: 2014-03-04T10:20:55+08:00
+
+====== 多用户的分区 ======
+Created Tuesday 04 March 2014
+
+============================================================
+
+==== 挂载点与挂载方式 ====
+文件：init.sun6i.rc，多用户必须使用谷歌默认的挂载方式
+
+== 我们原来使用的挂载方法 ==
+	export EXTERNAL_STORAGE /mnt/sdcard
+	mkdir /mnt/sdcard 0700 system system
+	symlink /mnt/sdcard /sdcard
+	symlink /mnt/sdcard /storage/sdcard0
+
+	mkdir /mnt/extsd 0700 system system
+	symlink /mnt/extsd  /storage/extsd
+	symlink /mnt/sdcard /storage/sdcard1
+
+	mkdir /mnt/usbhost1 0700 system system
+	symlink /mnt/usbhost1  /storage/usbhost1
+	symlink /mnt/usbhost1 /storage/sdcard2
+
+	mount debugfs debugfs /sys/kernel/debug
+	mkdir /databk 0700 root  system
+
+
+== 多用户使用谷歌默认的挂载方法 ==
+        mkdir /mnt/shell/emulated 0700 shell shell
+        mkdir /storage/emulated 0555 root root
+
+        export EXTERNAL_STORAGE /storage/emulated/legacy
+        export EMULATED_STORAGE_SOURCE /mnt/shell/emulated
+        export EMULATED_STORAGE_TARGET /storage/emulated
+        #export MEDIA_STORAGE /mnt/media/sdcard
+
+        # Support legacy paths
+        symlink /storage/emulated/legacy /sdcard
+        symlink /storage/emulated/legacy /mnt/sdcard
+        symlink /storage/emulated/legacy /storage/sdcard0
+        symlink /mnt/shell/emulated/0 /storage/emulated/legacy
+
+	mkdir /mnt/extsd 0000 system system
+	mkdir /mnt/usbhost1 0000 system system
+	mount debugfs debugfs /sys/kernel/debug
+        mkdir /bootloader 0700 root system
+	mkdir /databk 0700 root  system
+	
+	
+	也许你会问，这个0和多用户有什么关系呢，那是因为多用户这个新特性，只在平板上才启用，在手机上会被禁用的（手机多用户的专利为诺基亚所有）。但是底层实现是一致的。 /mnt/shell/emulated 目录和 /storage/emulated 下的文件夹是一样的。（注意，这个/mnt/shell/emulated  不是挂载出来的）
+	
+	主用户的EXTERNAL_STORAGE目录为： /storage/emulated/legacy  -->** /mnt/shell/emulated/0**
+	添加新用户后，在 /storage/emulated/ 下没有查看到新增加的目录，有可能是权限问题(0555,无读权限)
+	                                   在   **/mnt/shell/emulated/**  下面有增加 10、11、12 等目录
+	可以看出，新用户与主用户共享 EXTERNAL_STORAGE， 但是各个用户的内容都是独立的，保密的，各自有一个文件系统
+	
+	
+	由于作者没有平板升级到4.2，所以只是推测，/mnt/shell/ 是为了多用户准备的，因为linux的多用户是基于shell实现的。
+
+
+===============================================================================================
+
+==== 分区情况 ====
+
+**多用户                                                        3584                                                     单用户                                                                       7680 **
+bootloader        mmcblk0p2/nanda                   32                                                                         bootloader        mmcblk0p2/nanda                                     32
+env                          mmcblk0p5/nandb                   32                                                                         env                          mmcblk0p5/nandb                                     32
+boot                       mmcblk0p6/nandc                   32                                                                         boot                       mmcblk0p6/nandc                                      32
+system                 mmcblk0p7/nandd                    1536                                                                   system                 mmcblk0p7/nandd                                      1536
+                                                                                                                                                                             __data                       mmcblk0p8/nande                                       4096__
+misc                       mmcblk0p8/nandf                     32                                                                         misc                       mmcblk0p9/nandf                                       32
+recovery              mmcblk0p9/nandg                    64                                                                         recovery              mmcblk0p10/nandg                                     64
+cache                     mmcblk0p10/nandh                 1536                                                                   cache                     mmcblk0p11/nandh                                    1536  
+databk                 mmcblk0p11/nandi, data image backup                 256                            databk                 mmcblk0p12/nandi, data image backup              256
+private                 mmcblk0p13/nandj, sn                                                       32                              private                 mmcblk0p13/nandj, sn                                                    32
+private2              mmcblk0p14/nandk, data image private                 32                             private2              mmcblk0p14/nandk, data image private               32
+UDISK                   mmcblk0p1/nandl, UDISK                                                                                   UDISK                   mmcblk0p1/nandl, UDISK
+
+可知**单用户多了个data分区**
+
+mmcblk0pxx 指整个NAND
+mmcblk1pxx 指SD外卡
+
+== 多用户 ==
+shell@F1-D4:/ $ mount
+rootfs / rootfs ro,seclabel,relatime 0 0
+tmpfs /dev tmpfs rw,seclabel,nosuid,relatime,mode=755 0 0
+devpts /dev/pts devpts rw,seclabel,relatime,mode=600 0 0
+proc /proc proc rw,relatime 0 0
+sysfs /sys sysfs rw,seclabel,relatime 0 0
+selinuxfs /sys/fs/selinux selinuxfs rw,relatime 0 0
+none /sys/fs/cgroup tmpfs rw,seclabel,relatime,mode=750,gid=1000 0 0
+tmpfs /mnt/secure tmpfs rw,seclabel,relatime,mode=700 0 0
+tmpfs /mnt/asec tmpfs rw,seclabel,relatime,mode=755,gid=1000 0 0
+tmpfs /mnt/obb tmpfs rw,seclabel,relatime,mode=755,gid=1000 0 0
+none /dev/cpuctl cgroup rw,relatime,cpu 0 0
+debugfs /sys/kernel/debug debugfs rw,relatime 0 0
+/dev/block/by-name/system /system ext4 ro,seclabel,relatime,user_xattr,barrier=1,data=ordered 0 0
+/dev/block/by-name/cache /cache ext4 rw,seclabel,nosuid,nodev,noatime,user_xattr,barrier=1,nomblk_io_submit,data=ordered 0 0
+**/dev/block/by-name/UDISK /data** ext4 rw,seclabel,nosuid,nodev,noatime,user_xattr,barrier=1,nomblk_io_submit,data=ordered,noauto_da_alloc 0 0
+/dev/block/by-name/private /snsn ext4 rw,seclabel,nosuid,nodev,noatime,user_xattr,barrier=1,nomblk_io_submit,data=ordered 0 0
+/dev/fuse **/mnt/shell/emulated** fuse rw,nosuid,nodev,relatime,user_id=1023,group_id=1023,default_permissions,allow_other 0 0
+/dev/block/vold/179:49 /mnt/extsd vfat rw,dirsync,nosuid,nodev,noexec,relatime,uid=1000,gid=1015,fmask=0702,dmask=0702,allow_utime=0020,codepage=cp437,iocharset=ascii,shortname=mixed,utf8,errors=continue 0 0
+
+
+shell@F1-D4:/ $ df
+Filesystem               Size     Used     Free   Blksize
+/dev                   797.9M   128.0K   797.8M   4096
+/sys/fs/cgroup         797.9M    12.0K   797.9M   4096
+/mnt/secure            797.9M     0.0K   797.9M   4096
+/mnt/asec              797.9M     0.0K   797.9M   4096
+/mnt/obb               797.9M     0.0K   797.9M   4096
+/system                756.8M   598.1M   158.7M   4096
+/cache                 756.8M    13.6M   743.2M   4096
+**/data                   12.7G**   **212.2M**    12.5G   4096
+/snsn                   15.8M     4.1M    11.7M   4096
+**/mnt/shell/emulated     12.7G** **  212.2M **   12.5G   4096
+/mnt/extsd               3.7G     2.5G     1.2G   32768
+
+
+**多用户的 /data 与 /mnt/shell/emulated 大小一样， 使用fuse技术将/data/media虚拟成为一个叫做/dev/fuse的设备, 同时挂载在  /mnt/shell/emulated 目录**
+/data/media/0 与 /mnt/shell/emulated/0 目录下的文件一样
+
+== 单用户 ==
+shell@fiber-w02:/ $ mount
+rootfs / rootfs ro,relatime 0 0
+tmpfs /dev tmpfs rw,nosuid,relatime,mode=755 0 0
+devpts /dev/pts devpts rw,relatime,mode=600 0 0
+proc /proc proc rw,relatime 0 0
+sysfs /sys sysfs rw,relatime 0 0
+none /sys/fs/cgroup tmpfs rw,relatime,mode=750,gid=1000 0 0
+tmpfs /mnt/secure tmpfs rw,relatime,mode=700 0 0
+tmpfs /mnt/asec tmpfs rw,relatime,mode=755,gid=1000 0 0
+tmpfs /mnt/obb tmpfs rw,relatime,mode=755,gid=1000 0 0
+none /dev/cpuctl cgroup rw,relatime,cpu 0 0
+debugfs /sys/kernel/debug debugfs rw,relatime 0 0
+/dev/block/by-name/system /system ext4 ro,relatime,user_xattr,barrier=1,data=ordered 0 0
+/dev/block/by-name/cache /cache ext4 rw,nosuid,nodev,noatime,user_xattr,barrier=1,nomblk_io_submit,data=ordered 0 0
+**/dev/block/by-name/data /data** ext4 rw,nosuid,nodev,noatime,user_xattr,barrier=1,nomblk_io_submit,data=ordered,noauto_da_alloc 0 0
+/dev/block/by-name/private2 /snsn ext4 rw,nosuid,nodev,noatime,user_xattr,barrier=1,nomblk_io_submit,data=ordered 0 0
+/dev/block/vold/179:1 /mnt/sdcard vfat rw,dirsync,nosuid,nodev,noexec,relatime,uid=1000,gid=1015,fmask=0007,dmask=0007,allow_utime=0020,codepage=cp437,iocharset=ascii,shortname=mixed,utf8,errors=continue 0 0
+/dev/block/vold/179:1 /mnt/secure/asec vfat rw,dirsync,nosuid,nodev,noexec,relatime,uid=1000,gid=1015,fmask=0007,dmask=0007,allow_utime=0020,codepage=cp437,iocharset=ascii,shortname=mixed,utf8,errors=continue 0 0
+/dev/block/vold/179:49 /mnt/extsd vfat rw,dirsync,nosuid,nodev,noexec,relatime,uid=1000,gid=1015,fmask=0007,dmask=0007,allow_utime=0020,codepage=cp437,iocharset=ascii,shortname=mixed,utf8,errors=continue 0 0
+
+shell@fiber-w02:/ $ df
+Filesystem               Size     Used     Free   Blksize
+/dev                   798.1M   128.0K   797.9M   4096
+/sys/fs/cgroup         798.1M    12.0K   798.1M   4096
+/mnt/secure            798.1M     0.0K   798.1M   4096
+/mnt/asec              798.1M     0.0K   798.1M   4096
+/mnt/obb               798.1M     0.0K   798.1M   4096
+/system                756.8M   581.6M   175.1M   4096
+/cache                 756.8M    13.6M   743.2M   4096
+**/data **                   2.0G   136.0M     1.8G   4096
+/snsn                   15.8M     4.1M    11.7M   4096
+/mnt/sdcard             10.9G   132.0K    10.9G   4096
+/mnt/secure/asec: Permission denied
+/mnt/extsd               3.7G     3.1G   615.2M   32768
+
+

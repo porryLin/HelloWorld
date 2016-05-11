@@ -1,0 +1,205 @@
+Content-Type: text/x-zim-wiki
+Wiki-Format: zim 0.4
+Creation-Date: 2014-03-04T09:31:31+08:00
+
+====== IBinder对象在进程间的传递形式 ======
+Created Tuesday 04 March 2014
+
+http://www.linuxidc.com/Linux/2011-08/40720p2.htm
+
+当service经常被远程调用时，我们常常用到aidl来定一个接口供service和client来使用，这个其实就是使用Binder机制的IPC通信。当client bind service成功之后，系统AM会调用回调函数onServiceConnected将service的IBinder传递给client， client再通过调用aidl生成的asInterface()方法获得service的调用接口，此时一个bind过程结束了，我们在client端就可以远程调用service的方法了。例如
+
+    public void onServiceConnected(ComponentName className,   IBinder service) {  
+           mSecondaryService = ISecondary.Stub.asInterface(service);  
+    }  
+
+
+    我们再看aidl生成的asInterface()的定义
+
+    public static com.example.Android.apis.app.ISecondary asInterface(android.os.IBinder obj)  
+    {  
+          if ((obj==null)) {  
+                  return null;  
+           }  
+          android.os.IInterface iin = (android.os.IInterface)obj.queryLocalInterface(DESCRIPTOR);  
+          if (((iin!=null)&&(iin instanceof com.example.android.apis.app.ISecondary))) {  
+                      return ((com.example.android.apis.app.ISecondary)iin);  
+           }  
+           return new com.example.android.apis.app.ISecondary.Stub.Proxy(obj);  
+    }  
+
+
+    首先，asInterface()会去query传入的IBinder对象是否有LocalInterface,这里的LocalInterface是指传入的IBinder是service本身的引用还是代理。
+    1.当asInterface的输入的IBinder为server的引用(Binder类型)时，则直接返回该引用，那么此时调用server的方法不为IPC通信，而是直接的函数调用；
+    2.当asInterface的输入的IBinder为server的代理(BinderProxy类型)时，则需要创建该server的代理并返回，此时调用server的方法为IPC通信。
+
+    那么以上两种情况发生的条件是什么呢？这里我们先给出答案，然后再深入到代码中去研究2种不同的情况。
+    1.当client和service处在相同进程中的话，asInterface的输入的IBinder为server的引用时；
+    2.当client和service处在不同进程中的话，asInterface的输入的IBinder为server的代理。
+
+在研究上述实现代码之前，我们先介绍一下IBinder作为参数使用IPC进程间传递时的状态变化，其实这个就是我们本篇文章的核心内容，理解了这个机制，我们就会很容易理解我们上述的那个命题的原理了。
+
+
+    模型
+
+
+    IBinder作为参数在IPC通信中进行传递，可能会使某些人困惑，IBinder不就是IPC通信的媒介吗？怎么还会被作为参数来传递呢，这样理解就有点狭隘了，拿native层的IPC来说，client从SM(service manager)中获取service端的Interface，这个Interface同时也是IBinder类型，当C/S两端需要双工通信时，即所谓的Service端需要反过来调用Client端的方法时，就需要client通过前述的那个Interface将Client端的IBinder传递给Service。
+    拿Java应用层的Service来说更是如此，如本文的这个命题，下面我们会分析，首先来介绍原理性的知识。
+    Binder IPC通信中，Binder是通信的媒介，Parcel是通信的内容。方法远程调用过程中，其参数都被打包成Parcel的形式来传递的。IBinder对象也不例外，我们看一下Parcel类中的writeStrongBinder()(由于java层和native层的方法是相对应的，java层只是native的封装，因此我们只需要看native的即可),
+
+    status_t Parcel::writeStrongBinder(const sp<IBinder>& val)  
+    {  
+        return flatten_binder(ProcessState::self(), val, this);  
+    }  
+
+ 
+
+    status_t flatten_binder(const sp<ProcessState>& proc,  
+        const sp<IBinder>& binder, Parcel* out)  
+    {  
+        flat_binder_object obj;  
+          
+        obj.flags = 0x7f | FLAT_BINDER_FLAG_ACCEPTS_FDS;  
+        if (binder != NULL) {  
+            IBinder *local = binder->localBinder();  
+            if (!local) {  
+                BpBinder *proxy = binder->remoteBinder();  
+                if (proxy == NULL) {  
+                    LOGE("null proxy");  
+                }  
+                const int32_t handle = proxy ? proxy->handle() : 0;  
+                obj.type = BINDER_TYPE_HANDLE;  
+                obj.handle = handle;  
+                obj.cookie = NULL;  
+            } else {  
+                obj.type = BINDER_TYPE_BINDER;  
+                obj.binder = local->getWeakRefs();  
+                obj.cookie = local;  
+            }  
+        } else {  
+            obj.type = BINDER_TYPE_BINDER;  
+            obj.binder = NULL;  
+            obj.cookie = NULL;  
+        }  
+          
+        return finish_flatten_binder(binder, obj, out);  
+    }  
+
+上面代码分下面2种情况
+1. 如果传递的IBinder为service的本地IBinder对象，那么该IBinder对象为BBinder类型的，因此上面的local不为NULL，故binder type为BINDER_TYPE_BINDER。
+2. 如果传递的IBinder对象代理IBinder对象，那么binder type则为BINDER_TYPE_HANDLE。
+
+client端将方法调用参数打包成Parcel之后，会发送到内核的Binder模块，因此下面我们将分析一下内核的Binder模块的处理。
+
+kernel/drivers/staging/android/Binder.c中的函数binder_transaction()
+
+ 
+
+    switch (fp->type) {  
+            case BINDER_TYPE_BINDER:  
+            case BINDER_TYPE_WEAK_BINDER: {  
+                struct binder_ref *ref;  
+                struct binder_node *node = binder_get_node(proc, fp->binder);  
+                if (node == NULL) {  
+                    node = binder_new_node(proc, fp->binder, fp->cookie);  
+                    if (node == NULL) {  
+                        return_error = BR_FAILED_REPLY;  
+                        goto err_binder_new_node_failed;  
+                    }  
+                    node->min_priority = fp->flags & FLAT_BINDER_FLAG_PRIORITY_MASK;  
+                    node->accept_fds = !!(fp->flags & FLAT_BINDER_FLAG_ACCEPTS_FDS);  
+                }  
+                if (fp->cookie != node->cookie) {  
+                    binder_user_error("binder: %d:%d sending u%p "  
+                        "node %d, cookie mismatch %p != %p\n",  
+                        proc->pid, thread->pid,  
+                        fp->binder, node->debug_id,  
+                        fp->cookie, node->cookie);  
+                    goto err_binder_get_ref_for_node_failed;  
+                }  
+                ref = binder_get_ref_for_node(target_proc, node);  
+                if (ref == NULL) {  
+                    return_error = BR_FAILED_REPLY;  
+                    goto err_binder_get_ref_for_node_failed;  
+                }  
+                if (fp->type == BINDER_TYPE_BINDER)  
+                    fp->type = BINDER_TYPE_HANDLE;  
+                else  
+                    fp->type = BINDER_TYPE_WEAK_HANDLE;  
+                fp->handle = ref->desc;  
+                binder_inc_ref(ref, fp->type == BINDER_TYPE_HANDLE,  
+                           &thread->todo);  
+      
+                binder_debug(BINDER_DEBUG_TRANSACTION,  
+                         "        node %d u%p -> ref %d desc %d\n",  
+                         node->debug_id, node->ptr, ref->debug_id,  
+                         ref->desc);  
+            } break;  
+            case BINDER_TYPE_HANDLE:  
+            case BINDER_TYPE_WEAK_HANDLE: {  
+                struct binder_ref *ref = binder_get_ref(proc, fp->handle);  
+                if (ref == NULL) {  
+                    binder_user_error("binder: %d:%d got "  
+                        "transaction with invalid "  
+                        "handle, %ld\n", proc->pid,  
+                        thread->pid, fp->handle);  
+                    return_error = BR_FAILED_REPLY;  
+                    goto err_binder_get_ref_failed;  
+                }  
+                if (ref->node->proc == target_proc) {  
+                    if (fp->type == BINDER_TYPE_HANDLE)  
+                        fp->type = BINDER_TYPE_BINDER;  
+                    else  
+                        fp->type = BINDER_TYPE_WEAK_BINDER;  
+                    fp->binder = ref->node->ptr;  
+                    fp->cookie = ref->node->cookie;  
+                    binder_inc_node(ref->node, fp->type == BINDER_TYPE_BINDER, 0, NULL);  
+                    binder_debug(BINDER_DEBUG_TRANSACTION,  
+                             "        ref %d desc %d -> node %d u%p\n",  
+                             ref->debug_id, ref->desc, ref->node->debug_id,  
+                             ref->node->ptr);  
+                } else {  
+                    struct binder_ref *new_ref;  
+                    new_ref = binder_get_ref_for_node(target_proc, ref->node);  
+                    if (new_ref == NULL) {  
+                        return_error = BR_FAILED_REPLY;  
+                        goto err_binder_get_ref_for_node_failed;  
+                    }  
+                    fp->handle = new_ref->desc;  
+                    binder_inc_ref(new_ref, fp->type == BINDER_TYPE_HANDLE, NULL);  
+                    binder_debug(BINDER_DEBUG_TRANSACTION,  
+                             "        ref %d desc %d -> ref %d desc %d (node %d)\n",  
+                             ref->debug_id, ref->desc, new_ref->debug_id,  
+                             new_ref->desc, ref->node->debug_id);  
+                }  
+            } break;  
+
+    上面代码也分为了2种不同的分支：
+    1. 传来的IBinder类型为BINDER_TYPE_BINDER时，会将binder type值为BINDER_TYPE_HANDLE；
+    2. 传来的IBinder类型为BINDER_TYPE_HANDLE时，会判断该IBinder的实体被定义的进程(也就是该IBinder代表的server被定义的进程)与目标进程(也即IBinder被传递的目标进程)是否相同，如果相同，则将该IBinder type转化为BINDER_TYPE_BINDER，同时使其变为IBinder本地对象的引用。
+
+通过上述的处理，我们可以得出下面结论：
+    1.不同进程间传递的IBinder本地对象引用(BINDER_TYPE_BINDER类型)，在内核中均会被转化为代理(BINDER_TYPE_HANDLE类型，目前只是改变其类型，在IBinder接收方会根据其类型转化为代理)；
+    2.由于只有不同进程间传递才会将IBinder发送到Binder模块，所以IBinder在多级传递的过程中，有下面2种可能 进程A-->进程B-->进程A，进程A-->进程B-->进程C；其对应的IBinder类型就是BINDER_TYPE_BINDER-->BINDER_TYPE_HANDLE-->BINDER_TYPE_BINDER,BINDER_TYPE_BINDER-->BINDER_TYPE_HANDLE-->BINDER_TYPE_HANDLE。
+    根据上述结论，我们就会明白Binder IPC通信过程中，相同进程间的IBinder本地对象，如果不经过不同进程的传递，那么IBinder就不会传给内核的Binder模块，因此它一直是IBinder的本地对象；如果在进程间传递，即使通过再多的进程间的传递，只要最后的目标是同一个进程的component，那么他得到的IBinder对象就是本地的对象。
+
+
+
+
+
+套用模型
+    理解了上面的这个模型，我们再回过头看最开始的那个命题结论就很好理解了
+    1.当client和service处在相同进程中的话，asInterface的输入的IBinder为server的引用时；
+    2.当client和service处在不同进程中的话，asInterface的输入的IBinder为server的代理。
+
+    假如某一个component(例如一个Acitivity)处在进程A，它需要bind一个service，而该service处在进程B中，我们简单介绍一下bind的过程。
+    1. 进程A向AM(进程system_server)发出Bind请求，并将回调ServiceConnection提供给AM(传递给AM的也是一个接口(IServiceConnection)，因为AM与A之间是双工通信，所以A需要向AM提供IBinder)；
+    2. AM启动进程B并创建service，进程B将service的IBinder对象传递给AM，AM再通过IServiceConnection传递给进程A。所以service的IBinder对象的传递路径为：进程B-->进程system_server(AM)-->进程A。
+
+    套用上面的模型，就会得出本文最开始命题的结论。
+
+    便于理解下图给出里bind 一个service的过程
+
+
+
+

@@ -1,0 +1,422 @@
+Content-Type: text/x-zim-wiki
+Wiki-Format: zim 0.4
+Creation-Date: 2014-03-28T15:14:49+08:00
+
+====== 多次插拔SD卡导致touch暂时失灵 ======
+Created Friday 28 March 2014
+=====================================================
+
+=== 问题描述： ===
+
+[SD Card]拔出SD卡短時間內(6S左右)不能Touch。
+Steps:
+1.開機
+2.進入設置->存儲
+3.插入SD卡
+4.拔出SD卡
+5.查看存儲狀態變化并Touch機臺
+
+Expected Result:
+SD卡存儲狀態消失，Touch機臺正常
+
+Actual Result:
+1.拔出SD卡10次左右出現一次，機臺短時間內(6S左右)不能Touch。SQA1&SQA2機臺均出現。
+2.SQA1機臺出現一次拔出SD卡后，存儲狀態不會消失，必須開關機，沒有復現過。
+
+經實驗後
+2G的卡無此現象,8G的卡容易覆現.
+問題發生時,查看Touch log,確認驅動持續有報座標點.
+
+
+== 解决方法： ==
+
+Volume.cpp
+将retries = 60 改为 retries =5
+
+
+=== log信息： ===
+
+W/MediaScanner(14722): Error opening directory '/mnt/extsd/RL1/', skipping: I/O error.
+W/MediaScanner(14722): Error opening directory '/mnt/extsd/CS1/', skipping: I/O error.
+W/MediaScanner(14722): Error opening directory '/mnt/extsd/.Trash-1001/', skipping: I/O error.
+W/MediaScanner(14722): Error opening directory '/mnt/extsd/DCIM/', skipping: I/O error.
+W/MediaScanner(14722): Error opening directory '/mnt/extsd/.Trash-1000/', skipping: I/O error.
+W/System.err(14722): java.io.IOException: read failed: EIO (I/O error)
+W/System.err(14722): 	at libcore.io.IoBridge.read(IoBridge.java:443)
+W/System.err(14722): 	at java.io.FileInputStream.read(FileInputStream.java:179)
+W/System.err(14722): 	at android.graphics.BitmapFactory.nativeDecodeStream(Native Method)
+W/System.err(14722): 	at android.graphics.BitmapFactory.decodeStreamInternal(BitmapFactory.java:601)
+W/System.err(14722): 	at android.graphics.BitmapFactory.decodeStream(BitmapFactory.java:577)
+W/System.err(14722): 	at android.graphics.BitmapFactory.decodeFile(BitmapFactory.java:357)
+W/System.err(14722): 	at android.media.MediaScanner$MyMediaScannerClient.processImageFile(MediaScanner.java:737)
+W/System.err(14722): 	at android.media.MediaScanner$MyMediaScannerClient.doScanFile(MediaScanner.java:573)
+W/System.err(14722): 	at android.media.MediaScanner$MyMediaScannerClient.scanFile(MediaScanner.java:521)
+W/System.err(14722): 	at android.media.MediaScanner.processDirectory(Native Method)
+W/System.err(14722): 	at android.media.MediaScanner.scanDirectories(MediaScanner.java:1316)
+W/System.err(14722): 	at com.android.providers.media.MediaScannerService.scan(MediaScannerService.java:105)
+W/System.err(14722): 	at com.android.providers.media.MediaScannerService.access$300(MediaScannerService.java:49)
+W/System.err(14722): 	at com.android.providers.media.MediaScannerService$ServiceHandler.handleMessage(MediaScannerService.java:271)
+W/System.err(14722): 	at android.os.Handler.dispatchMessage(Handler.java:102)
+W/System.err(14722): 	at android.os.Looper.loop(Looper.java:137)
+W/System.err(14722): 	at com.android.providers.media.MediaScannerService.run(MediaScannerService.java:186)
+W/System.err(14722): 	at java.lang.Thread.run(Thread.java:841)
+W/System.err(14722): Caused by: libcore.io.ErrnoException: read failed: EIO (I/O error)
+W/System.err(14722): 	at libcore.io.Posix.readBytes(Native Method)
+W/System.err(14722): 	at libcore.io.Posix.read(Posix.java:128)
+W/System.err(14722): 	at libcore.io.BlockGuardOs.read(BlockGuardOs.java:149)
+W/System.err(14722): 	at libcore.io.IoBridge.read(IoBridge.java:433)
+W/System.err(14722): 	... 17 more
+D/skia    (14722): ---- read threw an exception
+
+W/System.err(14722): java.io.IOException: read failed: EIO (I/O error)
+W/System.err(14722): 	at android.graphics.BitmapFactory.nativeDecodeStream(Native Method)
+W/System.err(14722): 	at android.graphics.BitmapFactory.decodeStreamInternal(BitmapFactory.java:601)
+W/System.err(14722): 	at android.graphics.BitmapFactory.decodeStream(BitmapFactory.java:577)
+W/System.err(14722): 	at android.graphics.BitmapFactory.decodeFile(BitmapFactory.java:357)
+W/System.err(14722): 	at android.media.MediaScanner$MyMediaScannerClient.processImageFile(MediaScanner.java:737)
+W/System.err(14722): 	at android.media.MediaScanner$MyMediaScannerClient.doScanFile(MediaScanner.java:573)
+W/System.err(14722): 	at android.media.MediaScanner$MyMediaScannerClient.scanFile(MediaScanner.java:521)
+W/System.err(14722): 	at android.media.MediaScanner.processDirectory(Native Method)
+W/System.err(14722): 	at android.media.MediaScanner.scanDirectories(MediaScanner.java:1316)
+W/System.err(14722): 	at com.android.providers.media.MediaScannerService$ServiceHandler.handleMessage(MediaScannerService.java:271)
+W/System.err(14722): 	at java.lang.Thread.run(Thread.java:841)
+W/System.err(14722): 	at libcore.io.IoBridge.read(IoBridge.java:433)
+W/System.err(14722): 	at android.graphics.BitmapFactory.nativeDecodeStream(Native Method)
+W/System.err(14722): 	at android.graphics.BitmapFactory.decodeStreamInternal(BitmapFactory.java:601)
+W/System.err(14722): 	at android.graphics.BitmapFactory.decodeStream(BitmapFactory.java:577)
+W/System.err(14722): 	at android.graphics.BitmapFactory.decodeFile(BitmapFactory.java:357)
+W/System.err(14722): 	at android.media.MediaScanner$MyMediaScannerClient.doScanFile(MediaScanner.java:573)
+W/System.err(14722): 	at android.media.MediaScanner$MyMediaScannerClient.scanFile(MediaScanner.java:521)
+W/System.err(14722): 	at android.media.MediaScanner.processDirectory(Native Method)
+W/System.err(14722): 	at android.media.MediaScanner.scanDirectories(MediaScanner.java:1316)
+W/System.err(14722): 	at com.android.providers.media.MediaScannerService.scan(MediaScannerService.java:105)
+W/System.err(14722): 	at com.android.providers.media.MediaScannerService.run(MediaScannerService.java:186)
+W/System.err(14722): 	at libcore.io.Posix.readBytes(Native Method)
+W/System.err(14722): 	at libcore.io.IoBridge.read(IoBridge.java:443)
+W/System.err(14722): 	at android.graphics.BitmapFactory.decodeStreamInternal(BitmapFactory.java:601)
+W/System.err(14722): 	at android.graphics.BitmapFactory.decodeStream(BitmapFactory.java:577)
+W/System.err(14722): 	at android.graphics.BitmapFactory.decodeFile(BitmapFactory.java:357)
+W/System.err(14722): 	at android.media.MediaScanner$MyMediaScannerClient.doScanFile(MediaScanner.java:573)
+W/System.err(14722): 	at android.media.MediaScanner$MyMediaScannerClient.scanFile(MediaScanner.java:521)
+W/System.err(14722): 	at android.media.MediaScanner.processDirectory(Native Method)
+W/System.err(14722): 	at com.android.providers.media.MediaScannerService.access$300(MediaScannerService.java:49)
+W/System.err(14722): 	at com.android.providers.media.MediaScannerService.run(MediaScannerService.java:186)
+W/System.err(14722): 	at libcore.io.Posix.readBytes(Native Method)
+W/System.err(14722): 	at libcore.io.IoBridge.read(IoBridge.java:443)
+W/System.err(14722): 	at android.graphics.BitmapFactory.decodeStreamInternal(BitmapFactory.java:601)
+W/System.err(14722): 	at android.graphics.BitmapFactory.decodeStream(BitmapFactory.java:577)
+W/System.err(14722): 	at android.graphics.BitmapFactory.decodeFile(BitmapFactory.java:357)
+W/System.err(14722): 	at android.media.MediaScanner$MyMediaScannerClient.processImageFile(MediaScanner.java:737)
+W/System.err(14722): 	at android.media.MediaScanner$MyMediaScannerClient.doScanFile(MediaScanner.java:573)
+W/System.err(14722): 	at android.media.MediaScanner$MyMediaScannerClient.scanFile(MediaScanner.java:521)
+W/System.err(14722): 	at android.media.MediaScanner.processDirectory(Native Method)
+W/System.err(14722): 	at android.media.MediaScanner.scanDirectories(MediaScanner.java:1316)
+W/System.err(14722): 	at com.android.providers.media.MediaScannerService$ServiceHandler.handleMessage(MediaScannerService.java:271)
+W/System.err(14722): 	at com.android.providers.media.MediaScannerService.run(MediaScannerService.java:186)
+W/System.err(14722): 	at libcore.io.Posix.readBytes(Native Method)
+
+E/ProcessKiller( 1306): Process android.process.media (4589) has open file /mnt/extsd
+W/ProcessKiller( 1306): Sending SIGHUP to process 4589
+I/ActivityManager( 2103): Process android.process.media (pid 4589) has died.
+W/ActivityManager( 2103): Scheduling restart of crashed service com.android.providers.media/.MediaScannerService in 10590ms
+W/ActivityManager( 2103): Scheduling restart of crashed service com.android.providers.media/.MtpService in 1171200ms
+D/Zygote  ( 1312): Process 4589 terminated by signal (15)
+D/PhoneStatusBar( 2251): disable: < expand ICONS* alerts TICKER* system_info back home recent CLOCK* search >
+V/PanelView( 2251): animationTick called with dtms=0; nothing to do (h=79.96857 v=0.0)
+I/Vold    ( 1306): /mnt/extsd sucessfully unmounted
+I/Vold    ( 1306): /mnt/extsd unmounted successfully
+D/Vold    ( 1306): Volume extsd state changing 5 (Unmounting) -> 1 (Idle-Unmounted)
+D/DirectVolume( 1306): Crisis averted
+D/DirectVolume( 1306): Volume extsd /mnt/extsd disk 179:48 removed
+E/Vold    ( 1306): Volume extsd unmount request when not mounted
+D/Vold    ( 1306): Volume extsd state changing 1 (Idle-Unmounted) -> 0 (No-Media)
+D/Vold    ( 1306): Volume extsd state changing 0 (No-Media) -> 2 (Pending)
+D/Vold    ( 1306): Volume extsd state changing 2 (Pending) -> 1 (Idle-Unmounted)
+D/DirectVolume( 1306): Volume extsd /mnt/extsd partition 179:65 removed
+D/DirectVolume( 1306): Volume extsd /mnt/extsd disk 179:64 removed
+E/Vold    ( 1306): Volume extsd unmount request when not mounted
+D/Vold    ( 1306): Volume extsd state changing 1 (Idle-Unmounted) -> 0 (No-Media)
+D/MountService( 2103): volume state changed for /mnt/extsd (mounted -> unmounted)
+D/MountService( 2103): sendStorageIntent Intent { act=android.intent.action.MEDIA_UNMOUNTED dat=file:///mnt/extsd (has extras) } to UserHandle{-1}
+W/MountService( 2103): Duplicate state transition (unmounted -> unmounted) for /mnt/extsd
+D/MountService( 2103): sendStorageIntent Intent { act=unmounted dat=file:///mnt/extsd (has extras) } to UserHandle{-1}
+I/ActivityManager( 2103): Start proc android.process.media for broadcast com.android.providers.media/.MediaScannerReceiver: pid=4886 uid=10004 gids={50004, 1028, 1015, 1023, 1024, 2001, 3003, 3007}
+D/MountService( 2103): volume state changed for /mnt/extsd (unmounted -> removed)
+D/MountService( 2103): sendStorageIntent Intent { act=android.intent.action.MEDIA_REMOVED dat=file:///mnt/extsd (has extras) } to UserHandle{-1}
+D/MountService( 2103): volume state changed for /mnt/extsd (removed -> unmounted)
+D/MountService( 2103): sendStorageIntent Intent { act=android.intent.action.MEDIA_UNMOUNTED dat=file:///mnt/extsd (has extras) } to UserHandle{-1}
+W/MountService( 2103): Duplicate state transition (unmounted -> unmounted) for /mnt/extsd
+D/MountService( 2103): sendStorageIntent Intent { act=unmounted dat=file:///mnt/extsd (has extras) } to UserHandle{-1}
+D/Vold    ( 1306): mountVol /mnt/extsd
+D/Vold    ( 1306): storage_type =  primaryStorage = 1
+D/MountService( 2103): volume state changed for /mnt/extsd (unmounted -> removed)
+D/PhoneStatusBar( 2251): disable: < expand icons* alerts ticker* system_info back home recent clock* search >
+W/MountService( 2103): Insertion mount failed (-2)
+D/MountService( 2103): sendStorageIntent Intent { act=android.intent.action.MEDIA_REMOVED dat=file:///mnt/extsd (has extras) } to UserHandle{-1}
+W/InputMethodManagerService( 2103): Window already focused, ignoring focus gain of: com.android.internal.view.IInputMethodClient$Stub$Proxy@42b6b080 attribute=null, token = android.os.BinderProxy@42a63bd0
+D/MediaScannerReceiver( 4886): action: android.intent.action.MEDIA_UNMOUNTED path: /mnt/extsd
+D/MtpService( 4886): updating state; isCurrentUser=true, mMtpLocked=false
+D/MtpService( 4886): addStorageLocked 65537 /storage/emulated/0
+D/MtpService( 4886): updating state; isCurrentUser=true, mMtpLocked=false
+D/MtpService( 4886): starting MTP server in MTP mode
+D/MtpService( 4886): addStorageLocked 65537 /storage/emulated/0
+D/MediaScannerReceiver( 4886): action: android.intent.action.MEDIA_UNMOUNTED path: /mnt/extsd
+I/ActivityManager( 2103): Delay finish: com.google.android.music/.store.MediaStoreImportService$Receiver
+I/ActivityManager( 2103): Resuming delayed broadcast
+D/dalvikvm( 4886): GC_CONCURRENT freed 235K, 9% free 9178K/10076K, paused 5ms+4ms, total 66ms
+W/MediaScanner( 4886): Error opening directory '/mnt/extsd/', skipping: Permission denied.
+W/MediaScanner( 4886): Error opening directory '/mnt/usbhost1/', skipping: Permission denied.
+I/MediaStoreImporter( 3185): Update: incremental Added music: 0 Updated music: 0 Deleted music: 0 Created playlists: 0 Updated playlists: 0 Deleted playlists: 0 Inserted playlist items: 0 Deleted playlist items: 0 Removed orphaned playlist items: 0
+D/Vold    ( 1306): Volume extsd state changing 0 (No-Media) -> 2 (Pending)
+D/Vold    ( 1306): Volume extsd state changing 2 (Pending) -> 1 (Idle-Unmounted)
+D/MtpService( 4886): onStorageStateChanged /mnt/extsd removed -> unmounted
+D/MountService( 2103): volume state changed for /mnt/extsd (removed -> unmounted)
+D/MountService( 2103): sendStorageIntent Intent { act=android.intent.action.MEDIA_UNMOUNTED dat=file:///mnt/extsd (has extras) } to UserHandle{-1}
+D/MediaScannerReceiver( 4886): action: android.intent.action.MEDIA_UNMOUNTED path: /mnt/extsd
+D/Vold    ( 1306): mountVol /mnt/extsd
+D/Vold    ( 1306): storage_type =  primaryStorage = 1
+I/Vold    ( 1306): /dev/block/vold/179:49 being considered for volume extsd
+D/Vold    ( 1306): Volume extsd state changing 1 (Idle-Unmounted) -> 3 (Checking)
+I/Vold    ( 1306): Exfat::check
+D/MountService( 2103): volume state changed for /mnt/extsd (unmounted -> checking)
+I/fsck.exfat( 1306): exfatfsck 0.9.5
+D/MtpService( 4886): onStorageStateChanged /mnt/extsd unmounted -> checking
+I/fsck.exfat( 1306): ERROR: exFAT file system is not found.
+I/fsck.exfat( 1306): fsck.exfat terminated by exit(1)
+E/Vold    ( 1306): Filesystem check failed (unknown exit code 1)
+I/Vold    ( 1306): Fat::check /dev/block/vold/179:49
+D/MountService( 2103): sendStorageIntent Intent { act=android.intent.action.MEDIA_CHECKING dat=file:///mnt/extsd (has extras) } to UserHandle{-1}
+I/fsck_msdos( 1306): ** /dev/block/vold/179:49
+I/fsck_msdos( 1306): ** Phase 1 - Read and Compare FATs
+I/fsck_msdos( 1306): Attempting to allocate 472 KB for FAT
+I/fsck_msdos( 1306): Attempting to allocate 472 KB for FAT
+I/fsck_msdos( 1306): ** Phase 2 - Check Cluster Chains
+I/fsck_msdos( 1306): ** Phase 3 - Checking Directories
+I/fsck_msdos( 1306): ** Phase 4 - Checking for Lost Files
+I/fsck_msdos( 1306): 178 files, 1304320 free (40760 clusters)
+I/Vold    ( 1306): Filesystem check completed OK
+D/Vold    ( 1306): Volume extsd state changing 3 (Checking) -> 4 (Mounted)
+I/Vold    ( 1306): Volume::mountVol: getState=4, State_Mounted=4
+D/MtpService( 4886): onStorageStateChanged /mnt/extsd checking -> mounted
+D/MountService( 2103): volume state changed for /mnt/extsd (checking -> mounted)
+D/MtpService( 4886): addStorageLocked 131073 /mnt/extsd
+W/ResourceType( 2251): No known package when getting value for resource number 0x7f0a00c0
+D/MountService( 2103): sendStorageIntent Intent { act=android.intent.action.MEDIA_MOUNTED dat=file:///mnt/extsd (has extras) } to UserHandle{-1}
+D/MediaScannerReceiver( 4886): action: android.intent.action.MEDIA_MOUNTED path: /mnt/extsd
+V/MediaPlayerFactory( 3769): MediaPlayerFactory::getPlayerType: url = /mnt/extsd/岁月如歌.mp3
+V/MediaPlayerFactory( 3769): MediaPlayerFactory::getPlayerType: url = /mnt/extsd/滨崎步多字幕（日、中、英）(Ayumi.Hamasaki).-.[Blue.Bird].(20....mkv
+D/cedarx_demux( 3769): cedarx_demux_create: 0xf
+D/DirectVolume( 1306): Volume extsd /mnt/extsd partition 179:49 removed
+D/Vold    ( 1306): Volume extsd state changing 4 (Mounted) -> 5 (Unmounting)
+D/MediaProvider( 4886): deleting all entries for storage StorageVolume [mStorageId=131073 mPath=/mnt/extsd mDescriptionId=17040659 mPrimary=false mRemovable=true mEmulated=false mMtpReserveSpace=0 mAllowMassStorage=true mMaxFileSize=0 mOwner=null]
+D/MountService( 2103): sendStorageIntent Intent { act=android.intent.action.MEDIA_EJECT dat=file:///mnt/extsd (has extras) } to UserHandle{-1}
+D/dalvikvm( 3185): GC_CONCURRENT freed 400K, 11% free 9601K/10712K, paused 2ms+5ms, total 49ms
+I/MediaStoreImporter( 3185): Update: incremental Added music: 0 Updated music: 0 Deleted music: 0 Created playlists: 0 Updated playlists: 0 Deleted playlists: 0 Inserted playlist items: 0 Deleted playlist items: 0 Removed orphaned playlist items: 0
+W/MediaScanner( 4886): Error opening directory '/mnt/extsd/.Trash-1001/files/', skipping: I/O error.
+W/MediaScanner( 4886): Error opening directory '/mnt/extsd/.Trash-1001/expunged/', skipping: I/O error.
+W/MediaScanner( 4886): Error opening directory '/mnt/extsd/DCIM/', skipping: No such file or directory.
+W/MediaScanner( 4886): Error opening directory '/mnt/extsd/.Trash-1000/', skipping: No such file or directory.
+E/BitmapFactory( 4886): Unable to decode stream: java.io.FileNotFoundException: /mnt/extsd/IMG_20140323_225651.JPG: open failed: ENOENT (No such file or directory)
+E/JHEAD   ( 4886): can't open '/mnt/extsd/IMG_20140323_225651.JPG'
+E/BitmapFactory( 4886): Unable to decode stream: java.io.FileNotFoundException: /mnt/extsd/IMG_20140325_022644.JPG: open failed: ENOENT (No such file or directory)
+E/JHEAD   ( 4886): can't open '/mnt/extsd/IMG_20140325_022644.JPG'
+E/BitmapFactory( 4886): Unable to decode stream: java.io.FileNotFoundException: /mnt/extsd/IMG_20140325_022659.JPG: open failed: ENOENT (No such file or directory)
+E/JHEAD   ( 4886): can't open '/mnt/extsd/IMG_20140325_022659.JPG'
+E/BitmapFactory( 4886): Unable to decode stream: java.io.FileNotFoundException: /mnt/extsd/IMG_20140325_022711.JPG: open failed: ENOENT (No such file or directory)
+E/JHEAD   ( 4886): can't open '/mnt/extsd/IMG_20140325_022711.JPG'
+W/MediaScanner( 4886): Error opening directory '/mnt/extsd/Untitled Folder/', skipping: No such file or directory.
+V/MediaPlayerFactory( 3769): MediaPlayerFactory::getPlayerType: url = /mnt/extsd/一吻天荒.mp3
+E/        ( 3769): Failed to open file '/mnt/extsd/一吻天荒.mp3'. (No such file or directory)
+E/StagefrightMetadataRetriever( 3769): Unable to create data source for '/mnt/extsd/一吻天荒.mp3'.
+E/MediaScannerJNI( 4886): An error occurred while scanning file '/mnt/extsd/一吻天荒.mp3'.
+V/MediaPlayerFactory( 3769): MediaPlayerFactory::getPlayerType: url = /mnt/extsd/MUTE_20140120_122015.mp4
+E/CDX_Player( 3769): open file error!
+E/MediaScannerJNI( 4886): An error occurred while scanning file '/mnt/extsd/MUTE_20140120_122015.mp4'.
+V/MediaPlayerFactory( 3769): MediaPlayerFactory::getPlayerType: url = /mnt/extsd/TRIM_20140120_115334.mp4
+E/CDX_Player( 3769): open file error!
+E/MediaScannerJNI( 4886): An error occurred while scanning file '/mnt/extsd/TRIM_20140120_115334.mp4'.
+V/MediaPlayerFactory( 3769): MediaPlayerFactory::getPlayerType: url = /mnt/extsd/TRIM_20140120_123134.mp4
+E/CDX_Player( 3769): open file error!
+E/MediaScannerJNI( 4886): An error occurred while scanning file '/mnt/extsd/TRIM_20140120_123134.mp4'.
+W/MediaScanner( 4886): Error opening directory '/mnt/extsd/LOST.DIR/', skipping: No such file or directory.
+W/MediaScanner( 4886): Error opening directory '/mnt/usbhost1/', skipping: Permission denied.
+E/Vold    ( 1306): mPartIdx = -1, mMountedPartNum= 1
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+I/Choreographer( 2430): Skipped 369 frames!  The application may be doing too much work on its main thread.
+
+D/dalvikvm( 4886): GC_CONCURRENT freed 244K, 9% free 9331K/10240K, paused 7ms+3ms, total 34ms
+I/Vold    ( 1306): /mnt/extsd sucessfully unmounted
+I/Vold    ( 1306): /mnt/extsd unmounted successfully
+D/Vold    ( 1306): Volume extsd state changing 5 (Unmounting) -> 1 (Idle-Unmounted)
+D/DirectVolume( 1306): Crisis averted
+D/DirectVolume( 1306): Volume extsd /mnt/extsd disk 179:48 removed
+E/Vold    ( 1306): Volume extsd unmount request when not mounted
+D/Vold    ( 1306): Volume extsd state changing 1 (Idle-Unmounted) -> 0 (No-Media)
+D/MtpService( 4886): onStorageStateChanged /mnt/extsd mounted -> unmounted
+D/MtpService( 4886): removeStorageLocked 131073 /mnt/extsd
+D/MountService( 2103): volume state changed for /mnt/extsd (mounted -> unmounted)
+D/MountService( 2103): sendStorageIntent Intent { act=android.intent.action.MEDIA_UNMOUNTED dat=file:///mnt/extsd (has extras) } to UserHandle{-1}
+W/MountService( 2103): Duplicate state transition (unmounted -> unmounted) for /mnt/extsd
+D/MediaScannerReceiver( 4886): action: android.intent.action.MEDIA_UNMOUNTED path: /mnt/extsd
+D/MtpService( 4886): onStorageStateChanged /mnt/extsd unmounted -> removed
+D/MountService( 2103): sendStorageIntent Intent { act=unmounted dat=file:///mnt/extsd (has extras) } to UserHandle{-1}
+D/MountService( 2103): volume state changed for /mnt/extsd (unmounted -> removed)
+D/MountService( 2103): sendStorageIntent Intent { act=android.intent.action.MEDIA_REMOVED dat=file:///mnt/extsd (has extras) } to UserHandle{-1}
+D/Vold    ( 1306): Volume extsd state changing 0 (No-Media) -> 2 (Pending)
+D/Vold    ( 1306): Volume extsd state changing 2 (Pending) -> 1 (Idle-Unmounted)
+D/MtpService( 4886): onStorageStateChanged /mnt/extsd removed -> unmounted
+D/MountService( 2103): volume state changed for /mnt/extsd (removed -> unmounted)
+D/MountService( 2103): sendStorageIntent Intent { act=android.intent.action.MEDIA_UNMOUNTED dat=file:///mnt/extsd (has extras) } to UserHandle{-1}
+D/Vold    ( 1306): mountVol /mnt/extsd
+D/Vold    ( 1306): storage_type =  primaryStorage = 1
+I/Vold    ( 1306): /dev/block/vold/179:49 being considered for volume extsd
+D/Vold    ( 1306): Volume extsd state changing 1 (Idle-Unmounted) -> 3 (Checking)
+I/Vold    ( 1306): Exfat::check
+D/MediaScannerReceiver( 4886): action: android.intent.action.MEDIA_UNMOUNTED path: /mnt/extsd
+I/fsck.exfat( 1306): exfatfsck 0.9.5
+D/MtpService( 4886): onStorageStateChanged /mnt/extsd unmounted -> checking
+D/MountService( 2103): volume state changed for /mnt/extsd (unmounted -> checking)
+D/MountService( 2103): sendStorageIntent Intent { act=android.intent.action.MEDIA_CHECKING dat=file:///mnt/extsd (has extras) } to UserHandle{-1}
+I/fsck.exfat( 1306): ERROR: exFAT file system is not found.
+I/fsck.exfat( 1306): fsck.exfat terminated by exit(1)
+E/Vold    ( 1306): Filesystem check failed (unknown exit code 1)
+I/Vold    ( 1306): Fat::check /dev/block/vold/179:49
+I/fsck_msdos( 1306): ** /dev/block/vold/179:49
+I/fsck_msdos( 1306): ** Phase 1 - Read and Compare FATs
+I/fsck_msdos( 1306): Attempting to allocate 472 KB for FAT
+I/fsck_msdos( 1306): Attempting to allocate 472 KB for FAT
+I/fsck_msdos( 1306): ** Phase 2 - Check Cluster Chains
+I/fsck_msdos( 1306): ** Phase 3 - Checking Directories
+I/fsck_msdos( 1306): ** Phase 4 - Checking for Lost Files
+I/fsck_msdos( 1306): 178 files, 1304320 free (40760 clusters)
+I/Vold    ( 1306): Filesystem check completed OK
+D/Vold    ( 1306): Volume extsd state changing 3 (Checking) -> 4 (Mounted)
+I/Vold    ( 1306): Volume::mountVol: getState=4, State_Mounted=4
+D/MtpService( 4886): onStorageStateChanged /mnt/extsd checking -> mounted
+D/MtpService( 4886): addStorageLocked 131073 /mnt/extsd
+W/ResourceType( 2251): No known package when getting value for resource number 0x7f0a00c0
+D/MountService( 2103): volume state changed for /mnt/extsd (checking -> mounted)
+D/MountService( 2103): sendStorageIntent Intent { act=android.intent.action.MEDIA_MOUNTED dat=file:///mnt/extsd (has extras) } to UserHandle{-1}
+D/MediaScannerReceiver( 4886): action: android.intent.action.MEDIA_MOUNTED path: /mnt/extsd
+I/ActivityManager( 2103): Delay finish: com.android.vending/com.google.android.finsky.receivers.ConsumptionAppDataChangedReceiver
+I/ActivityManager( 2103): Resuming delayed broadcast
+I/MediaStoreImporter( 3185): Update: incremental Added music: 2 Updated music: 0 Deleted music: 0 Created playlists: 0 Updated playlists: 0 Deleted playlists: 0 Inserted playlist items: 0 Deleted playlist items: 0 Removed orphaned playlist items: 0
+
+D/dalvikvm( 4886): GC_CONCURRENT freed 424K, 11% free 9304K/10392K, paused 3ms+2ms, total 21ms
+D/dalvikvm( 4886): GC_FOR_ALLOC freed 294K, 12% free 9218K/10472K, paused 16ms, total 17ms
+D/skia    ( 4886): --- SkImageDecoder::Factory returned null
+D/skia    ( 4886): --- SkImageDecoder::Factory returned null
+D/dalvikvm( 4886): GC_FOR_ALLOC freed 218K, 12% free 9225K/10472K, paused 16ms, total 16ms
+D/skia    ( 4886): --- SkImageDecoder::Factory returned null
+D/dalvikvm( 4886): GC_FOR_ALLOC freed 240K, 12% free 9233K/10472K, paused 16ms, total 17ms
+D/skia    ( 4886): --- SkImageDecoder::Factory returned null
+
+
+
+
+D/skia    ( 4886): --- SkImageDecoder::Factory returned null
+D/dalvikvm( 4886): GC_FOR_ALLOC freed 240K, 12% free 9241K/10472K, paused 15ms, total 15ms
+D/skia    ( 4886): --- SkImageDecoder::Factory returned null
+D/skia    ( 4886): --- SkImageDecoder::Factory returned null
+D/skia    ( 4886): --- SkImageDecoder::Factory returned null
+D/skia    ( 4886): --- SkImageDecoder::Factory returned null
+D/skia    ( 4886): --- SkImageDecoder::Factory returned null
+D/skia    ( 4886): --- SkImageDecoder::Factory returned null
+D/skia    ( 4886): --- SkImageDecoder::Factory returned null
+
+D/skia    ( 4886): --- SkImageDecoder::Factory returned null
+D/skia    ( 4886): --- SkImageDecoder::Factory returned null
+D/skia    ( 4886): --- SkImageDecoder::Factory returned null
+D/skia    ( 4886): --- SkImageDecoder::Factory returned null
+D/dalvikvm( 4886): GC_FOR_ALLOC freed 225K, 12% free 9247K/10472K, paused 15ms, total 16ms
+
+D/skia    ( 4886): --- SkImageDecoder::Factory returned null
+
+V/MediaPlayerFactory( 3769): MediaPlayerFactory::getPlayerType: url = /mnt/extsd/一吻天荒.mp3
+D/dalvikvm( 2103): GC_EXPLICIT freed 1145K, 14% free 13818K/16012K, paused 5ms+9ms, total 79ms
+V/MediaPlayerFactory( 3769): MediaPlayerFactory::getPlayerType: url = /mnt/extsd/MUTE_20140120_122015.mp4
+D/cedarx_demux( 3769): cedarx_demux_create: 0x7
+E/mov_parser_oal( 3769): open mov/mp4 reader failed@
+E/CDX_Player( 3769): cedar demuxer open error
+V/MediaPlayerFactory( 3769): MediaPlayerFactory::getPlayerType: url = /mnt/extsd/TRIM_20140120_115334.mp4
+D/cedarx_demux( 3769): cedarx_demux_create: 0x7
+E/mov_parser_oal( 3769): open mov/mp4 reader failed@
+E/CDX_Player( 3769): cedar demuxer open error
+V/MediaPlayerFactory( 3769): MediaPlayerFactory::getPlayerType: url = /mnt/extsd/TRIM_20140120_123134.mp4
+D/cedarx_demux( 3769): cedarx_demux_create: 0x7
+E/mov_parser_oal( 3769): open mov/mp4 reader failed@
+E/CDX_Player( 3769): cedar demuxer open error
+
+D/dalvikvm( 4886): GC_CONCURRENT freed 298K, 11% free 9357K/10472K, paused 2ms+2ms, total 21ms
+W/MediaScanner( 4886): Error opening directory '/mnt/usbhost1/', skipping: Permission denied.
+D/dalvikvm( 4886): GC_CONCURRENT freed 449K, 11% free 9323K/10472K, paused 2ms+3ms, total 23ms
+V/MediaPlayerFactory( 3769): MediaPlayerFactory::getPlayerType: fd = 0x20
+V/MediaPlayerFactory( 3769): getPlayerType: 1
+V/MediaPlayerFactory( 3769): use STAGEFRIGHT_PLAYER
+D/dalvikvm( 4886): GC_FOR_ALLOC freed 417K, 13% free 9214K/10472K, paused 17ms, total 18ms
+I/dalvikvm-heap( 4886): Grow heap (frag case) to 9.696MB for 55108-byte allocation
+D/dalvikvm( 4886): GC_FOR_ALLOC freed 5K, 13% free 9262K/10528K, paused 16ms, total 16ms
+V/MediaPlayerFactory( 3769): MediaPlayerFactory::getPlayerType: fd = 0x20
+V/MediaPlayerFactory( 3769): getPlayerType: 1
+V/MediaPlayerFactory( 3769): use STAGEFRIGHT_PLAYER
+D/UsbDeviceManager( 2103): mBootFastReceiver reveived ACTION_BATTERY_CHANGE
+
+D/dalvikvm( 4886): GC_FOR_ALLOC freed 73K, 13% free 9207K/10528K, paused 18ms, total 18ms
+
+
+I/RecentItemsManager( 3185): Deleted 1 invalid recent items.
+
+
+
+I/MediaStoreImporter( 3185): Update: incremental Added music: 0 Updated music: 2 Deleted music: 0 Created playlists: 0 Updated playlists: 0 Deleted playlists: 0 Inserted playlist items: 0 Deleted playlist items: 0 Removed orphaned playlist items: 0
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+D/UsbDeviceManager( 2103): mBootFastReceiver reveived ACTION_BATTERY_CHANGE
+W/SocketClient( 1309): write error (Broken pipe)
+
+
+
+
+
+

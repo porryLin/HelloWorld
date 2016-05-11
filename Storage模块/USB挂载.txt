@@ -1,0 +1,127 @@
+1. 打开init.a2.usb.rc文件
+on property:sys.usb.config=mass_storage,adb
+    write /sys/class/android_usb/android0/enable 0          //关闭USB功能
+    write /sys/class/android_usb/android0/idVendor 18d1
+    write /sys/class/android_usb/android0/idProduct 4e22
+    write /sys/class/android_usb/android0/functions ${sys.usb.config}     //写方法
+    write /sys/class/android_usb/android0/enable 1           //打开USB功能
+    start adbd
+    setprop sys.usb.state ${sys.usb.config}
+
+
+2. 将 挂载设备/dev/block/vold/253:36  (内部存储) 写到节点中 sys/class/android_usb/f_mass_storage/lun0/file
+将 挂载设备/dev/block/vold/253:1  (SD 卡)   写到节点中 sys/class/android_usb/f_mass_storage/lun1/file
+
+如何挂载
+mount -t vfat /dev/block/vold/253:36 /storage/sdcard0/
+
+获取当前USB存储的模式 
+getprop | grep "sys.usb.config"
+[sys.usb.config]: [mtp, adb]
+
+
+
+
+About Media Store database:
+        ContentValues cv = new ContentValues();
+        // Lets label the recorded audio file as NON-MUSIC so that the file
+        // won't be displayed automatically, except for in the playlist.
+        cv.put(MediaStore.Audio.Media.IS_MUSIC, "1");
+
+        cv.put(MediaStore.Audio.Media.TITLE, title);
+        cv.put(MediaStore.Audio.Media.DATA, file.getAbsolutePath());
+        cv.put(MediaStore.Audio.Media.DATE_ADDED, (int) (current / 1000));
+        cv.put(MediaStore.Audio.Media.DATE_MODIFIED, (int) (modDate / 1000));
+        cv.put(MediaStore.Audio.Media.DURATION, sampleLengthMillis);
+        cv.put(MediaStore.Audio.Media.MIME_TYPE, mRequestedType);
+        cv.put(MediaStore.Audio.Media.ARTIST, "your record sounds");
+        cv.put(MediaStore.Audio.Media.ALBUM, "record sounds");
+
+        Uri base = MediaStore.Audio.Media.EXTERNAL_CONTENT_URI;
+        Uri result = resolver.insert(base, cv);
+
+        int audioId = Integer.valueOf(result.getLastPathSegment());
+        addToPlaylist(resolver, audioId, getPlaylistId(getResources()));
+
+        // Notify those applications such as Music listening to the 
+        // scanner events that a recorded audio file just created. 
+        sendBroadcast(new Intent(Intent.ACTION_MEDIA_SCANNER_SCAN_FILE, result));
+
+
+Rescan the mediastore:
+
+import android.media.MediaScannerConnection;
+import
+android.media.MediaScannerConnection.MediaScannerConnectionClient;
+
+private static class MediaScannerNotifier implements
+MediaScannerConnectionClient {
+    private Context mContext;
+    private MediaScannerConnection mConnection;
+    private String mPath;
+    private String mMimeType;
+
+    public MediaScannerNotifier(Context context, String path, String
+mimeType) {
+        mContext = context;
+        mPath = path;
+        mMimeType = mimeType;
+        mConnection = new MediaScannerConnection(context, this);
+        mConnection.connect();
+    }
+
+    public void onMediaScannerConnected() {
+        mConnection.scanFile(mPath, mMimeType);
+    }
+
+    public void onScanCompleted(String path, Uri uri) {
+        // OPTIONAL: scan is complete, this will cause the viewer to
+render it
+        try {
+            if (uri != null) {
+                Intent intent = new Intent(Intent.ACTION_VIEW);
+                intent.setData(uri);
+                mContext.startActivity(intent);
+            }
+        } finally {
+            mConnection.disconnect();
+            mContext = null;
+        }
+    }
+}
+
+To scan a file, you just create a new MediaScannerNotifier:
+
+new MediaScannerNotifier(path, mimeType); 
+
+
+Have you looked at Ringdroid?. It's pretty light weight and the integration is straight forward. It works well with VBR media files as well.
+
+For your problem with getting the duration, you might want to do something like below using Ringdroid.
+
+public class AudioUtils
+{
+    public static long getDuration(CheapSoundFile cheapSoundFile)
+    {
+        if( cheapSoundFile == null)
+            return -1;
+        int sampleRate = cheapSoundFile.getSampleRate();
+        int samplesPerFrame = cheapSoundFile.getSamplesPerFrame();
+        int frames = cheapSoundFile.getNumFrames();
+        cheapSoundFile = null;
+        return 1000 * ( frames * samplesPerFrame) / sampleRate;
+    }
+
+    public static long getDuration(String mediaPath)
+    {
+        if( mediaPath != null && mediaPath.length() > 0)
+            try 
+            {
+                return getDuration(CheapSoundFile.create(mediaPath, null));
+            }catch (FileNotFoundException e){} 
+            catch (IOException e){}
+        return -1;
+    }
+}
+
+

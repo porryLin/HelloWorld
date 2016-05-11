@@ -1,0 +1,170 @@
+Content-Type: text/x-zim-wiki
+Wiki-Format: zim 0.4
+Creation-Date: 2014-05-02T13:53:58+08:00
+
+====== 增加data分区后的OTA实现 ======
+Created Friday 02 May 2014
+
+
+由于默认的OTA升级包里面是没有关于data分区的升级，所以需要我们对OTA包的编译生成，打包，以及recovery升级过程进行修改
+
+现在的做法的情况是：只能在data分区中增加或修改apk，不能删除设备中本身存在的apk
+======================================================================================
+
+== 1. 生成OTA全包 ==
+
+指令为：
+./build/tools/releasetools/__ota_from_target_files__ out/dist/signed-target-files.zip out/dist/signed-ota-files.zip
+
+修改脚本文件 ：android4.4/build/tools/releasetools/ota_from_target_files
+
+def CopySystemFiles(input_zip, output_zip=None,
+                    substitute=None):
++    if info.filename.startswith("DATA/"):
++      basefilename = info.filename[5:]
++      if IsSymlink(info):
++        symlinks.append((input_zip.read(info.filename),
++                         "/data/" + basefilename))
++      else:
++        info2 = copy.copy(info)
++        fn = info2.filename = "data/" + basefilename
++        if substitute and fn in substitute and substitute[fn] is None:
++          continue
++        if output_zip is not None:
++          if substitute and fn in substitute:
++            data = substitute[fn]
++          else:
++            data = input_zip.read(info.filename)
++          output_zip.writestr(info2, data)
++        if fn.endswith("/"):
++          Item.Get(fn[:-1], dir=True)
++        else:
++          Item.Get(fn, dir=False)
+
+修改过脚本之后再使用上面的指令生成OTA全包signed-ota-files.zip，打开signed-ota-files.zip，可以查看到里面多了一个data文件夹
+
+
+== 2. 升级包verify修改 ==
+
+相关代码文件位置：
+android/bootable/revoery
+
+recovery升级中，会在install.cpp的really_install_package()方法中加载升级包
+并调用  verify_file(path, loadedKeys, numKeys) 来验证升级包
+我们加到data分区的apk由于是第三方apk文件，通不过签名验证，所以强制让它通过签名验证
+really_install_package(const char *path, int* wipe_cache)
+{
+     ...
+     err = verify_file(path, loadedKeys, numKeys);
++  err = VERIFY_SUCCESS;
+     ...
+}
+
+
+== 3. 删除system.notfirstrun文件 ==
+
+init.rc 文件中会在开机过程调用service:
+service  preinstall  /system/bin/busybox  sh  /system/bin/preinstall.sh
+  user root
+  group root
+  disabled
+  oneshot
+
+preinstall.sh文件会去判断是否存在/data/system.notfirstrun文件
+
+if [ ! -e /data/system.notfirstrun ]; then	
+    echo "do preinstall job"	
+  
+	/system/bin/sh /system/bin/pm preinstall /system/preinstall
+	/system/bin/sh /system/bin/pm preinstall /sdcard/preinstall
+	/system/bin/sh /system/bin/data_copy.sh
+
+
+	$BUSYBOX touch /data/system.notfirstrun
+
+
+如果不存在该文件则会在开机过程中对/system/preinstall 和/sdcard/preinstall两个目录下的apk文件进行安装
+安装完成后生成文件/data/system.notfirstrun
+
+删除理由：由于OTA升级后该文件已经存在，导致在/system/preinstall目录下的apk文件不能得到更新
+
+修改方法：
+recovery.cpp
+一共有3种调用install_package()方法进行升级的流程，在每个升级完成的地方添加如下代码：
+               result = install_package(copy, wipe_cache, TEMPORARY_INSTALL_FILE);
++		/**/
++		ensure_path_mounted("/data");
++		if(remove("/data/system.notfirstrun") == -1)
++		         ui->Print("rm system.notfirstrun failed.\n");
++		else
++		         ui->Print("\n rm system.notfirstrun success.\n");
++		 ensure_path_unmounted("/data");
++		/**/
+
+
+
+
+== 4. 修改全包中的升级脚本 ==
+双击打开压缩包（试过解压后修改文件，再重新打包，但是升级过程中会报验证升级包文件头错误）
+META-INF/com/google/android/updater-script
+
+   format("ext4", "EMMC", "/dev/block/by-name/system", "0", "/system");
+   mount("ext4", "EMMC", "/dev/block/by-name/system", "/system");
++ mount("ext4", "EMMC", "/dev/block/by-name/UDISK", "/data");
+   package_extract_dir("recovery", "/system");
+   package_extract_dir("system", "/system");
++ package_extract_dir("data/app", "/data/app");            // data/p 该路径要和升级包中的data文件夹路径一样
+
+// 如果不加这一行，生成的文件夹里面apk权限是740，无法安装
++ set_metadata_recursive("/data/app", "uid", 0, "gid", 0, "dmode", 0755, "fmode", 0644, "capabilities", 0x0, "selabel", "u:object_r:system_file:s0");
+    set_metadata_recursive("/system", "uid", 0, "gid", 0, "dmode", 0755, "fmode", 0644, "capabilities", 0x0, "selabel", "u:object_r:system_file:s0");
+
++   unmount("/data"); 
+      unmount("/system");
+
+
+
+======================================================================================
+
+== 5. 生成OTA差分包 ==
+
+修改脚本文件 ：android4.4/build/tools/releasetools/ota_from_target_files
+def LoadSystemFiles(z):
+  for info in z.infolist():
+    if info.filename.startswith("SYSTEM/") and not IsSymlink(info):
+      basefilename = info.filename[7:]
+      fn = "system/" + basefilename
+      data = z.read(info.filename)
+      out[fn] = common.File(fn, data)
++    if info.filename.startswith("DATA/") and not IsSymlink(info):
++      basefilename = info.filename[5:]
++      fn = "data/" + basefilename
++      data = z.read(info.filename)
++      out[fn] = common.File(fn, data)
+
+
+== 6. 修改差分包中的升级脚本 ==
+META-INF/com/google/android/updater-script
+
+       mount("ext4", "EMMC", "/dev/block/by-name/cache", "/cache");
++     mount("ext4", "EMMC", "/dev/block/by-name/UDISK", "/data");
++     package_extract_dir("data/app", "/data/app");
+
++     set_metadata_recursive("/data/app", "uid", 0, "gid", 0, "dmode", 0755, "fmode", 0644, "capabilities", 0x0, "selabel", "u:object_r:system_file:s0");
+       set_metadata_recursive("/system", "uid", 0, "gid", 0, "dmode", 0755, "fmode", 0644, "capabilities", 0x0, "selabel", "u:object_r:system_file:s0");
+
++     unmount("/data");
+       unmount("/cache");
+       unmount("/system");
+
+
+
+
+
+
+
+
+
+
+
+

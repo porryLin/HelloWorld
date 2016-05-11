@@ -1,0 +1,147 @@
+产生OTA完整包和差分包的方法有误，导致升级后系统APK的签名被替换而启动不起来，在CTS签名后不能按照原来的make_ota_package的方式产生OTA包，新的产生固件和差分包方法如下：
+first you must compile the system
+1.
+android/build/tools/mkkey.sh
+#AUTH='/C=US/ST=Chinese/L=QIHAO/O=QIHAO/OU=QIHAO/CN=China/emailAddress=allwinnertech@com'
+AUTH='/C=US/ST=Chinese/L=IDSBG/O=IDSBG/OU=IDSBG/CN=China/emailAddress=foxconn@com'
+2.
+cd build/tools/
+source mkkey.sh platform
+source mkkey.sh media
+source mkkey.sh releasekey
+source mkkey.sh shared
+3.
+cp build/tools/12file /device/idsbg/f1/security
+4.
+get_uboot
+make -j4 dist
+
+
+
+================================================签名===============================================
+5.
+./build/tools/releasetools/sign_target_files_apks -d device/idsbg/f1/security out/dist/f1-target_files-2013XXXX.zip out/dist/signed-target-files.zip
+
+BF ./build/tools/releasetools/sign_target_files_apks -d device/idsbg/f1/security out/dist/wing_BF-target_files-2013XXXX.zip out/dist/signed-target-files.zip
+6.
+./build/tools/releasetools/sign_target_files_apks -d device/idsbg/f1/security -e NovelSync.apk=device/idsbg/f1/security/     -e SoftWinnerService.apk=device/idsbg/f1/security/releasekey -e Music.apk=device/idsbg/f1/security/releasekey -e MusicFX.apk=device/idsbg/f1/security/releasekey -e SoftWinnerService.apk=device/idsbg/f1/security/releasekey -e DragonFire_v2.1.apk=device/idsbg/f1/security/releasekey -e flashplayer.apk=device/idsbg/f1/security/releasekey -e DragonPhone.apk=device/idsbg/f1/security/releasekey out/dist/f1-target_files-2013XXXX.zip out/dist/signed-target-files.zip
+
+备份signed-target-files，用于产生差分升级包
+mkdir ../backup
+cp out/dist/signed-target-files.zip ../backup/signed-target-files-backup.zip
+
+
+7.
+./build/tools/releasetools/img_from_target_files out/dist/signed-target-files.zip out/dist/signed-img.zip
+
+================================================产生OTA完整包===============================================
+7.5 产生OTA完整包：
+./build/tools/releasetools/ota_from_target_files out/dist/signed-target-files.zip out/dist/signed-ota-files.zip
+#需要用签过名的target_file产生的OTA包才能升级正常
+8.
+mkdir out/dist/signed-img
+9.
+unzip out/dist/signed-img.zip -d out/dist/signed-img
+10.
+cp out/dist/signed-img/*.img out/target/product/f1
+11.
+pack
+
+================================================产生OTA差分包===============================================
+产生差分包的方法：
+1.重新执行4、5、6步骤，产生新的signed-target-files.zip文件
+2.将旧的signed-target-files-backup.zip与新的signed-target-files.zip进行差分，产生差分包out_inc.zip
+./build/tools/releasetools/ota_from_target_files -i signed-target-files-backup.zip signed-target-files-new.zip out_inc.zip
+ 
+
+
+
+
+
+
+
+====================================== Android 4.4 build==================================
+1. $ cd lichee
+   $ ./build.sh -p sun6i_fiber
+
+2. $ cd ../android
+   $ source build/envsetup.sh
+   $ lunch  fiber-w02
+   $ extract-bsp
+
+3. $ make
+
+4. $ get_uboot
+
+5. $ make -j4 dist
+
+6. 签名：
+   $ ./build/tools/releasetools/sign_target_files_apks -d device/softwinner/fiber-w02/security -e DragonPhone.apk,VideoTest.apk,flashplayer.apk,DragonFire.apk= out/dist/fiber_w02-target_files-2014XXXX.zip out/dist/signed-target-files.zip
+
+====================================================================================
+7. 备份，以待下次编译OTA差分包所需：
+   $ mkdir ../backup
+   $ cp out/dist/signed-target-files.zip ../backup/signed-target-files-backup.zip
+
+8. 产生OTA全包：
+   $ ./build/tools/releasetools/ota_from_target_files out/dist/signed-target-files.zip out/dist/signed-ota-files.zip
+
+9. 产生OTA差分包：
+   $ ./build/tools/releasetools/ota_from_target_files -i ../backup/signed-target-files-backup.zip out/dist/signed-target-files.zip out/dist/out_inc.zip
+
+=====================================================================================
+
+7.  $ ./build/tools/releasetools/img_from_target_files out/dist/signed-target-files.zip out/dist/signed-img.zip
+
+8.  $ mkdir out/dist/signed-img
+
+9.  $ unzip out/dist/signed-img.zip -d out/dist/signed-img
+
+10. $ cp out/dist/signed-img/*.img out/target/product/fiber-w02
+
+11. $ pack
+
+
+
+======================================CS1 SDK 4.5 build==================================
+6.签名
+   $ ./build/tools/releasetools/sign_target_files_apks -d device/softwinner/fiber-a31stm/security -e DragonPhone.apk,VideoTest.apk,DragonFire.apk,AWGallery.apk,AWUpdate.apk=device/softwinner/fiber-a31stm/security/releasekey -e NovelSync.apk=device/softwinner/fiber-a31stm/security/platform out/dist/fiber_a31stm-target_files-2014xxxx.zip out/dist/signed-target-files.zip
+
+7.  $ ./build/tools/releasetools/img_from_target_files out/dist/signed-target-files.zip out/dist/signed-img.zip
+
+8.  $ mkdir out/dist/signed-img
+
+9.  $ unzip out/dist/signed-img.zip -d out/dist/signed-img
+
+10. $ cp out/dist/signed-img/*.img out/target/product/fiber-a31stm
+
+11. $ pack
+
+升级方式：
+
+   将生成的全包或者差分包复制到 /cache/
+   并改名为 update.zip
+   $  busybox cp /mnt/sdcard/xxx.zip  /cache/
+   $  mv xxx.zip update.zip
+   $  cd /cache/recovery/
+   $  touch  command
+   $  echo --update_package=/cache/update.zip > command
+   $  reboot recovery
+
+
+======================================RL1  build==================================
+6.签名
+./build/tools/releasetools/sign_target_files_apks -d device/softwinner/fiber-a31stm/security out/dist/fiber_a31stm-target_files-2014xxxx.zip out/dist/signed-target-files.zip
+
+
+./build/tools/releasetools/sign_target_files_apks -d device/softwinner/fiber-a31stm/security -e DragonFire.apk,DragonPhone.apk,VideoTest.apk,AWGallery.apk,AWUpdate.apk=device/softwinner/fiber-a31stm/security/releasekey -e NovelSync.apk=device/softwinner/fiber-a31stm/security/platform -e qqmarket.apk,ESFileExplorer.apk,SubwaySurf.apk,baidumap.apk,FruitNinja.apk,TR2Free.apk,iReader.apk= out/dist/fiber_a31stm-target_files-2014xxxx.zip out/dist/signed-target-files.zip
+
+7.  $ ./build/tools/releasetools/img_from_target_files out/dist/signed-target-files.zip out/dist/signed-img.zip
+
+8.  $ mkdir out/dist/signed-img
+
+9.  $ unzip out/dist/signed-img.zip -d out/dist/signed-img
+
+10. $ cp out/dist/signed-img/*.img out/target/product/fiber-a31stm
+
+11. $ pack

@@ -1,0 +1,31 @@
+刚刚一个BUG让我发现，如果 activity 实现了一个回调接口，然后使用 this 设置给需要回调接口的方法，这种应用场景比较常见，
+最常见的就是实现 onClickListener 接口，然后 findViewById().setOnClickListenr(this)
+
+如果，这个回调接口设置到了一个静态对象（单例模式），当 activity finish() 的时候（按返回键，回到桌面），则activity 不会被调用 onDestroy() ，原因可能是 activity 对象还在被引用！
+
+此时你再点击图标回到应用，onCreate() 再次调用！
+
+很明显，如果你把资源释放放在了 onDestroy() 里面，就会导致内存泄露！
+
+那有没有解决办法呢？有的
+
+你可以在 onPause() 方法里面判断 isFinishing() ，正常调用 finish() 后 activity 的回调过程是 onPause、onStop、onDestroy ，
+
+倘若出现上面的情况，只到 onPause！但是 isFinishing() 标志还是为 true ！你可以释放资源了。
+
+API文档:
+
+protected void onDestroy ()
+
+Added in API level 1
+Perform any final cleanup before an activity is destroyed. This can happen either because the activity is finishing (someone called finish() on it,
+or because the system is temporarily destroying this instance of the activity to save space.
+You can distinguish between these two scenarios with the isFinishing() method.
+
+Note: do not count on this method being called as a place for saving data! For example, if an activity is editing data in a content provider,
+those edits should be committed in either onPause() or onSaveInstanceState(Bundle), not here.
+This method is usually implemented to free resources like threads that are associated with an activity,
+so that a destroyed activity does not leave such things around while the rest of its application is still running.
+There are situations where the system will simply kill the activity's hosting process without calling this method (or any others) in it,
+so it should not be used to do things that are intended to remain around after the process goes away.
+Derived classes must call through to the super class's implementation of this method. If they do not, an exception will be thrown.

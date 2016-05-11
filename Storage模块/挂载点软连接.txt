@@ -1,0 +1,9 @@
+Content-Type: text/x-zim-wiki
+Wiki-Format: zim 0.4
+Creation-Date: 2014-02-28T14:49:37+08:00
+
+====== 挂载点软连接 ======
+Created Friday 28 February 2014
+
+android 4.2，会使用fuse技术/dev/fuse 会被挂载到/storage/emulated/0 目录，为了兼容以前的版本，同时挂载到 /storage/emulated/legacy （故名思议，传统的），还建立三个软连接 /storage/sdcard0 ，/sdcard，/mnt/sdcard ，都指向 /storage/emulated/legacy。
+也就是说文件夹0和legacy指向的地址是一致的，都是存储盘里的，楼主想放到哪个文件夹都可以

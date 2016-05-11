@@ -1,0 +1,59 @@
+Content-Type: text/x-zim-wiki
+Wiki-Format: zim 0.4
+Creation-Date: 2014-03-18T19:34:22+08:00
+
+====== 图片剪裁无法保存到SD卡中 ======
+Created Tuesday 18 March 2014
+
+=== 问题描述： ===
+使用图库的crop图片剪裁功能时，如果被剪裁的原图片是保存在SD卡中，则会出现无法保存剪裁好的新图片的情况。
+
+=== 解决过程： ===
+**分析log信息：**
+在打印的log中，可以看到新图片的content:// url值，但是在 ContentProvider.openFile(Uri uri, String mode) 的时候会返回 FileNotFoundException 错误，也就是说打不开文件。
+
+**查看数据库：**
+分别剪裁内部存储和SD卡中的图片，使用git pull  /data/data/com.android.providers.media/databases/external.db  [[/home/porry/]] 将数据库导出并使用Sqliteman
+查看数据库，发现不管有没有新图片生成，都没有马上更新在数据库中
+
+**排除权限问题：**
+不是SD卡权限的问题：1. 将/mnt/extsd/ 挂载权限改为 0000 后，仍然无法保存图片；2. 如果是权限问题，会抛出SecurityException。
+
+
+=== 猜想： ===
+content://media/external/images/media/200   的 external 只可以保存在 EXTERNAL STORAGE 中
+
+在MediaStore.java中有这么一句定义，SD卡并不是primary，只有内部存储才是primary
+经过试验：在storage_list.xml中，将 /mnt/sdcard 的android:primary="true" 改为 "false"，
+                               将 /mnt/extsd   的android:primary="false"改为 "true"
+                      仍然不能保存到/mnt/extsd 中，所以还需要继续跟进
+            /**
+			* The content:// style URI for the "__primary__" external storage
+			* volume.
+             */
+            public static final Uri EXTERNAL_CONTENT_URI =
+                    getContentUri("external");
+
+
+=== 解决方法： 将content:// 改为 file:// ===
+
+通过下面方法可以将content:// 转换为 file:// 
+
+          string  myImageUrl = "content://media/external/images/media/***";
+          Uri uri = Uri.parse(myImageUrl);
+
+public Uri contentUriToFileUri (uri)
+ {
+          String[] proj = { MediaStore.Images.Media.DATA };   
+          Cursor cursor = getContentResolver().query(uri, proj, null, null, null);
+          int actual_image_column_index = cursor.getColumnIndexOrThrow(MediaStore.Images.Media.DATA);   
+          cursor.moveToFirst();
+     
+         String img_path = cursor.getString(actual_image_column_index);
+         File file = new File(img_path);
+         Uri fileUri = Uri.fromFile(file);
+}
+
+
+
+

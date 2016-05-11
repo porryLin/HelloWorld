@@ -1,0 +1,553 @@
+20140812 KAITO-249 : Catalonian wrong translation
+卡泰罗尼亚语对应的目录是 values-ca
+
+FW_KAITO_8151 是WIFI版本
+
+FW_KAITO_8392 是3G版本
+
+
+
+====================================================
+20140815 TTP-4467 Delete the fuction as the Calendar.apk has been replaced by CalendarGoogle.apk
+由于apk被替换掉了，对应的intent启动不了Activity，所以把该功能去掉
+packages/apps/Mms/res/values/mtk_arrays.xml
+-        <item>@string/attach_vcalendar</item>
++        <!--ckt, chunhui.lin <item>@string/attach_vcalendar</item> -->
+
+packages/apps/Mms/src/com/android/mms/util/MessageConsts.java
+-            R.drawable.ipmsg_share_calendar, R.drawable.ipmsg_add_slideshow};
++            //ckt-chunhui.lin R.drawable.ipmsg_share_calendar
++            R.drawable.ipmsg_add_slideshow};
+
+-            R.drawable.ipmsg_share_calendar, R.drawable.ipmsg_add_slideshow};
++            //ckt-chunhui.lin R.drawable.ipmsg_share_calendar
++            R.drawable.ipmsg_add_slideshow};
+
+-            R.drawable.ipmsg_share_calendar, R.drawable.ipmsg_add_slideshow,
++            //ckt-chunhui.lin R.drawable.ipmsg_share_calendar
++            R.drawable.ipmsg_add_slideshow,
+
+packages/apps/Mms/src/com/mediatek/ipmsg/ui/SharePanel.java
+-        ADD_IMAGE, ADD_VIDEO, ADD_SOUND, ADD_VCALENDAR,
++        ADD_IMAGE, ADD_VIDEO, ADD_SOUND, //ckt-chunhui, disable ADD_VCALENDAR
+
+-        IPMSG_SHARE_CONTACT, IPMSG_SHARE_CALENDAR, IPMSG_SHARE_SLIDESHOW};
++        IPMSG_SHARE_CONTACT, IPMSG_SHARE_SLIDESHOW}; //ckt-chunhui, disable IPMSG_SHARE_CALENDAR
+
+-        IPMSG_CHOOSE_PHOTO, IPMSG_CHOOSE_VIDEO, IPMSG_CHOOSE_AUDIO, IPMSG_SHARE_CALENDAR,
++        IPMSG_CHOOSE_PHOTO, IPMSG_CHOOSE_VIDEO, IPMSG_CHOOSE_AUDIO, //ckt-chunhui, disable IPMSG_SHARE_CALENDAR
+
+
+
+
+====================================================
+20140815 KAITO-256 : change the default language to Spanish
+mediatek/config/kaito/ProjectConfig.mk
+-MTK_PRODUCT_LOCALES=en_US es_ES zh_CN zh_TW ru_RU pt_BR fr_FR de_DE tr_TR it_IT in_ID ms_MY vi_VN ar_EG  th_TH  pt_PT   nl_NL el_GR hu_HU tl_PH ro_RO cs_CZ
++MTK_PRODUCT_LOCALES=es_ES en_US zh_CN zh_TW ru_RU pt_BR fr_FR de_DE tr_TR it_IT in_ID ms_MY vi_VN ar_EG  th_TH  pt_PT   nl_NL el_GR hu_HU tl_PH ro_RO cs_CZ
+
+将en_ES移至第一位，则系统自动判定为默认语言
+
+
+
+
+====================================================
+20140816 TTP-4587 : 没插入耳机状态下打开收音机，弹出的对话框不够人性化
+/mediatek/packages/apps/FMRadio/src/com/mediatek/FMRadio/dialogs/NoAntennaDialog.java
+--> public class NoAntennaDialog extends DialogFragment {
+         AlertDialog.Builder builder = new AlertDialog.Builder(getActivity());
+         builder.setMessage(R.string.dlg_noantenna_text)
+                 .setTitle(R.string.dlg_noantenna_title)
++/*将多余的选项去掉
+                 .setPositiveButton(R.string.btn_yes, new DialogInterface.OnClickListener() {
+ 
+                     public void onClick(DialogInterface dialog, int which) {
+                         mListener.noAntennaContinue();
+                     }
+                 })
++*/
+                .setNegativeButton(R.string.btn_ok, new DialogInterface.OnClickListener() {
+ 
+                     public void onClick(DialogInterface dialog, int which) {
+                         mListener.noAntennaCancel();
+
+
+
+====================================================
+20140819 TTP-4816 Horizontal screen didn't display "remove","uninstall","App Info"
+这是由于对于横屏状态下，多了个-land文件夹，如 values-af-land
+   <string name="delete_target_label" msgid="4155210680095864979"></string>
+   <string name="delete_target_uninstall_label" msgid="1839407506844917298"></string>
+   <string name="info_target_label" msgid="1424400595004570393"></string>
+
+将这几个空的字符串注释掉，就会默认使用values-af 下面的string定义了。
+
+
+
+====================================================
+20140820 TTP-4500 KAITO 竖屏状态下多任务管理界面(最近打开activity)显示不协调
+--- a/frameworks/base/packages/SystemUI/res/layout/status_bar_recent_item.xml
++++ b/frameworks/base/packages/SystemUI/res/layout/status_bar_recent_item.xml
+@@ -31,10 +31,11 @@
+         android:layout_gravity="center_horizontal"
+         android:layout_height="wrap_content"
+         android:layout_width="wrap_content"
++        android:paddingRight="25dp"
+         android:clipChildren="false">
+ 
+         <TextView android:id="@+id/app_label"
+-            android:layout_width="wrap_content"
++            android:layout_width="120dp"
+             android:layout_height="wrap_content"
+             android:textSize="@dimen/status_bar_recents_app_label_text_size"
+             android:fadingEdge="horizontal"
+
+
+
+====================================================
+201408  TTP-4592 设置闹钟时，“时”设置为10、11、12，无法显示数字，0-9没问题。
+经过伟大的春辉同志验证，设置字体为“超大”时，该现象必现
+time_header_label.xml
+
+AlarmClockFragment.java  //显示闹钟列表
+--> onResume();
+        // Make sure to use the child FragmentManager. We have to use that one for the
+        // case where an intent comes in telling the activity to load the timepicker,
+        // which means we have to use that one everywhere so that the fragment can get
+        // correctly picked up here if it's open.
+        TimePickerDialog tpd = (TimePickerDialog) getChildFragmentManager().
+                    findFragmentByTag(AlarmUtils.FRAG_TAG_TIME_PICKER);
+        if (tpd != null) { //单例模式
+            // The dialog is already open so we need to set the listener again.
+            tpd.setOnTimeSetListener(this);
+        }
+        
+--> bindView(); //已有闹钟的时间设置
+            itemHolder.clock.setOnClickListener(new View.OnClickListener() {
+                @Override
+                public void onClick(View view) {
+                    mSelectedAlarm = itemHolder.alarm;
+                    AlarmUtils.showTimeEditDialog(getChildFragmentManager(),
+                            alarm, AlarmClockFragment.this, DateFormat.is24HourFormat(getActivity()));
+                    expandAlarm(itemHolder, true);
+                    itemHolder.alarmItem.post(mScrollRunnable);
+                }
+            });
+            
+--> startCreatingAlarm(); //新建闹钟的时间设置
+        if(isResumed()) { /*ckt guoyi add for alarm crash , MTK support[ALPS01514300] 2014-4-18*/
+            AlarmUtils.showTimeEditDialog(getChildFragmentManager(),
+                 null, AlarmClockFragment.this, DateFormat.is24HourFormat(getActivity()));
+        }
+        
+--> OnTimeSet(); //设置完闹钟之后的回调函数
+        
+AlarmUtils.java //闹钟用到的各种工具，猜测有设置铃声，设置时间，重复度等
+--> showTimeEditDialog();
+        TimePickerDialog dialog = TimePickerDialog.newInstance(listener,
+                hour, minutes, is24HourMode);
+        dialog.setThemeDark(true);
+
+        // Make sure the dialog isn't already added.
+        manager.executePendingTransactions();
+        final FragmentTransaction ft = manager.beginTransaction();
+        final Fragment prev = manager.findFragmentByTag(FRAG_TAG_TIME_PICKER);
+        if (prev != null) {
+            ft.remove(prev);
+        }
+        ft.commit();
+
+        if (dialog != null && !dialog.isAdded()) {
+            dialog.show(manager, FRAG_TAG_TIME_PICKER);
+        }
+
+TimePickerDialog.java // frameworks  修改闹钟时间界面等
+--> newInstance();
+
+--> onCreateView(); //界面的初始化 横屏layout_land/time_picker_dialog
+
+AccessibleTextView.java //设置闹钟时显示数字如 “10:22”
+
+--> public void initialize(OnTimeSetListener callback, int hourOfDay, int minute, boolean is24HourMode) {
+
+--> setCurrentItemShowing();
+
+--> updateAmPmDisplay(); //修改上下午显示
+
+
+
+
+
+
+====================================================
+TTP-5365 : Select a contact in the phone book to share to Gmail, the recipient automatically generate a wrong email address
+          选择联系人分享到Gmail，会自动生成一个无效的收件人地址
+packages/apps/Contacts/src/com/android/contacts/detail/ContactLoaderFragment.java
+
+-                intent.setDataAndType(shareUri, Contacts.CONTENT_VCARD_TYPE);
++          //ckt-chunhui.lin ttp-5365      intent.setDataAndType(shareUri, Contacts.CONTENT_VCARD_TYPE);
++                intent.setType(Contacts.CONTENT_VCARD_TYPE);
+                 //@}
+                 intent.putExtra(Intent.EXTRA_STREAM, shareUri);
+                 intent.putExtra(VCardCommonArguments.ARG_CALLING_ACTIVITY,
+
+
+
+
+
+====================================================
+20140905 TTP-5369 : In the US language , set up speed dial ,the prompt language is not English
+                    US语言环境下，拨号界面长按数字键，提示语不是英语
+packages/apps/ContactsCommon/res/values-en-rUS/mtk_strings.xml
+packages/apps/ContactsCommon/res/values-es/mtk_strings.xml
+packages/apps/ContactsCommon/res/values/mtk_strings.xml
+packages/apps/ContactsCommon/res/values-ca/mtk_strings.xml
+
++<resources xmlns:xliff="urn:oasis:names:tc:xliff:document:1.2">
++    <string name="call_speed_dial_title">la marcatge ràpid</string>
++    <string name="dialog_no_speed_dial_number_message">No hi ha un número de marcatge ràpid, s\'estableix ara?</string>
++</resources>
+
+
+
+
+====================================================
+20140905 TTP-5368 Unplug the headphones in call, the sound output from the earpiece  f4a8838
+       先插入耳机再通话，通话期间拔出耳机，声音输出通道变成了听筒，而不是扬声器（卡托无听筒）
+       
+先从 InCallUI 搜到了声音切换图标，再去搜耳机插拔广播。
+
+packages/services/Telephony/src/com/android/phone/WiredHeadsetManager.java
+接受耳机插拔广播
+--> public void onReceive(Context context, Intent intent) {
+         String action = intent.getAction();
+         if (action.equals(Intent.ACTION_HEADSET_PLUG)) {
+               onHeadsetConnection(intent.getIntExtra("state", 0) == 1);
+         }
+    }
+    
+packages/services/Telephony/src/com/android/phone/AudioRouter.java
+处理耳机插拔事件
+--> public void onWiredHeadsetConnection(boolean pluggedIn) {
+          ...
+          if (PhoneUtils.isSpeakerOn(mContext)) {
+                  newMode = AudioMode.SPEAKER;
+          } else {
+                 // newMode = AudioMode.EARPIECE; chunhui
+                  turnOnOffSpeaker(ON);
+                  newMode = AudioMode.SPEAKER;
+          }
+          ...
+   }
+
+
+
+
+=========================================
+20140910 KAITO-286 : Reboot menu is incorrect
+
+frameworks/base/services/java/com/android/server/power/ShutdownThread.java
+                    sConfirmDialog = new AlertDialog.Builder(context)
+                    .setTitle(mRebootSafeMode
+                            ? com.android.internal.R.string.reboot_safemode_title
+                           : (mReboot ? com.android.internal.R.string.global_action_reboot :
+                              com.android.internal.R.string.power_off))
+                    .setMessage(mReboot ? com.android.internal.R.string.reboot_confirm : resourceId)
+                    
+frameworks/base/core/res/res/values-ca/strings.xml
+    <string name="global_action_reboot">"reprendre"</string>
+    <string name="global_action_screenshot">"imatges"</string>
+    <string name="reboot_confirm">"El teu tablet es reiniciarà."</string>
+
+frameworks/base/core/res/res/values-es-rUS/strings.xml
+    <string name="global_action_reboot">Reiniciar</string>
+    <string name="reboot_confirm">Tu tablet se reiniciará.</string>
+    <string name="global_action_screenshot">Captura de Pantalla</string>
+    
+frameworks/base/core/res/res/values-es/strings.xml
+    <string name="global_action_reboot">Reiniciar</string>
+    <string name="reboot_confirm">Tu tablet se reiniciará.</string>
+    <string name="global_action_screenshot">Captura de Pantalla</string>
+    
+frameworks/base/core/res/res/values-zh-rHK/strings.xml
+    <string name="global_action_reboot">"重啟"</string>
+    <string name="global_action_screenshot">"截屏"</string>
+    <string name="reboot_confirm">"您的手機將會重啟"</string>
+    
+frameworks/base/core/res/res/values-zh-rTW/strings.xml
+    <string name="global_action_reboot">"重啟"</string>
+    <string name="global_action_screenshot">"截屏"</string>
+    <string name="reboot_confirm">"您的手機將會重啟"</string>
+    
+    
+    
+    
+====================================================
+20140911 TTP-5386 : Video Replacement pictures by crop photo,it will display unable to save photo edits"
+         谷歌相册裁剪照片无法保存
+         
+packages/services/Telephony/src/com/mediatek/settings/VTAdvancedSetting.java
+-->  protected void onActivityResult(int requestCode, int resultCode, Intent data) {
+         switch (requestCode) {
+         case REQUESTCODE_PICTRUE_PICKED_WITH_DATA:
+             Intent intent = new Intent();
+             ComponentName componentName = new ComponentName(  
+                             "com.android.gallery3d",  
+                             "com.android.gallery3d.filtershow.crop.CropActivity");  
+             intent.setComponent(componentName);
+             ...
+      }
+      
+      
+  
+  
+====================================================
+20140911 TTP-5515 : The contact set personalized ringtones "None" is not valid
+联系人设置铃声为“无”，但来电时仍然播放默认铃声
+
+packages/apps/Contacts/src/com/android/contacts/detail/ContactLoaderFragment.java
+-->  private void doPickRingtone() {
+          intent.putExtra(RingtoneManager.EXTRA_RINGTONE_SHOW_SILENT, false); //将None选项去掉
+          startActivityForResult(intent, REQUEST_CODE_PICK_RINGTONE);
+    }
+-->  public void onActivityResult(int requestCode, int resultCode, Intent data) {
+          case REQUEST_CODE_PICK_RINGTONE: {
+                Uri pickedUri = data.getParcelableExtra(RingtoneManager.EXTRA_RINGTONE_PICKED_URI);
+                handleRingtonePicked(pickedUri);
+                break;
+            }
+     }
+-->  private void handleRingtonePicked(Uri pickedUri) {
+          Intent intent = ContactSaveService.createSetRingtone(
+                    mContext, ringtoneContactUri, mCustomRingtone);
+          mContext.startService(intent);
+     }
+
+packages/apps/Contacts/src/com/android/contacts/ContactSaveService.java
+-->   public static Intent createSetRingtone(Context context, Uri contactUri, String value) {
+
+
+
+
+
+====================================================
+20140912 JIRA KAITO-295 Advanced settings are not available in Bluetooth menu
+        蓝牙设置中无“蓝牙高级设置”选项
+
+packages/apps/Settings/src/com/android/settings/bluetooth/BluetoothSettings.java
+-->  public void onCreateOptionsMenu(Menu menu, MenuInflater inflater) {
+            ...
+            if(ConfigHelper.isAdvanceSettingEnabled()) {
+            menu.add(Menu.NONE, MENU_ID_ADVANCED_SETTING, 0, R.string.bluetooth_advanced_settings)
+                .setEnabled(bluetoothIsEnabled)    
+                .setShowAsAction(MenuItem.SHOW_AS_ACTION_NEVER);
+            }
+            ...
+      }
+      
+mediatek/frameworks-ext/base/core/java/android/bluetooth/ConfigHelper.java
+-->  public static boolean isAdvancedProfileEnabled() { 
+		     readXML("/system/etc/bluetooth/btconfig.xml");
+		     ProfileConfig[] profiles = new ProfileConfig[profileList.size()];
+			 
+		     profileList.toArray(profiles);
+		     for(int i = 0; i < profiles.length; i++) {
+			       if(profiles[i].getProfileEnabled()) {
+          				return true;
+			       }
+		     }
+		     return false;
+	    }
+	    
+关键在下面的XML文件
+mediatek/external/bluetooth/bt_cust/btconfig.xml
+   <profile>
+			<name>profile_supported_simap</name>
+			<value>false</value>
+		</profile>
+		
+		<profile>
+			<name>profile_supported_prxm</name>
+			<value>false</value>
+		</profile>
+		
+		任何一个为true都会显示“高级设置选项”
+
+
+
+
+
+====================================================
+20140916 KAITO-317 Unable to access to internet when DUT is connected to a VPN network
+ [patch]ALPS01727219(For_CKT92_TB_KK_ALPS.KK1.MP1.V2.16_P11)
+
+
+
+
+====================================================
+20140917 TTP-5293 : Added to the contacts on the main screen can not be deleted
+ 联系人快捷方式无法随着联系人删除而删除
+ 
+ 
+
+
+====================================================
+20140918 KAITO-337 : Remove "enter password" in screen lock 【WIFI】
+      锁屏界面不要有“输入密码”字样
+frameworks/base/packages/Keyguard/src/com/android/keyguard/KeyguardPasswordView.java
+
++import com.mediatek.common.featureoption.FeatureOption;
+
+     protected void resetState() {
+         /// M: [ALPS00594552] Indicate the user to input password.
+-        mSecurityMessageDisplay.setMessage(R.string.kg_password_instructions, true);
++        if (!FeatureOption.MTK_TB_MODE_WIFI_ONLY) {
++              mSecurityMessageDisplay.setMessage(R.string.kg_password_instructions, true);
++        }
+         mPasswordEntry.setEnabled(true);
+     }
+
+
+
+
+====================================================
+20140919 KAITO-333 :System updates appears. 【WIFI】
+
+packages/apps/Settings/res/xml/device_info_settings.xml
+ 	<PreferenceScreen android:key="firmware_updates"
+-		android:title="@string/firmware_updates_title" >
++		android:title="@string/radio_info_smsc_update_label" >
+ 		<intent android:targetPackage="com.bqreaders.ota"
+ 			android:targetClass="com.bqreaders.ota.act.MainActivity" />
+ 	</PreferenceScreen>
+
+packages/apps/Settings/src/com/android/settings/DeviceInfoSettings.java
+             // Remove for secondary users
+             removePreference(KEY_SYSTEM_UPDATE_SETTINGS);
+         }
++        if (FeatureOption.MTK_TB_MODE_WIFI_ONLY) {   // ckt-chunhui.lin KAITO-333
++            removePreference(KEY_SYSTEM_UPDATE_SETTINGS);
++        }
+
+
+
+
+====================================================
+20140919  TTP-5644 Alarm system alarm repeat 铃声重复
+
+Alarm:  1. Argon & Fermium ;  2. Krypton & Plutonium ; 3.Carbon & Neptunium
+
+Notification : 1. Cobalt & Lalande  2. Argon & Tejat  3. Ceti Alpha & Space Seed ; 4.Argon & Cobalt
+
+frameworks/base/data/sounds/AllAudio.mk
+# $(LOCAL_PATH)/alarms/ogg/Fermium.ogg:system/media/audio/alarms/Fermium.ogg \
+# $(LOCAL_PATH)/alarms/ogg/Plutonium.ogg:system/media/audio/alarms/Plutonium.ogg \
+#   $(LOCAL_PATH)/notifications/ogg/Tejat.ogg:system/media/audio/notifications/Tejat.ogg \
+
+
+
+====================================================
+   TTP-6241 [KAITO][短信]录制视频时MENU菜单不消失
+
+packages/apps/Camera/src/com/android/camera/actor/VideoActor.java
+
+-->  public boolean onKeyDown(int keyCode, KeyEvent event) {
+       case SettingChecker.VOLUME_KEY_START_VIDEO:
+				  //ckt zhangyan add begin:ttp 3865  when set the volume key to “take picture”，take viedo in the Messaging, the DUT pop up “unfortunately ，the Gallery has stopped”	
+				  if(mCamera.isVideoCaptureIntent()){
+				     	mVideoShutterListener.onShutterButtonClick(null);
+					   mVolumeKeyPressed = true;
+				  }
+				  //ckt zhangyan add end
+		    	return true;
+
+
+mVideoShutterListener.onShutterButtonClick(ShutterButton button);
+-->  public void onShutterButtonClick(ShutterButton button);
+
+-->  public void startVideoRecording();
+
+
+
+
+
+====================================================
+TTP-6346 播放收音机时短按耳机键，收音机不退出，收音机与音乐同时播放
+
+mediatek/packages/apps/FMRadio/src/com/mediatek/FMRadio/FMRadioService.java
+
+
+private class FMServiceBroadcastReceiver extends BroadcastReceiver {
+        @Override
+-->     public void onReceive(Context context, Intent intent) {
+               ...
+               else if (Intent.ACTION_MEDIA_BUTTON.equals(action)) {
+                    exitFM();
+                    stopSelf();
+               }
+               ...
+}
+-->  public void onCreate() {
+         filter.addAction(Intent.ACTION_MEDIA_BUTTON);
+   
+
+
+
+=========================================
+20141011 KAITO450 451 : 增加静态壁纸，删除动态壁纸
+
+默认壁纸文件位置
+vendor/star_tic/vegetahd/bq/resource_overlay/generic/frameworks/base/core/res/res/drawable-nodpi/default_wallpaper.jpg
+vendor/star_tic/vegetahd/bq/resource_overlay/generic/frameworks/base/core/res/res/drawable-xhdpi/default_wallpaper.jpg
+
+静态壁纸位置
+packages/apps/Launcher3/res/values-nodpi/wallpapers.xml
+packages/apps/Launcher3/res/drawable
+试过将壁纸放在drawable_xxxhdi/目录下面，但是系统读取不到
+
+动态壁纸是各个apk文件
+MagicSmokeWallpapers.apk 魔幻烟云
+VisualizationWallpapers.apk 频谱图
+HoloSpiralWallpaper.apk 
+Plant3D.apk 3D树
+MtkVideoLiveWallpaper.apk 视频壁纸
+
+ 
+ 
+ Dear all
+    
+          因为kaito 项目分为3G和wifi版本， 现在很多同事需要在代码里加以区分， 因此统一定义相关的宏来使用。 由于CKT的宏都定义在ProjectConfig_ckt.mk , 但是经过验证要使定义的宏在java中也能使用，只能定义在ProjectConfig.mk 中， 因此现在在该配置文件中定义了宏 CKT_KAITO_3G_VERNO  来标记3G版本。
+ 
+        1          在C, C++ 文件中请直接使用， 例如：
+ 
+                            #if defined(CKT_KAITO_3G_VERNO)
+                                    ------3G----------
+                            #else 
+                                   ------WIFI--------
+                            #endif  
+ 
+         2      而在 java代码中按以下操作；
+ 
+                1 ）  导入FeatureOption包：
+                           import com.mediatek.common.featureoption.FeatureOption; 
+ 
+                2 ）  做判断：
+                       if（FeatureOption.CKT_KAITO_3G_VERNO）{
+ 
+                                ------3G----------
+                       }else{
+ 
+                                 ------WIFI----------
+                       }
+ 
+ 
+ 
+jack.liu 
+
+
+
+KAITO WIFI 版 。进工程模式的方法： 在计算器里输入".xπ13646633πx."
+
+adb shell am start com.mediatek.engineermode/.EngineerMode
+
+adb shell pm disable com.mediatek.engineermode

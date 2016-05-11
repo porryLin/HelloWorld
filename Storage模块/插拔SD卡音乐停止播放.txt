@@ -1,0 +1,239 @@
+Content-Type: text/x-zim-wiki
+Wiki-Format: zim 0.4
+Creation-Date: 2014-04-11T14:49:57+08:00
+
+====== 插拔SD卡音乐停止播放 ======
+Created Friday 11 April 2014
+
+=============================================================================
+根据Log信息无报错可以看出，该行为是软件默认行为，可以更改。
+
+要点：
+1. 在软件中接收到插拔SD卡广播的事件处理中，将暂停播放的功能去掉
+2. 播放的音乐文件如果是SD卡中，则拔出SD卡时必须停止播放并返回音乐列表界面       
+3. 在播放列表中，如果下一首将要播放的是SD卡中的音乐文件，则拔出SD卡时必须重新生成播放列表
+
+
+
+播放过程中插入SD卡log信息：
+
+D/Vold    ( 1302): Volume extsd state changing 0 (No-Media) -> 2 (Pending)
+D/Vold    ( 1302): Volume extsd state changing 2 (Pending) -> 1 (Idle-Unmounted)
+D/MtpService( 2498): onStorageStateChanged /mnt/extsd removed -> unmounted
+D/MountService( 2189): volume state changed for /mnt/extsd (removed -> unmounted)
+D/MountService( 2189): sendStorageIntent Intent { act=android.intent.action.MEDIA_UNMOUNTED dat=file:///mnt/extsd (has extras) } to UserHandle{-1}
+D/Vold    ( 1302): mountVol /mnt/extsd
+D/Vold    ( 1302): storage_type =  primaryStorage = 1
+I/Vold    ( 1302): /dev/block/vold/16777215:255 being considered for volume extsd
+D/Vold    ( 1302): Volume extsd state changing 1 (Idle-Unmounted) -> 3 (Checking)
+I/Vold    ( 1302): Volume: file '/mnt/extsd/16777215_255' is not exist, create it
+I/Vold    ( 1302): Exfat::check
+I/fsck.exfat( 1302): exfatfsck 0.9.5
+I/fsck.exfat( 1302): ERROR: failed to open `/dev/block/vold/16777215:255'.
+I/fsck.exfat( 1302): fsck.exfat terminated by exit(1)
+D/MtpService( 2498): onStorageStateChanged /mnt/extsd unmounted -> checking
+D/MediaScannerReceiver( 2498): action: android.intent.action.MEDIA_UNMOUNTED path: /mnt/extsd
+I/fsck_msdos( 1302): ** /dev/block/vold/16777215:255
+I/fsck_msdos( 1302): Can't open: No such file or directory
+I/fsck_msdos( 1302): fsck_msdos terminated by exit(8)
+D/MountService( 2189): volume state changed for /mnt/extsd (unmounted -> checking)
+E/Vold    ( 1302): Filesystem check failed (unknown exit code 1)
+I/Vold    ( 1302): Fat::check /dev/block/vold/16777215:255
+D/MountService( 2189): sendStorageIntent Intent { act=android.intent.action.MEDIA_CHECKING dat=file:///mnt/extsd (has extras) } to UserHandle{-1}
+W/BroadcastQueue( 2189): Unable to launch app com.estrongs.android.pop/10028 for broadcast Intent { act=android.intent.action.MEDIA_UNMOUNTED dat=file:///mnt/extsd flg=0x10 (has extras) }: process is bad
+E/Vold    ( 1302): Filesystem check failed (unknown exit code 8)
+I/Vold    ( 1302): Ntfs::check
+I/ntfs-3g.probe( 1302): Failed to access '/dev/block/vold/16777215:255': No such file or directory
+I/ntfs-3g.probe( 1302): Error opening '/dev/block/vold/16777215:255': No such file or directory
+I/ntfs-3g.probe( 1302): ntfs-3g.probe terminated by exit(18)
+D/MtpService( 2498): onStorageStateChanged /mnt/extsd checking -> unmounted
+I/fsck.exfat( 1302): exfatfsck 0.9.5
+I/fsck.exfat( 1302): ERROR: failed to open `/dev/block/vold/16777215:255'.
+E/Vold    ( 1302): Filesystem check failed (unknown exit code 18)
+E/Vold    ( 1302): /dev/block/vold/16777215:255 failed FS checks (No such file or directory)
+W/Vold    ( 1302): Volume::deleteMountPoint: /mnt/extsd/16777215_255
+D/Vold    ( 1302): Volume extsd state changing 3 (Checking) -> 1 (Idle-Unmounted)
+I/Vold    ( 1302): /dev/block/vold/16777215:255 being considered for volume extsd
+D/Vold    ( 1302): Volume extsd state changing 1 (Idle-Unmounted) -> 3 (Checking)
+I/Vold    ( 1302): Volume: file '/mnt/extsd/16777215_255' is not exist, create it
+I/Vold    ( 1302): Exfat::check
+D/MountService( 2189): volume state changed for /mnt/extsd (checking -> unmounted)
+D/MountService( 2189): sendStorageIntent Intent { act=android.intent.action.MEDIA_UNMOUNTED dat=file:///mnt/extsd (has extras) } to UserHandle{-1}
+D/MountService( 2189): volume state changed for /mnt/extsd (unmounted -> checking)
+D/MtpService( 2498): onStorageStateChanged /mnt/extsd unmounted -> checking
+D/MountService( 2189): sendStorageIntent Intent { act=android.intent.action.MEDIA_CHECKING dat=file:///mnt/extsd (has extras) } to UserHandle{-1}
+D/MediaScannerReceiver( 2498): action: android.intent.action.MEDIA_UNMOUNTED path: /mnt/extsd
+I/fsck.exfat( 1302): fsck.exfat terminated by exit(1)
+E/Vold    ( 1302): Filesystem check failed (unknown exit code 1)
+I/Vold    ( 1302): Fat::check /dev/block/vold/16777215:255
+W/BroadcastQueue( 2189): Unable to launch app com.estrongs.android.pop/10028 for broadcast Intent { act=android.intent.action.MEDIA_UNMOUNTED dat=file:///mnt/extsd flg=0x10 (has extras) }: process is bad
+I/fsck_msdos( 1302): ** /dev/block/vold/16777215:255
+I/fsck_msdos( 1302): Can't open: No such file or directory
+I/fsck_msdos( 1302): fsck_msdos terminated by exit(8)
+E/Vold    ( 1302): Filesystem check failed (unknown exit code 8)
+I/Vold    ( 1302): Ntfs::check
+I/ntfs-3g.probe( 1302): Failed to access '/dev/block/vold/16777215:255': No such file or directory
+I/ntfs-3g.probe( 1302): Error opening '/dev/block/vold/16777215:255': No such file or directory
+I/ntfs-3g.probe( 1302): ntfs-3g.probe terminated by exit(18)
+D/MtpService( 2498): onStorageStateChanged /mnt/extsd checking -> unmounted
+E/Vold    ( 1302): Filesystem check failed (unknown exit code 18)
+E/Vold    ( 1302): /dev/block/vold/16777215:255 failed FS checks (No such file or directory)
+W/Vold    ( 1302): Volume::deleteMountPoint: /mnt/extsd/16777215_255
+D/Vold    ( 1302): Volume extsd state changing 3 (Checking) -> 1 (Idle-Unmounted)
+I/Vold    ( 1302): /dev/block/vold/16777215:255 being considered for volume extsd
+D/Vold    ( 1302): Volume extsd state changing 1 (Idle-Unmounted) -> 3 (Checking)
+I/Vold    ( 1302): Volume: file '/mnt/extsd/16777215_255' is not exist, create it
+I/Vold    ( 1302): Exfat::check
+D/MountService( 2189): volume state changed for /mnt/extsd (checking -> unmounted)
+D/MountService( 2189): sendStorageIntent Intent { act=android.intent.action.MEDIA_UNMOUNTED dat=file:///mnt/extsd (has extras) } to UserHandle{-1}
+D/MountService( 2189): volume state changed for /mnt/extsd (unmounted -> checking)
+D/MtpService( 2498): onStorageStateChanged /mnt/extsd unmounted -> checking
+I/fsck.exfat( 1302): exfatfsck 0.9.5
+I/fsck.exfat( 1302): ERROR: failed to open `/dev/block/vold/16777215:255'.
+D/MediaScannerReceiver( 2498): action: android.intent.action.MEDIA_UNMOUNTED path: /mnt/extsd
+D/MountService( 2189): sendStorageIntent Intent { act=android.intent.action.MEDIA_CHECKING dat=file:///mnt/extsd (has extras) } to UserHandle{-1}
+W/BroadcastQueue( 2189): Unable to launch app com.estrongs.android.pop/10028 for broadcast Intent { act=android.intent.action.MEDIA_UNMOUNTED dat=file:///mnt/extsd flg=0x10 (has extras) }: process is bad
+I/fsck.exfat( 1302): fsck.exfat terminated by exit(1)
+E/Vold    ( 1302): Filesystem check failed (unknown exit code 1)
+I/Vold    ( 1302): Fat::check /dev/block/vold/16777215:255
+I/fsck_msdos( 1302): ** /dev/block/vold/16777215:255
+I/fsck_msdos( 1302): Can't open: No such file or directory
+I/fsck_msdos( 1302): fsck_msdos terminated by exit(8)
+E/Vold    ( 1302): Filesystem check failed (unknown exit code 8)
+I/Vold    ( 1302): Ntfs::check
+I/ntfs-3g.probe( 1302): Failed to access '/dev/block/vold/16777215:255': No such file or directory
+I/ntfs-3g.probe( 1302): Error opening '/dev/block/vold/16777215:255': No such file or directory
+I/ntfs-3g.probe( 1302): ntfs-3g.probe terminated by exit(18)
+D/MtpService( 2498): onStorageStateChanged /mnt/extsd checking -> unmounted
+D/MtpService( 2498): onStorageStateChanged /mnt/extsd unmounted -> checking
+I/fsck.exfat( 1302): exfatfsck 0.9.5
+E/Vold    ( 1302): Filesystem check failed (unknown exit code 18)
+E/Vold    ( 1302): /dev/block/vold/16777215:255 failed FS checks (No such file or directory)
+W/Vold    ( 1302): Volume::deleteMountPoint: /mnt/extsd/16777215_255
+D/Vold    ( 1302): Volume extsd state changing 3 (Checking) -> 1 (Idle-Unmounted)
+I/Vold    ( 1302): /dev/block/vold/179:52 being considered for volume extsd
+D/Vold    ( 1302): Volume extsd state changing 1 (Idle-Unmounted) -> 3 (Checking)
+I/Vold    ( 1302): Volume: file '/mnt/extsd/179_52' is not exist, create it
+I/Vold    ( 1302): Exfat::check
+D/MountService( 2189): volume state changed for /mnt/extsd (checking -> unmounted)
+D/MountService( 2189): sendStorageIntent Intent { act=android.intent.action.MEDIA_UNMOUNTED dat=file:///mnt/extsd (has extras) } to UserHandle{-1}
+D/MountService( 2189): volume state changed for /mnt/extsd (unmounted -> checking)
+D/MountService( 2189): sendStorageIntent Intent { act=android.intent.action.MEDIA_CHECKING dat=file:///mnt/extsd (has extras) } to UserHandle{-1}
+I/fsck.exfat( 1302): ERROR: exFAT file system is not found.
+I/fsck.exfat( 1302): fsck.exfat terminated by exit(1)
+D/MediaScannerReceiver( 2498): action: android.intent.action.MEDIA_UNMOUNTED path: /mnt/extsd
+E/Vold    ( 1302): Filesystem check failed (unknown exit code 1)
+I/Vold    ( 1302): Fat::check /dev/block/vold/179:52
+W/BroadcastQueue( 2189): Unable to launch app com.estrongs.android.pop/10028 for broadcast Intent { act=android.intent.action.MEDIA_UNMOUNTED dat=file:///mnt/extsd flg=0x10 (has extras) }: process is bad
+I/fsck_msdos( 1302): ** /dev/block/vold/179:52
+I/fsck_msdos( 1302): ** Phase 1 - Read FAT (compare skipped)
+I/fsck_msdos( 1302): Attempting to allocate 7564 KB for FAT
+D/dalvikvm( 2498): GC_CONCURRENT freed 446K, 12% free 9372K/10544K, paused 3ms+3ms, total 21ms
+I/fsck_msdos( 1302): ** Phase 2 - Check Cluster Chains
+I/fsck_msdos( 1302): ** Phase 3 - Checking Directories
+I/fsck_msdos( 1302): ** Phase 4 - Checking for Lost Files
+I/fsck_msdos( 1302): 21 files, 3527760 free (1930516 clusters)
+I/Vold    ( 1302): Filesystem check completed OK
+D/Vold    ( 1302): Volume extsd state changing 3 (Checking) -> 4 (Mounted)
+I/Vold    ( 1302): Volume::mountVol: getState=4, State_Mounted=4
+D/MountService( 2189): volume state changed for /mnt/extsd (checking -> mounted)
+D/MtpService( 2498): onStorageStateChanged /mnt/extsd checking -> mounted
+D/MtpService( 2498): addStorageLocked 131073 /mnt/extsd
+W/ResourceType( 2402): No known package when getting value for resource number 0x7f0a00c0
+E/VoldConnector( 2189): NDC Command {7 volume mount /mnt/extsd} took too long (957ms)
+D/MountService( 2189): sendStorageIntent Intent { act=android.intent.action.MEDIA_MOUNTED dat=file:///mnt/extsd (has extras) } to UserHandle{-1}
+D/MediaScannerReceiver( 2498): action: android.intent.action.MEDIA_MOUNTED path: /mnt/extsd
+W/BroadcastQueue( 2189): Unable to launch app com.estrongs.android.pop/10028 for broadcast Intent { act=android.intent.action.MEDIA_MOUNTED dat=file:///mnt/extsd flg=0x10 (has extras) }: process is bad
+V/MediaPlayerFactory( 1310): MediaPlayerFactory::getPlayerType: fd = 0x15
+V/MediaPlayerFactory( 1310): getPlayerType: 1
+V/MediaPlayerFactory( 1310): use STAGEFRIGHT_PLAYER
+V/MediaPlayerFactory( 1310):  create StagefrightPlayer
+D/MediaPlaybackService( 2685): restored queue, currently at position 67997/213055 (requested 67997)
+V/MusicFXControlPanelReceiver( 3464): onReceive
+V/MusicFXControlPanelReceiver( 3464): Action: android.media.action.OPEN_AUDIO_EFFECT_CONTROL_SESSION
+V/MusicFXControlPanelReceiver( 3464): Package name: com.android.music
+V/MusicFXControlPanelReceiver( 3464): Audio session: 7
+V/MusicFXControlPanelEffect( 3464): openSession(android.app.ReceiverRestrictedContext@41f58ad8, com.android.music, 7)
+E/MediaPlayer( 2685): Should have subtitle controller already set
+V/MediaPlayerFactory( 1310): MediaPlayerFactory::getPlayerType: url = /mnt/extsd/179_52/alwaysrain.mp3
+V/MediaPlayerFactory( 1310): MediaPlayerFactory::getPlayerType: url = /mnt/extsd/179_52/周杰伦 - 七里香.mp3
+D/dalvikvm( 2498): GC_CONCURRENT freed 379K, 12% free 9402K/10584K, paused 4ms+2ms, total 23ms
+D/dalvikvm( 2498): WAIT_FOR_CONCURRENT_GC blocked 9ms
+V/MediaPlayerFactory( 1310): MediaPlayerFactory::getPlayerType: url = /mnt/extsd/179_52/周杰伦 - 安静.mp3
+V/MediaPlayerFactory( 1310): MediaPlayerFactory::getPlayerType: url = /mnt/extsd/179_52/VID_20010123_144337.mp4
+D/cedarx_demux( 1310): cedarx_demux_create: 0x7
+V/MediaPlayerFactory( 1310): MediaPlayerFactory::getPlayerType: url = /mnt/extsd/179_52/周杰伦 - 一路向北（寻找周杰伦 电影主题曲）.mp3
+W/MediaScanner( 2498): Error opening directory '/mnt/usbhost1/', skipping: Permission denied.
+D/bsthal  ( 2189): mPendingEvent.light = 640.000000
+D/bsthal  ( 2189): mPendingEvent.light = 640.000000
+V/MediaScanner( 2498): pruneDeadThumbnailFiles... android.database.sqlite.SQLiteCursor@41f6cd70
+V/MediaScanner( 2498): /pruneDeadThumbnailFiles... android.database.sqlite.SQLiteCursor@41f6cd70
+D/bsthal  ( 2189): mPendingEvent.light = 320.000000
+D/bsthal  ( 2189): mPendingEvent.light = 320.000000
+
+
+播放过程中拔出SD卡信息：
+
+D/DirectVolume( 1302): Volume extsd /mnt/extsd partition 179:52 removed
+D/Vold    ( 1302): Volume extsd state changing 4 (Mounted) -> 5 (Unmounting)
+D/MountService( 2189): sendStorageIntent Intent { act=android.intent.action.MEDIA_EJECT dat=file:///mnt/extsd (has extras) } to UserHandle{-1}
+D/MediaProvider( 2498): deleting all entries for storage StorageVolume [mStorageId=131073 mPath=/mnt/extsd mDescriptionId=17040659 mPrimary=false mRemovable=true mEmulated=false mMtpReserveSpace=0 mAllowMassStorage=true mMaxFileSize=0 mOwner=null]
+D/dalvikvm( 2189): GC_FOR_ALLOC freed 877K, 10% free 16404K/18140K, paused 49ms, total 49ms
+V/PhoneStatusBar( 2402): setLightsOn(true)
+D/dalvikvm( 2685): GC_EXPLICIT freed 9416K, 35% free 19543K/29664K, paused 3ms+8ms, total 52ms
+W/CursorWrapperInner( 2685): Cursor finalized without prior close()
+W/CursorWrapperInner( 2685): Cursor finalized without prior close()
+W/CursorWrapperInner( 2685): Cursor finalized without prior close()
+W/CursorWrapperInner( 2685): Cursor finalized without prior close()
+W/CursorWrapperInner( 2685): Cursor finalized without prior close()
+W/CursorWrapperInner( 2685): Cursor finalized without prior close()
+W/CursorWrapperInner( 2685): Cursor finalized without prior close()
+W/CursorWrapperInner( 2685): Cursor finalized without prior close()
+W/CursorWrapperInner( 2685): Cursor finalized without prior close()
+W/CursorWrapperInner( 2685): Cursor finalized without prior close()
+W/CursorWrapperInner( 2685): Cursor finalized without prior close()
+W/CursorWrapperInner( 2685): Cursor finalized without prior close()
+W/CursorWrapperInner( 2685): Cursor finalized without prior close()
+W/CursorWrapperInner( 2685): Cursor finalized without prior close()
+W/CursorWrapperInner( 2685): Cursor finalized without prior close()
+W/CursorWrapperInner( 2685): Cursor finalized without prior close()
+E/Vold    ( 1302): mPartIdx = -1, mMountedPartNum= 4
+I/Vold    ( 1302): /mnt/extsd/179_52 sucessfully unmounted
+W/Vold    ( 1302): Volume::deleteMountPoint: /mnt/extsd/179_52
+I/Vold    ( 1302): Volume::deleteDeviceNode: path=������
+E/Vold    ( 1302): Volume::deleteDeviceNode: path(��������) is invalid
+I/Vold    ( 1302): /mnt/extsd sucessfully unmounted
+I/Vold    ( 1302): /mnt/extsd unmounted successfully
+D/Vold    ( 1302): Volume extsd state changing 5 (Unmounting) -> 1 (Idle-Unmounted)
+D/DirectVolume( 1302): Crisis averted
+D/DirectVolume( 1302): Volume extsd /mnt/extsd disk 179:48 removed
+E/Vold    ( 1302): Volume extsd unmount request when not mounted
+D/Vold    ( 1302): Volume extsd state changing 1 (Idle-Unmounted) -> 0 (No-Media)
+D/MtpService( 2498): onStorageStateChanged /mnt/extsd mounted -> unmounted
+D/MtpService( 2498): removeStorageLocked 131073 /mnt/extsd
+D/MediaScannerReceiver( 2498): action: android.intent.action.MEDIA_UNMOUNTED path: /mnt/extsd
+D/MtpService( 2498): onStorageStateChanged /mnt/extsd unmounted -> removed
+D/MountService( 2189): volume state changed for /mnt/extsd (mounted -> unmounted)
+D/MountService( 2189): sendStorageIntent Intent { act=android.intent.action.MEDIA_UNMOUNTED dat=file:///mnt/extsd (has extras) } to UserHandle{-1}
+W/MountService( 2189): Duplicate state transition (unmounted -> unmounted) for /mnt/extsd
+D/MountService( 2189): sendStorageIntent Intent { act=unmounted dat=file:///mnt/extsd (has extras) } to UserHandle{-1}
+D/MountService( 2189): volume state changed for /mnt/extsd (unmounted -> removed)
+D/MountService( 2189): sendStorageIntent Intent { act=android.intent.action.MEDIA_REMOVED dat=file:///mnt/extsd (has extras) } to UserHandle{-1}
+W/BroadcastQueue( 2189): Unable to launch app com.estrongs.android.pop/10028 for broadcast Intent { act=android.intent.action.MEDIA_UNMOUNTED dat=file:///mnt/extsd flg=0x10 (has extras) }: process is bad
+D/bsthal  ( 2189): mPendingEvent.light = 640.000000
+D/bsthal  ( 2189): mPendingEvent.light = 640.000000
+D/bsthal  ( 2189): mPendingEvent.light = 320.000000
+D/bsthal  ( 2189): mPendingEvent.light = 320.000000
+D/bsthal  ( 2189): mPendingEvent.light = 640.000000
+D/bsthal  ( 2189): mPendingEvent.light = 640.000000
+D/bsthal  ( 2189): mPendingEvent.light = 320.000000
+D/bsthal  ( 2189): mPendingEvent.light = 320.000000
+D/bsthal  ( 2189): mPendingEvent.light = 640.000000
+D/bsthal  ( 2189): mPendingEvent.light = 640.000000
+D/bsthal  ( 2189): mPendingEvent.light = 320.000000
+D/bsthal  ( 2189): mPendingEvent.light = 320.000000
+D/bsthal  ( 2189): mPendingEvent.light = 320.000000
+D/bsthal  ( 2189): mPendingEvent.light = 640.000000
+D/bsthal  ( 2189): mPendingEvent.light = 640.000000
+
+

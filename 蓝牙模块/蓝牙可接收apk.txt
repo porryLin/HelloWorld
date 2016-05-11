@@ -1,0 +1,31 @@
+Content-Type: text/x-zim-wiki
+Wiki-Format: zim 0.4
+Creation-Date: 2014-05-20T09:28:03+08:00
+
+====== 蓝牙可接收apk ======
+Created Tuesday 20 May 2014
+
+android4.4/packages/apps/Bluetooth/src/com/android/bluetooth/opp/Constants.java 
+
+    /**
+	* The MIME type(s) of we could accept from other device.
+	* This is in essence a "white list" of acceptable types.
+	* Today, restricted to images, audio, video and certain text types.
+     */
+    public static final String[] ACCEPTABLE_SHARE_INBOUND_TYPES = new String[] {
+        "image/*",
+        "video/*",
+        "audio/*",
+        "text/x-vcard",
+        "text/plain",
+        "text/html",
+        "application/zip",
+        "application/vnd.ms-excel",
+        "application/msword",
+        "application/vnd.ms-powerpoint",
+        "application/pdf",
+        "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+        "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+        "application/vnd.openxmlformats-officedocument.presentationml.presentation",
++	"application/vnd.android.package-archive",             // 添加这句后，就可以通过蓝牙接收apk文件
+    };

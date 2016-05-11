@@ -1,0 +1,365 @@
+Content-Type: text/x-zim-wiki
+Wiki-Format: zim 0.4
+Creation-Date: 2014-02-26T09:48:09+08:00
+
+====== 杂 ======
+Created Wednesday 26 February 2014
+
+
+================================================常用文件位置==================================================
+开机动画的文件位置：
+       device/idsbg/f1/media/bootanimation.zip
+
+开机画面主要是由一个zip格式的压缩包bootanimation.zip组成，
+压缩包里面包含数张png格式的图片，还有一个desc.txt的文本文档。
+开机时按desc.txt里面的指令，屏幕上会按文件名称顺序连续的播放一张张的图片，
+就像播放原始的胶带影片一样，形成动画。 
+
+
+Android开机动画有两种修改方法:
+1. android 2.0及之后，使用bootanimation程序显示开机画面，
+  如需修改开机画面，不用修改代码，只需按格式要求做bootanimation.zip包，放在系统(room包)的/system/media目录中，
+  或/data/local目录中即可，两个目录下都存在时，优先使用/data/local下的。
+2. android 2.0之前，则需要修改源码。
+
+
+
+壁纸与默认壁纸
+默认壁纸：
+/frameworks/base/core/res/res/drawable/default_wallpaper.jpg
+
+壁纸：
+/packages/apps/Launcher2/res/drawable/xxx
+
+/packages/apps/Launcher2/res/values-mdpi/wallpapers.xml
+<item>wallpaperName</item>
+
+
+
+字体库的文件位置
+      framework/base/data/fonts/
+
+
+系统自带音频文件位置
+      framework/base/data/sounds/
+
+
+
+
+====== usb 调试对话框默认为可调试 ======
+ro.adb.secure=0
+
+
+====== usb 调试默认为可调试(开发者选项) ======
+persist.sys.usb.config=mtp,adb
+
+
+== 备份数据的功能实现： ==
+在版型配置包的anroid.prop中加入下面这个配置即可：
+
+ro.settings.backuptransport=com.google.android.backup/.BackupTransportService
+
+或者
+device/softwinner/fiber-common/overlay/frameworks/base/packages/SettingsProvider/res/values/defaults.xml
+<string name="def_backup_transport">com.google.android.backup/.BackupTransportService</string>
+
+================================================权限掩码==================================================
+默认情况下的umask值是022(可以用umask命令查看），
+此时你建立的文件默认权限是644(6-0,6-2,6-2)，
+建立的目录的默认权限是755(7-0,7-2,7-2)，
+它是为了控制默认权限，不要使默认的文件和目录具有全权而设的
+
+
+
+
+================================================静态库 动态库=================================================
+静态库 
+    静态库在程序编译时会被连接到目标代码中，程序运行时将不再需要该静态库。
+动态库
+    动态库在程序编译时并不会被连接到目标代码中，而是在程序运行是才被载入，因此在程序运行时还需要动态库存在。
+
+当静态库和动态库同名时， gcc命令将优先使用动态库。
+
+
+Recovery中所用到的库全部是静态库的原因：
+    1. 所用到的库全部连接到目标代码中了，在升级的时候动态库；
+    2. 不用创建保存动态库的目录；
+    3. 动态库比较大，加载耗费时间和内存。
+
+
+
+=============================================音乐播放器 问题=================================================
+遇到的很多个bug都与播放器的生命周期有关，如无法拖动进度条。
+
+    在reset() 后 MediaPlayer 处于 Idle 状态， 此时如果调用了getDuration()等方法, 会触发OnErrorListener.onError()，并且MediaPlayer会进入Error状态。
+
+    如果MediaPlayer进入了Error状态，可以通过调用reset()来恢复，使得MediaPlayer重新返回到Idle状态。
+
+
+停止其他播放中的音乐：
+    /*
+	   * Make sure we're not recording music playing in the background, ask
+	   * the MediaPlaybackService to pause playback.
+     */
+    private void stopAudioPlayback() {
+        // Shamelessly copied from MediaPlaybackService.java, which
+        // should be public, but isn't.
+        Intent i = new Intent("com.android.music.musicservicecommand");
+        i.putExtra("command", "pause");
+
+        sendBroadcast(i);
+    }
+
+
+
+
+============================================长按电源键关机功能============================================
+frameworks/base/policy/src/com/android/internal/policy/impl/PhoneWindowManager.java
+--> private final Runnable mPowerLongPress = new Runnable() {
+          ...
+          if (FactoryTest.isLongPressOnPowerOffEnabled()) {
+              resolvedBehavior = LONG_PRESS_POWER_SHUT_OFF_NO_CONFIRM;
+          }
+          ...
+          case LONG_PRESS_POWER_SHUT_OFF:
+          case LONG_PRESS_POWER_SHUT_OFF_NO_CONFIRM:
+                mPowerKeyHandled = true;
+                performHapticFeedbackLw(null, HapticFeedbackConstants.LONG_PRESS, false);
+                sendCloseSystemWindows(SYSTEM_DIALOG_REASON_GLOBAL_ACTIONS);
+                mWindowManagerFuncs.shutdown(resolvedBehavior == LONG_PRESS_POWER_SHUT_OFF);
+                break;
+    }
+
+
+
+
+
+=========================================连续按电源键导致视频播放器退出===================================
+线程问题
+    onPause()线程未执行完毕，onResume()就开始执行，导致程序退出。
+解决方法： 
+    在onResume()开始前加上 Thread.sleep(100); 直到onPause()执行完毕。
+
+
+
+
+============================Thread.sleep() VS Thread.currentThread().sleep()=============================
+http://stackoverflow.com/questions/2077216/java-thread-currentthread-sleepx-vs-thread-sleepx
+
+1. 两个方法其实是同一个方法来的
+2. 因为属于类的静态方法，最好用类调用，而不是用实例去调用，所以用 Thread.sleep()比较规范
+3. 结果都是使当前线程sleep,不能使其他线程sleep，第二个方法可能会让人造成可以otherThread.sleep()的歧义。
+
+
+
+
+================================================酱油党飘过====================================================
+如何求得文件的MD5值
+   $ openssl md5 '/home/porry/signed-ota-files.zip' 
+结果:
+   MD5(/home/porry/signed-ota-files.zip)= fe2f0ff9908f03892d62333a84380545
+
+
+
+
+
+
+
+
+====== 对话框 ======
+dismiss dialog when touch the other place:
+         Dialog.setCanceledOnTouchOutside(true);
+
+
+
+====== 读取文件信息 ======
+使用命令读取文件字符串信息
+public String readVersionSNInfo(String type) {
+	  String version = "null";
+	  String command = "";
+	  if ("sn".equals(type)) {
+	       command = "cat /snsn/sn.txt";
+	  } else {
+	       return version;	
+	  }
+
+	  try {
+	       DataInputStream  bf = new DataInputStream(Runtime.getRuntime().exec(command).getInputStream());
+	       version = bf.readLine();
+	       Log.i("setting", "[" + type + "] = " + version);
+	  } catch (IOException e) {
+		 e.printStackTrace();
+	  }	
+	      return version;
+}
+
+
+
+====== 闹钟无法唤醒机台 ======
+这是查看的log信息：
+D/com.wumii.android.service.PushService(25798): One new message delivered[content=null, topics=[system/mobile/alive]].
+D/com.wumii.android.service.PushService(25798): Next ping will happen within 240 second.
+经验证是某个推送服务接收了闹钟的广播，关掉Wifi就可以了。
+是否可以改广播方式？
+
+
+
+
+====== 疑问点 ======
+修改Launcher需要回复出厂设置才能看到效果？
+
+
+下拉菜单消失问题经验证与SetupWizard.apk有关，SetupWizard.apk依赖GoogleLoginService.apk， GooglePartnerSetup.apk
+
+
+== socket无法生成 ==
+dev/socket/ 下面没有生成socket问题：
+因为socket是在服务启动过程中生成的，首先检查服务有没有启动成功。
+
+== socket无法连接 ==
+客户端无法连接socket问题：
+首先检查dev/socket/下的socket权限，将660改为666后连接成功。
+
+java中byte[]数组转化为String需要使用 new String(buf, "UTF-8"); 不可直接用("xxx" + buf)转化
+      String转化为 byte[] mString.getBytes(Charsets.UTF_8)); 不可直接用toString()转化
+
+
+
+====== native 层打印Log信息 ======
+第一步
+在mk文件加入 LOCAL_SHARED_LIBRARIES := liblog libcutils
+第二步
+#include <cutils/log.h>
+第三步
+#define SLOGI(...) ((void)__android_log_buf_print(LOG_ID_SYSTEM, ANDROID_LOG_INFO, LOG_TAG, __VA_ARGS__))
+#define SLOGE(...) ((void)__android_log_buf_print(LOG_ID_SYSTEM, ANDROID_LOG_ERROR, LOG_TAG, __VA_ARGS__))
+
+#define LOG_TAG "MyServer"
+
+
+
+
+====== OTA 升级根据版本号 ======
+
+
+
+
+Sensor的log位置 : android/device/idsbg/common/hardware/libhardware/invensense/libsensors/LightSensor.cpp
+
+
+================================
+获得分辨率，密度等的方法
+adb shell
+wm
+usage: wm [subcommand] [options]
+       wm size [reset|WxH]
+       wm density [reset|DENSITY]
+       wm overscan [reset|LEFT,TOP,RIGHT,BOT
+
+wm size: return or override display size.
+
+wm density: override display density.
+
+wm overscan: set overscan area for display.
+
+
+
+=============修改横竖屏==================
+
+mediatek/custom/kaito/kernel/accelerometer/lsm330/cust_acc.c 
+.direction = 0,改为.direction = 3
+
+
+
+=============各种版本号==================
+
+正式版本版本号注意事项：
+1.软件发布单中填写外部版本号、
+2.手机*#166*#查询的外部版本号、
+3.软件包名称、
+4.软件BIN文档的版本号、
+5.工具读取的外部版本号、
+6.进入测试模式->Version查看软件版本号 、
+7.设置->关于手机查询软件版本号 
+这七者一致，都为外部版本号；
+
+1.软件发布单中填写内部版本号、
+2.手机*#29826633#查询的内部版本号、
+3.工具读取的内部版本号，
+这三者一致，都为内部版本号；
+
+
+
+
+
+
+
+=========================================
+KAITO 屏幕触摸偶尔失灵
+ckt-mtk-8151/out/target/product/kaito_wifi/system/vendor/ft5606/ckt/5a_10.bin
+ckt-mtk-8151/out/target/product/kaito_wifi/system/vendor/ft5606/truely/5a_10.bin
+
+
+
+
+=========================================
+拍照声音修改位置
+frameworks/av/services/camera/libcameraservice/CameraService.cpp
+-->  void CameraService::loadSound() {
+          Mutex::Autolock lock(mSoundLock);
+         if (mSoundRef++) return;
+
+         mSoundPlayer[SOUND_SHUTTER] = newMediaPlayer("/system/media/audio/ui/camera_click.ogg");
+         mSoundPlayer[SOUND_RECORDING] = newMediaPlayer("/system/media/audio/ui/VideoRecord.ogg");
+}
+
+
+
+
+==========================================
+IPSEC Xauth PSK:
+-Server address: vpnqa.bq.com
+-IPSec identifier: grupoqa
+-IPSec pre-shared key: bqreaderskey
+-Username: qa
+-Password: bqreaders
+
+-Forwarding routes: 172.16.0.0/12
+
+
+
+==========================================
+辨别内存泄露两个原则：
+
+1.正常系统在运行稳定后其内存的占用量是稳定的，不应该无限制增长
+2.对任何一个类的使用个数也有一个相对稳定的上限，不应该无限制增长
+
+
+13824365137
+git clone szgit@10.240.2.41:mt6592_jb9 y02a_s10a
+
+
+
+
+
+==========================================
+射频校准参数固化代码方法
+2G 部分请参考：User Guide – MT6166_2G.pptx 
+路径：/SW/3G Phone Data/Smart Phone/Standard Package/MT6572 SW Doc Package/Modem 
+3G 部分请参考： 
+User Guide - RF Initial Settings(MT6280_and_latter).pptx 
+路径：Cabinets/Product Line/WCX/HW (For Customer Release)/Common Design Notes/Antenna & RF L1/Common 
+
+
+
+==========================================
+当listView 最后一行与前面不对齐时,请在最里面那层 <LinearLayout> 将 paddingLeft 改成 layout_marginLeft
+
+==========================================
+隐藏状态栏某个view,如时间 等
+        getView().setSystemUiVisibility(
+                View.STATUS_BAR_DISABLE_HOME |
+                View.STATUS_BAR_DISABLE_RECENT |
+                View.STATUS_BAR_DISABLE_NOTIFICATION_ALERTS |
+                View.STATUS_BAR_DISABLE_CLOCK);
+

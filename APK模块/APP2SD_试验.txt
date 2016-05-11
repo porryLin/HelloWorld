@@ -1,0 +1,338 @@
+====== APP2SD的实现 ======
+Created Tuesday 20 May 2014
+
+== 摘要 ==
+
+1. 文件的复制过程，PMS针对内部存储和sd卡分别提供了一个类：FileInstallArgs 和 AsecInstallArgs，并分别调用二者的copyApk方法来完成apk的复制过程。
+2. 由于多用户的分区方式，/data分区 与内部存储分区 /mnt/shell/emulated 共用同一块存储分区，所以移动到内部存储分区没有多大意义。
+3.  isExternalStorageEmulated() 判断的却是"内部存储分区",这不合逻辑，应该改为判断 SD 卡分区是否 emulated，或者应该先判断是否mounted。
+4.  根据试验，可以在 /data 分区安装超过1G的APK，那么应该整个 /data 都可以用来安装，一共有5.4 G大小，也就没必要 APP2SD 了。
+
+== ========================================================================================================== ==
+ F1 Android4.2 版本的APP2SD功能是移动到内部存储中，并不是SD卡。
+试验过程记录如下：
+
+newCachePath = /mnt/asec/com.baidu.BaiduMap.pad-1
+
+== 移动到SD之前 ==
+1.  /data/data/com.baidu.BaiduMap.pad/lib -> /data/app-lib/com.baidu.BaiduMap.pad
+2.  /data/app/com.baidu.BaiduMap.pad-1.apk   （大小为10151373）
+3.  /data/dalvik-cache/data@app@com.baidu.BaiduMap.pad-1.apk@classes.dex
+4.  /data/system/packages.list  （一样）
+com.baidu.BaiduMap.pad 10059 0 /data/data/com.baidu.BaiduMap.pad
+
+5.  /data/system/packages.xml
+__<package name="com.baidu.BaiduMap.pad" codePath="/data/app/com.baidu.BaiduMap.pad-1.apk" nativeLibraryPath="/data/app-lib/com.baidu.BaiduMap.pad" __flags="0" ft="5275218" it="5275fcf" ut="5275fcf" version="320" userId="10059">
+<sigs count="1">
+<cert index="19" key="30820253308201bca00302010202044b9dd8e7300d06092a864886f70d0101050500306d310b300906035504061302434e3111300f060355040813085368616e676861693111300f060355040713085368616e6768616931133011060355040a130a426169647520496e632e31133011060355040b130a426169647520496e632e310e300c0603550403130542616964753020170d3130303331353036353131395a180f32303634313231363036353131395a306d310b300906035504061302434e3111300f060355040813085368616e676861693111300f060355040713085368616e6768616931133011060355040a130a426169647520496e632e31133011060355040b130a426169647520496e632e310e300c06035504031305426169647530819f300d06092a864886f70d010101050003818d00308189028181009c7a58a39572c4b379ddfca6765e95d3aec69fe362ce622e629647cf441b9e4b7b695e540fd29b7da7b2ab64793089f2b69112d11ac5776973dd68cff88b671826c1286e57c7294c76c7c118ae41bf9336ff9ae0aa90c65ed7db0749ff137b815b6d3b53abaad72d7817b0b8900caef12eea13d12baf0b8cb30543bfb3489c230203010001300d06092a864886f70d01010505000381810063231fb3859d01f75cd7ed810aa5c08eb8fba5b7b7bf11f2c65ae70aa69365b7c985334a38be2c6712c77a1b8aa09d1ae84b51b0062968734700f795b08a7ff5dd73751cd63254f211cb6386fa733690d826b44c169f76c23b82f813b15c1da47a2be69369cd75bf7cdaa337d2ea38726a778583838409b482efc126f7e668b3" />
+</sigs>
+<perms>
+<item name="android.permission.READ_EXTERNAL_STORAGE" />
+</perms>
+其他权限...
+</package>
+
+
+
+== 移动到SD之后 ==
+1.  /data/data/com.baidu.BaiduMap.pad/lib -> /mnt/asec/com.baidu.BaiduMap.pad-1/lib
+2.  /mnt/asec/com.baidu.BaiduMap.pad-1/pkg.apk   （大小为10151373）
+3.  /data/dalvik-cache/mnt@asec@com.baidu.BaiduMap.pad-1@pkg.apk@classes.dex
+4.  /data/system/packages.list （一样）
+com.baidu.BaiduMap.pad 10059 0 /data/data/com.baidu.BaiduMap.pad
+
+5.  /data/system/packages.xml
+__<package name="com.baidu.BaiduMap.pad" codePath="/mnt/asec/com.baidu.BaiduMap.pad-1/pkg.apk" nativeLibraryPath="/mnt/asec/com.baidu.BaiduMap.pad-1/lib__" flags="262144" ft="5275218" it="5275fcf" ut="5275fcf" version="320" userId="10059">
+<sigs count="1">
+<cert index="19" key="30820253308201bca00302010202044b9dd8e7300d06092a864886f70d0101050500306d310b300906035504061302434e3111300f060355040813085368616e676861693111300f060355040713085368616e6768616931133011060355040a130a426169647520496e632e31133011060355040b130a426169647520496e632e310e300c0603550403130542616964753020170d3130303331353036353131395a180f32303634313231363036353131395a306d310b300906035504061302434e3111300f060355040813085368616e676861693111300f060355040713085368616e6768616931133011060355040a130a426169647520496e632e31133011060355040b130a426169647520496e632e310e300c06035504031305426169647530819f300d06092a864886f70d010101050003818d00308189028181009c7a58a39572c4b379ddfca6765e95d3aec69fe362ce622e629647cf441b9e4b7b695e540fd29b7da7b2ab64793089f2b69112d11ac5776973dd68cff88b671826c1286e57c7294c76c7c118ae41bf9336ff9ae0aa90c65ed7db0749ff137b815b6d3b53abaad72d7817b0b8900caef12eea13d12baf0b8cb30543bfb3489c230203010001300d06092a864886f70d01010505000381810063231fb3859d01f75cd7ed810aa5c08eb8fba5b7b7bf11f2c65ae70aa69365b7c985334a38be2c6712c77a1b8aa09d1ae84b51b0062968734700f795b08a7ff5dd73751cd63254f211cb6386fa733690d826b44c169f76c23b82f813b15c1da47a2be69369cd75bf7cdaa337d2ea38726a778583838409b482efc126f7e668b3" />
+</sigs>
+<perms>
+<item name="android.permission.READ_EXTERNAL_STORAGE" />
+其他权限...
+</perms>
+</package>
+
+
+
+
+
+
+
+=========================================================================================
+设备中如何操作：设置  -> 应用 -> SD卡中  -> 移至SD卡
+
+== 代码中加载显示 "SD卡中" 的地方： ManageApplications.java ==
+->  public void onCreate(Bundle savedInstanceState) {
+               ...
+               if (!Environment.isExternalStorageEmulated()) {       __ //如果不是emulated的，则显示__
+                               tab = new TabInfo(this, mApplicationsState,
+                               getActivity().getString(R.string.filter_apps_onsdcard), LIST_TYPE_SDCARD, this, savedInstanceState);
+                               mTabs.add(tab);
+               }
+                ...
+       }
+
+== 选中一个应用，在打开的应用信息里面，加载显示 "移至SD卡" ：InstalledAppDetails.java ==
+->     private void initMoveButton() {
+                   if (Environment.isExternalStorageEmulated()) {       __//如果是emulated的，则隐藏__
+                            mMoveAppButton.setVisibility(View.INVISIBLE);
+                            return;
+                   }
+                   boolean dataOnly = false;
+                   dataOnly = (mPackageInfo == null) && (mAppEntry != null);
+                   boolean moveDisable = true;
+                   if (dataOnly) {
+                                 mMoveAppButton.setText(R.string.move_app);        // 移动
+                    } else if ((mAppEntry.info.flags & ApplicationInfo.FLAG_EXTERNAL_STORAGE) != 0) {
+                                  mMoveAppButton.setText(R.string.move_app_to_internal);        //移至平板电脑
+                                  // Always let apps move to internal storage from sdcard.
+                                  moveDisable = false;
+                   } else {
+                                  mMoveAppButton.setText(R.string.move_app_to_sdcard);        //移至 SD 卡 / 移至 USB 存储设备
+                                  mCanBeOnSdCardChecker.init();         // 初始化IPackageManager 和 获得mInstallLocation的值，其值为0 （APP_INSTALL_AUTO）
+                                  moveDisable = !mCanBeOnSdCardChecker.check(mAppEntry.info);
+                   }
+                   if (moveDisable) {
+                                  mMoveAppButton.setEnabled(false);       // 不可移动
+                   } else {
+                                  mMoveAppButton.setOnClickListener(this);        // 设置响应事件
+                                  mMoveAppButton.setEnabled(true);         // 可移动
+                   }
+      }
+
+== 点击了 “移至SD卡”后的响应事件：InstalledAppDetails.java ==
+->  public void onClick(View v) {
+                ...
+                if (v == mMoveAppButton) {
+                             if (mPackageMoveObserver == null) {
+                                           mPackageMoveObserver = new PackageMoveObserver();
+                              }
+                              int moveFlags = (mAppEntry.info.flags & ApplicationInfo.FLAG_EXTERNAL_STORAGE) != 0 ?
+                                                              PackageManager.MOVE_INTERNAL : PackageManager.MOVE_EXTERNAL_MEDIA;          // 其flag值为2
+                              mMoveInProgress = true;        // refreshButtons()方法中会根据该值来判断是否显示“移动中” 和将按钮状态变为不可用
+                              refreshButtons();
+                              mPm.movePackage(mAppEntry.info.packageName, mPackageMoveObserver, moveFlags);
+                 }
+                 ...
+        }
+
+== 通过binder调用服务 ：PackageManagerService.java ==
+->     public void movePackage(final String packageName, final IPackageMoveObserver observer, final int flags) {
+                 ...
+                synchronized (mPackages) {
+                        PackageParser.Package pkg = mPackages.get(packageName);
+                        if (pkg == null) {      //__判断要移动的APK是否存在__
+                                    returnCode = PackageManager.MOVE_FAILED_DOESNT_EXIST;
+                         } else {
+                                   if (pkg.applicationInfo != null && isSystemApp(pkg)) {        //__判断是否系统APK__
+                                             returnCode = PackageManager.MOVE_FAILED_SYSTEM_PACKAGE;
+                                    } else if (pkg.mOperationPending) {              //__判断该APK是否在后台挂起__
+                                             returnCode = PackageManager.MOVE_FAILED_OPERATION_PENDING;
+                                    } else {
+                                              // 接下来找到要移动的apk文件的位置，和将要移动到的位置 newFlags = 8, currFlags = 16
+                                             newFlags = (flags & PackageManager.MOVE_EXTERNAL_MEDIA) != 0 ? PackageManager.INSTALL_EXTERNAL
+                                                                                       : PackageManager.INSTALL_INTERNAL;
+                                             currFlags = isExternal(pkg) ? PackageManager.INSTALL_EXTERNAL : PackageManager.INSTALL_INTERNAL;
+
+                                             if (newFlags == currFlags) {
+                                                            Slog.w(TAG, "No move required. Trying to move to same location");
+                                                            returnCode = PackageManager.MOVE_FAILED_INVALID_LOCATION;
+                                              } else {
+                                                           if (isForwardLocked(pkg)) {      // __没有走这一支线__
+                                                                           currFlags |= PackageManager.INSTALL_FORWARD_LOCK;
+                                                                           newFlags |= PackageManager.INSTALL_FORWARD_LOCK;
+                                                            }
+                                              }
+                            }
+                           if (returnCode == PackageManager.MOVE_SUCCEEDED) {   // 满足以上所有的判断条件，不容易啊
+                                         pkg.mOperationPending = true;
+                           }
+
+                          if (returnCode != PackageManager.MOVE_SUCCEEDED) {
+                                     processPendingMove(new MoveParams(null, observer, 0, packageName, null, -1, user), returnCode);
+                          } else {                 // __走这一条支线__
+                                      Message msg = mHandler.obtainMessage(INIT_COPY);   // __这个消息的含义是完成apk的拷贝过程__
+                                      InstallArgs srcArgs = createInstallArgs(currFlags, pkg.applicationInfo.sourceDir,
+                                                                                                                    pkg.applicationInfo.publicSourceDir, pkg.applicationInfo.nativeLibraryDir);
+                                      MoveParams mp = new MoveParams(srcArgs, observer, newFlags, packageName,
+                                                                                                                pkg.applicationInfo.dataDir, pkg.applicationInfo.uid, user);
+                                      msg.obj = mp;
+                                      mHandler.sendMessage(msg);
+                           }
+                }
+
+发送移动apk需要的相关信息给内部类 PackageHandler 进行处理
+
+在 PackageHandler 中，先绑定 IMediaContainerService ，安装过程中一些状态的检查会用到这个服务 ,__绑定时会发送 MCS_BOUND 消息 ，非常重要__
+--> private boolean connectToService() {
+               if (DEBUG_SD_INSTALL) Log.i(TAG, "Trying to bind to" + " DefaultContainerService");
+               Intent service = new Intent().setComponent(DEFAULT_CONTAINER_COMPONENT);
+               Process.setThreadPriority(Process.THREAD_PRIORITY_DEFAULT);
+               if (mContext.bindServiceAsUser(service, mDefContainerConn, Context.BIND_AUTO_CREATE, UserHandle.OWNER)) {
+                          Process.setThreadPriority(Process.THREAD_PRIORITY_BACKGROUND);          // __设置线程级别为后台运行__
+                          mBound = true;
+                          return true;
+                }
+                Process.setThreadPriority(Process.THREAD_PRIORITY_BACKGROUND);
+                return false;
+        }
+
+处理接收到的消息
+-->    void doHandleMessage(Message msg) {
+                  switch (msg.what) {
+                          case INIT_COPY: {        // 简单的判断是否绑定服务，还有添加到 mPendingInstalls 中
+                                        HandlerParams params = (HandlerParams) msg.obj;
+                                        int idx = mPendingInstalls.size();
+
+                                        // If a bind was already initiated we dont really
+                                        // need to do anything. The pending install
+                                        // will be processed later on.
+                                        if (!mBound) {
+                                                     // If this is the only one pending we might
+                                                    // have to bind to the service again.
+                                                   if (!connectToService()) {
+                                                                    Slog.e(TAG, "Failed to bind to media container service");
+                                                                    params.serviceError();
+                                                                   return;
+                                                    } else {
+                                                                   // Once we bind to the service, the first
+                                                                   // pending request will be processed.
+                                                                  mPendingInstalls.add(idx, params);
+                                                     }
+                                            } else {
+                                                      __mPendingInstalls.add(idx, params);__
+                                                       // Already bound to the service. Just make
+                                                       // sure we trigger off processing the first request.
+                                                      if (idx == 0) {
+                                                                   mHandler.sendEmptyMessage(MCS_BOUND);
+                                                       }
+                                             }
+                                             break;
+                                  }
+                                  case MCS_BOUND: {       //__循环进行 startCopy() 操作，直到 mPendingInstalls 为0__
+                                           if (msg.obj != null) {
+                                                      mContainerService = (IMediaContainerService) msg.obj;
+                                           }
+                                           if (mContainerService == null) {
+                                                     // Something seriously wrong. Bail out
+                                                     Slog.e(TAG, "Cannot bind to media container service");
+                                                      for (HandlerParams params : mPendingInstalls) {
+                                                                  // Indicate service bind error
+                                                                  params.serviceError();
+                                                       }
+                                                       mPendingInstalls.clear();
+                                            } else if (mPendingInstalls.size() > 0) {
+                                                        HandlerParams params = mPendingInstalls.get(0);
+                                                        if (params != null) {
+                                                                   if (__params.startCopy()__) {       调用具体的params进行复制操作
+                                                                              // We are done...  look for more work or to go idle.
+                                                                              if (DEBUG_SD_INSTALL) Log.i(TAG,  "Checking for more work or unbind...");
+                                                                              // Delete pending install
+                                                                               if (mPendingInstalls.size() > 0) {
+                                                                                         mPendingInstalls.remove(0);
+                                                                                }
+                                                                               if (mPendingInstalls.size() == 0) {
+                                                                                          if (mBound) {
+                                                                                                             if (DEBUG_SD_INSTALL) Log.i(TAG,  "Posting delayed MCS_UNBIND");
+                                                                                                             removeMessages(MCS_UNBIND);
+                                                                                                             Message ubmsg = obtainMessage(MCS_UNBIND);
+                                                                                                              // Unbind after a little delay, to avoid continual thrashing.
+                                                                                                            sendMessageDelayed(ubmsg, 10000);
+                                                                                             }
+                                                                                  } else {  // 进行下一个任务的复制工作
+                                                                                               // There are more pending requests in queue.
+                                                                                               // Just post MCS_BOUND message to trigger processing of next pending install.
+                                                                                               if (DEBUG_SD_INSTALL) Log.i(TAG,  "Posting MCS_BOUND for next woek");
+                                                                                               mHandler.sendEmptyMessage(MCS_BOUND);
+                                                                                    }
+                                                                          }
+                                                                }
+                                               } else {
+                                                       // Should never happen ideally.
+                                                      Slog.w(TAG, "Empty queue");
+                                               }
+                                               break;
+                                  }
+
+== 文件的复制过程，PMS针对内部存储和sd卡分别提供了一个类：FileInstallArgs 和 AsecInstallArgs，并分别调用二者的copyApk方法来完成apk的复制过程 ==
+
+HandlerParams 是内部抽象类，主要作用有3个：
+(1) 定义失败重试次数为4，超过4次则发送 “MCS_GIVE_UP” 信息，并调用抽象方法 handleServiceError() ；没超过则发送 “MCS_RECONNECT” 信息。
+(2) 调用抽象方法 handleStartCopy() 进行复制工作
+(3) 调用抽象方法 handleReturnCode() 进行回调工作
+
+正常情况会运行 handleStartCopy() 后接着运行 handleReturnCode()。
+
+继承 HandlerParams 的三个内部类 ：
+MeasureParams
+InstallParams
+MoveParams ： 在movePackage API使用的实用工具类。
+
+== 别急，还没到真正复制APK的地方！！！ MoveParams.handleStartCopy() ==
+-->  public void handleStartCopy() throws RemoteException {
+               mRet = PackageManager.INSTALL_FAILED_INSUFFICIENT_STORAGE;
+               // Check for storage space on target medium
+               if (!targetArgs.checkFreeStorage(mContainerService)) {
+                            Log.w(TAG, "Insufficient storage to install");   // __我们 CS1 机台报错的地方，检查空间大小__
+                            return;
+                }
+                mRet = srcArgs.doPreCopy();          // __复制前的准备工作__
+                if (mRet != PackageManager.INSTALL_SUCCEEDED) {
+                          return;
+                 }
+
+                  mRet = targetArgs.copyApk(mContainerService, false);        // __开始复制__
+                  if (mRet != PackageManager.INSTALL_SUCCEEDED) {
+                               srcArgs.doPostCopy(uid);
+                              return;
+                   }
+
+                    mRet = srcArgs.doPostCopy(uid);        // __目测是复制完成后，删掉原来的APK文件__
+                    if (mRet != PackageManager.INSTALL_SUCCEEDED) {
+                             return;
+                    }
+
+                   mRet = targetArgs.doPreInstall(mRet);    // __安装复制好的APK文件__
+                   if (mRet != PackageManager.INSTALL_SUCCEEDED) {
+                            return;
+                    }
+          }
+
+检查空间大小checkFreeStorage() 会通过binder 调用到 DefaultContainerService.java 的 checkExternalFreeStorage() -> isUnderExternalThreshold()
+在 isUnderExternalThreshold() 中，会有这段代码：
+if (Environment.isExternalStorageEmulated()) {
+           return false;
+ }
+注释掉，试试看！！！
+结果新弹出来个框框：无法移动应用。 好吧，继续追下去～
+I/Porry   ( 2539): moveFlags = 2
+I/Porry   ( 2179): movePackage ()
+I/Porry   ( 2179): newFlags = 8, currFlags = 16
+I/Porry   ( 2179): i go to here !!!
+I/Porry   ( 2179): createInstallArgs()  cid = com.estrongs.android.pop-1, AsecInstallArgs.RES_FILE_NAME = pkg.apk
+I/Porry   ( 2179): MoveParams()   packageUri = file:///data/app/com.estrongs.android.pop-1.apk
+I/Porry   ( 2179): MoveParams()   targetArgs = com.android.server.pm.PackageManagerService$AsecInstallArgs@41c21be8
+I/Porry   ( 2179): src   path  = /data/app/com.estrongs.android.pop-1.apk, tar  path = null
+I/Porry   ( 3656): yes, i come here now. the apkFile = /data/app/com.estrongs.android.pop-1.apk
+W/ActivityManager( 2179): No content provider found for permission revoke: file:///data/app/com.estrongs.android.pop-1.apk
+I/PackageHelper( 2179): Failed to destroy container com.estrongs.android.pop-1
+E/Vold    ( 1311): Couldn't find ASEC com.estrongs.android.pop-1
+W/FileUtils( 2179): Failed to chmod(AppsOnSD.sks): libcore.io.ErrnoException: chmod failed: ENOENT (No such file or directory)
+E/PackageHelper( 3656): Failed to create secure container com.estrongs.android.pop-1
+E/Vold    ( 1311): Error creating imagefile (Permission denied)
+E/Vold    ( 1311): ASEC image file creation failed (Permission denied)
+W/Vold    ( 1311): Returning OperationFailed - no handler for errno 13
+E/DefContainer( 3656): Failed to create container com.estrongs.android.pop-1
+W/ActivityManager( 2179): No content provider found for permission revoke: file:///data/app/com.estrongs.android.pop-1.apk
+I/PackageHelper( 2179): Failed to destroy container com.estrongs.android.pop-1
+E/Vold    ( 1311): Couldn't find ASEC com.estrongs.android.pop-1
+I/PackageHelper( 2179): Failed to destroy container com.estrongs.android.pop-1
+E/Vold    ( 1311): Couldn't find ASEC com.estrongs.android.pop-1
+
+
+
+问题出在  mRet = targetArgs.copyApk(mContainerService, false);
+在 copyApk() 中有一句代码：
+newCachePath = imcs.copyResourceToContainer(packageURI, cid, getEncryptKey(),  RES_FILE_NAME, PUBLIC_RES_FILE_NAME, isExternal(), isFwdLocked());
+结果 newCachePath = null
+准备在 Android 4.2 上打印 log 看这个值是什么

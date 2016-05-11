@@ -1,0 +1,113 @@
+TTP-5293 [KRILIN][Communication][联系人]添加到主屏上的联系人不能完全被删除
+
+【概要】：添加到主屏上的联系人不能完全被删除
+【预置条件】：电话本中至少保存有一个联系人
+【复现步骤】：1、进入任意一联系人详细信息主界面按菜单图标选择添加到主屏上，查看是否已添加到主屏
+2、再次进入电话本中将添加到主屏上的联系人删除掉，返回主屏查看是否已被删除
+【预期结果】：可正常添加到主频并删除
+【实际结果】：在电话本中删除联系人后主屏上联系人图标仍存在。
+【发生几率】：100%
+
+
+
+联系人快捷方式添加到桌面是MTK添加的功能，非谷歌自带功能
+
+packages/apps/Contacts/src/com/android/contacts/detail/ContactLoaderFragment.java
+--> public boolean onOptionsItemSelected(MenuItem item) {
+        case R.id.menu_create_contact_shortcut: {
+                // Create a launcher shortcut with this contact
+                createLauncherShortcutWithContact();
+                return true;
+        }
+     }
+     
+--> private void createLauncherShortcutWithContact() {
+        final Activity parentActivity = getActivity();
+        ShortcutIntentBuilder builder = new ShortcutIntentBuilder(parentActivity,
+                new OnShortcutIntentCreatedListener() {
+                
+            //创建intent回调该方法
+            @Override
+            public void onShortcutIntentCreated(Uri uri, Intent shortcutIntent) {
+                shortcutIntent.setAction(ACTION_INSTALL_SHORTCUT);
+                parentActivity.sendBroadcast(shortcutIntent); //该方法主要是给Launcher发送intent
+            }
+
+        });
+        builder.createContactShortcutIntent(mLookupUri); //创建intent
+    }
+
+packages/apps/ContactsCommon/src/com/android/contacts/common/list/ShortcutIntentBuilder.java
+-->　private void createContactShortcutIntent(Uri contactUri, String contentType, String displayName, byte[] bitmapData) {
+          Bitmap bitmap = getPhotoBitmap(bitmapData);
+          final Bitmap icon = generateQuickContactIcon(bitmap);
+
+          Intent shortcutIntent = new Intent(ContactsContract.QuickContact.ACTION_QUICK_CONTACT);
+ 
+          shortcutIntent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_CLEAR_TASK);
+          shortcutIntent.putExtra(INTENT_EXTRA_IGNORE_LAUNCH_ANIMATION, true);
+          shortcutIntent.setDataAndType(contactUri, contentType);
+          shortcutIntent.putExtra(ContactsContract.QuickContact.EXTRA_MODE, ContactsContract.QuickContact.MODE_LARGE);
+          shortcutIntent.putExtra(ContactsContract.QuickContact.EXTRA_EXCLUDE_MIMES, (String[]) null);
+          
+          Intent intent = new Intent();
+          
+          intent.putExtra(Intent.EXTRA_SHORTCUT_ICON, icon);  //快捷方式图标
+          intent.putExtra(Intent.EXTRA_SHORTCUT_INTENT, shortcutIntent); //快捷方式指向的intent
+          if (TextUtils.isEmpty(displayName)) {   //快捷方式的名称
+               intent.putExtra(Intent.EXTRA_SHORTCUT_NAME, mContext.getResources().getString(R.string.missing_name));
+          } else {
+               intent.putExtra(Intent.EXTRA_SHORTCUT_NAME, displayName);
+          }
+          
+          mListener.onShortcutIntentCreated(contactUri, intent); //最后再调用上面的回调方法发送给Launcher
+       }
+       
+       
+============================================================== 
+我添加的删除图标的方法:
+
+packages/apps/Contacts/AndroidManifest.xml //添加权限
+-->  <uses-permission android:name="com.android.launcher.permission.UNINSTALL_SHORTCUT"/>
+
+packages/apps/Contacts/src/com/android/contacts/interactions/ContactDeletionInteraction.java
+--> import com.android.contacts.common.list.ShortcutIntentBuilder;
+--> import com.android.contacts.common.list.ShortcutIntentBuilder.OnShortcutIntentCreatedListener;
+
+--> protected void doDeleteContact(final Uri contactUri) { //点击确认删除之后的方法
+              ...
+              deleteLauncherShortcutWithContact();
+    }
+         
+--> private static final String ACTION_UNINSTALL_SHORTCUT =
+            "com.android.launcher.action.UNINSTALL_SHORTCUT"; //chunhui
+                      
+--> private void deleteLauncherShortcutWithContact() {
+        final Activity parentActivity = getActivity();
+
+        ShortcutIntentBuilder builder = new ShortcutIntentBuilder(parentActivity,
+                new OnShortcutIntentCreatedListener() {
+
+            @Override
+            public void onShortcutIntentCreated(Uri uri, Intent shortcutIntent) {
+                //主要是 EXTRA_SHORTCUT_NAME, EXTRA_SHORTCUT_INTENT 两个参数设置好
+                Intent intent = new Intent(ACTION_UNINSTALL_SHORTCUT );  
+                intent.putExtra(Intent.EXTRA_SHORTCUT_NAME, shortcutIntent.getStringExtra(Intent.EXTRA_SHORTCUT_NAME));  
+                intent.putExtra(Intent.EXTRA_SHORTCUT_INTENT, shortcutIntent.getParcelableExtra(Intent.EXTRA_SHORTCUT_INTENT));
+                parentActivity.sendBroadcast(intent);
+                
+            }
+
+        });
+        builder.createContactShortcutIntent(mContactUri);
+    }
+
+现在存在的问题是：当创建快捷方式后，不要退出联系人程序，直接又点击删除联系人，返回到桌面会发现快捷方式没有被删除
+
+原因是：发送了一个“创建”的广播和一个“删除”的广播，退出到桌面时两个广播可能同时开始响应，
+        在还没有“创建”好快捷方式之前，“删除”广播已经执行完毕了
+        
+        
+        
+
+

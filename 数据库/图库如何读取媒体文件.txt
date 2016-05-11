@@ -1,0 +1,128 @@
+Content-Type: text/x-zim-wiki
+Wiki-Format: zim 0.4
+Creation-Date: 2014-03-27T10:58:35+08:00
+
+====== 图库如何读取媒体文件 ======
+Created Thursday 27 March 2014
+
+图库的一切动作都明显地起源于Application.这是区别与其他那种感觉不到Application存在，仅仅感觉到Activity存在的简单应用的一个特点。
+
+图库的application就是GalleryAppImpl.java.
+
+GalleryApp中很清楚地表明了自己的作为图库Application要做的事情。
+
+数据处理（DataManager），图像缓存（ImageCacheService），线程调度(ThreadPool),
+
+以及andorid应用普遍需要的传递信息规则Context，UI和主进程调度(Looper)，资源(Resources)和数据库处理(ContentResolver)。
+
+有了GalleryAppImpl对GalleryApp的implement,就有了在图库的任何处理时，都能将Context，DataManager，ImageCacheService，ThreadPool，DownloadCache 这些数据作为全局变量取出。
+=================================================================================
+
+== Gallery2 入口Activity : ==
+[[/packages/apps/Gallery2/src/com/android/gallery3d/app/GalleryActivity.java]]
+
+--> onCreate(Bundle savedInstanceState);
+
+--> initializeByIntent();
+
+--> startDefaultPage()    //从应用列表进入图库走该支线
+     {
+                Bundle data = new Bundle();
+                data.putString(AlbumSetPage.KEY_MEDIA_PATH,    getDataManager().getTopSetPath(DataManager.INCLUDE_ALL));
+                getStateManager().startState(AlbumSetPage.class,  data);
+      }
+         log:       data = Bundle[{media-path=/combo/{/local/all,/picasa/all}}]
+
+ [[/src/com/android/gallery3d/app/StateManager.java]]
+
+→ startState(Class<? extends ActivityState> klass,   Bundle data)
+      {
+                 state = klass.newInstance();                   // AlbumSetPage的初始化，调用onCreate()
+                 UsageStatistics.onContentViewChanged(UsageStatistics.COMPONENT_GALLERY,   klass.getSimpleName());     // do nothing
+                 state.initialize(mActivity, data);            // 仅仅是给activity, data 赋值
+                 mStack.push(new StateEntry(data, state));
+                 state.onCreate(data, null);                     // 设置背景颜色
+       }
+
+[[/src/com/android/gallery3d/app/AlbumSetPage.java]]
+ 
+--> AlbumSetPage.onCreate(Bundle data, Bundle restoreState);
+
+--> initializeViews();
+
+--> initializeData(data)
+       {
+                   String mediaPath = data.getString(AlbumSetPage.KEY_MEDIA_PATH);
+                   mMediaSet = mActivity.getDataManager().getMediaSet(mediaPath);
+
+                   mSelectionManager.setSourceMediaSet(mMediaSet);                        // 给mSourceMediaSet, mTotal 赋值
+                   mAlbumSetDataAdapter = new AlbumSetDataLoader( mActivity, mMediaSet, DATA_CACHE_SIZE);
+                   mAlbumSetDataAdapter.setLoadingListener(new MyLoadingListener());
+                   mAlbumSetView.setModel(mAlbumSetDataAdapter);
+        }
+      log  : mediaPath = /combo/{/local/all,/picasa/all};
+                mMediaSet = com.android.gallery3d.data.ComboAlbumSet@41a4d910
+
+[[/src/com/android/gallery3d/app/AlbumSetDataLoader.java]]
+
+-->  AlbumSetDataLoader(AbstractGalleryActivity activity, MediaSet albumSet, int cacheSize) {
+
+
+
+
+
+========================================================================================
+
+== 图库的视频/图片数据加载 ==
+
+--> GalleryAppImpl.onCreate();
+--> GalleryAppImpl.getDataManager();
+--> DataManager.initializeSourceMap();
+--> LocalSource.LocalSource();
+--> LocalSource.createMediaObject();  //不知到哪里调用到的
+--> LocalAlbumSet.LocalAlbumSet();
+
+--> LocalAlbumSet.reload();
+--> LocalAlbumSet.AlbumsLoader.run()
+      {
+                BucketEntry[] entries = BucketHelper.loadBucketEntries( jc, mApplication.getContentResolver(), mType);   //加载数据
+       }
+--> BucketHelper.loadBucketEntries();
+--> BucketHelper.loadBucketEntriesFromFilesTable();
+
+private static BucketEntry[] loadBucketEntriesFromFilesTable(
+            JobContext jc, ContentResolver resolver, int type) {
+        Uri uri = getFilesContentUri();
+        Cursor cursor = resolver.query(uri,  PROJECTION_BUCKET, BUCKET_GROUP_BY,  null, BUCKET_ORDER_BY);
+        if (cursor != null) {
+            return new BucketEntry[0];              //如果运行到这里，则会显示照片和视频都为空
+        }
+        ArrayList<BucketEntry> buffer = new ArrayList<BucketEntry>();
+        int typeBits = 0;
+        if ((type & MediaObject.MEDIA_TYPE_IMAGE) != 0) {
+            typeBits |= (1 << FileColumns.MEDIA_TYPE_IMAGE);
+        }
+        if ((type & MediaObject.MEDIA_TYPE_VIDEO) != 0) {
+            typeBits |= (1 << FileColumns.MEDIA_TYPE_VIDEO);
+        }
+        try {
+            while (cursor.moveToNext()) {
+                if ((typeBits & (1 << cursor.getInt(INDEX_MEDIA_TYPE))) != 0) {
+                    BucketEntry entry = new BucketEntry(
+                            cursor.getInt(INDEX_BUCKET_ID),
+                            cursor.getString(INDEX_BUCKET_NAME));
+                    Log.i("PorryAP", "BucketHelper   loadBucketEntriesFromFilesTable()   entry.name = " + cursor.getString(INDEX_BUCKET_NAME));
+                    if (!buffer.contains(entry)) {
+                        buffer.add(entry);
+                    }
+                }
+                if (jc.isCancelled()) return null;
+            }
+        } finally {
+            Utils.closeSilently(cursor);
+        }
+        return buffer.toArray(new BucketEntry[buffer.size()]);
+    }
+ 
+
+

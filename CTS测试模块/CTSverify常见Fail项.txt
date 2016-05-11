@@ -1,0 +1,21 @@
+Content-Type: text/x-zim-wiki
+Wiki-Format: zim 0.4
+Creation-Date: 2014-07-03T10:15:14+08:00
+
+====== CTSverify常见Fail项 ======
+Created Thursday 03 July 2014
+
+==============================
+Streaming Video Quality Verifier
+選擇HTTP PROGESSUVE的三個視頻播放時，提示“Uable to play stream.See log for details.”。
+使用Nexus 7驗證，也有此問題。
+
+
+==============================
+测试前置摄像头角度对准出现偏离
+正如你们所知道的的摄像头fov这个距离需要调
+参考：
+./device/softwinner/polaris-common/hardware/camera/CameraHardware2.cpp:860: p.set(CameraParameters::KEY_HORIZONTAL_VIEW_ANGLE, "54.6");
+
+
+==============================

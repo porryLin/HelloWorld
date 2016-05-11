@@ -1,0 +1,265 @@
+Content-Type: text/x-zim-wiki
+Wiki-Format: zim 0.4
+Creation-Date: 2014-06-06T20:25:49+08:00
+
+====== OTA升级后无法开机问题 ======
+Created Friday 06 June 2014
+
+====== 4.5 升级到 4.6 ======
+1.升级到工程版4.6，正常开机
+
+2.升级到用户版SDK4.6，无法开机，在升级包中添加format data分区后可以正常开机。
+
+===================================================================================
+
+== 现象为： ==
+1. 用户版升级成功后开机画面卡在android开机动画处，并且显示一阵时间动画后黑屏，黑屏过一会又开始显示开机动画，一直循环，循环很长时间后进入系统，偶尔出现下拉菜单无法使用，虚拟按键无法使用的问题。
+
+2. 可以进入adb shell,但是无法删除/mnt/sdcard/ 目录下面的文件，也无法新建文件，猜测是由于还没有挂载上？
+
+3. 查看log信息，一直在循环，当循环到可以开机时，才开始出现mount service的log信息
+
+== 解决方案： ==
+在升级脚本中添加（必须添加在data分区挂载语句之后）
+__delete("/data/system/packages.xml");__
+
+== 原因猜测： ==
+可能是要更新的东西太多，更新不过来，所以一直在循环操作，也无法挂载上。（也许是4.6的安装方式变了？可是为什么工程版就可以）
+只要format一下子就可以开机了。
+
+
+通过adb shell查看各目录，除了data由于权限问题无法查看外，其他/mnt ,  /,  /system , /mnt/sdcard/ 目录的权限是一样的，也可以看到内容
+可是如果没有挂载上，怎么可以查看到内容的
+
+===================================================================================
+user版无格式化data分区，各目录权限
+根目录：
+drwxr-xr-x root     root              2014-06-09 09:58 acct
+drwx------ root     system            2014-06-09 09:58 bootloader
+drwxrwx--- system   cache             2014-06-09 09:59 cache
+dr-x------ root     root              2014-06-09 09:58 config
+lrwxrwxrwx root     root              2014-06-09 09:58 d -> /sys/kernel/debug
+drwxrwx--x system   system            2014-06-09 09:58 data
+drwx------ root     system            2014-06-09 09:58 databk
+-rw-r--r-- root     root          117 1970-01-01 08:00 default.prop
+drwxr-xr-x root     root              2014-06-09 09:58 dev
+lrwxrwxrwx root     root              2014-06-09 09:58 etc -> /system/etc
+-rw-r--r-- root     root         9081 1970-01-01 08:00 file_contexts
+-rw-r----- root     root         2270 1970-01-01 08:00 fstab.sun6i
+-rwxr-x--- root     root       187632 1970-01-01 08:00 init
+-rwxr-x--- root     root          919 1970-01-01 08:00 init.environ.rc
+-rwxr-x--- root     root        22864 1970-01-01 08:00 init.rc
+-rwxr-x--- root     root          111 1970-01-01 08:00 init.recovery.sun6i.rc
+-rwxr-x--- root     root         5809 1970-01-01 08:00 init.sun6i.rc
+-rwxr-x--- root     root         3555 1970-01-01 08:00 init.sun6i.usb.rc
+-rwxr-x--- root     root         1795 1970-01-01 08:00 init.trace.rc
+-rwxr-x--- root     root         3915 1970-01-01 08:00 init.usb.rc
+-rwxr-x--- root     root      3145728 1970-01-01 08:00 initlogo.rle
+drwxrwxr-x root     system            2014-06-09 09:58 mnt
+-rw-r--r-- root     root      1462943 1970-01-01 08:00 nand.ko
+dr-xr-xr-x root     root              1970-01-01 08:00 proc
+-rw-r--r-- root     root         2161 1970-01-01 08:00 property_contexts
+drwx------ root     root              2014-06-07 16:16 root
+drwxr-x--- root     root              1970-01-01 08:00 sbin
+lrwxrwxrwx root     root              2014-06-09 09:58 sdcard -> /storage/emulated/legacy
+-rw-r--r-- root     root          656 1970-01-01 08:00 seapp_contexts
+-rw-r--r-- root     root        75297 1970-01-01 08:00 sepolicy
+drwxr-xr-x root     root              1970-01-01 08:00 snsn
+drwxr-x--x root     sdcard_r          2014-06-09 09:58 storage
+drwxr-xr-x root     root              2014-06-09 09:58 sys
+drwxr-xr-x root     root              2014-06-09 09:58 system
+-rw-r--r-- root     root         4024 1970-01-01 08:00 ueventd.rc
+-rw-r--r-- root     root         1118 1970-01-01 08:00 ueventd.sun6i.rc
+lrwxrwxrwx root     root              2014-06-09 09:58 vendor -> /system/vendor
+
+
+
+system目录：
+drwxr-xr-x root     root              2014-06-09 09:57 app
+drwxr-xr-x root     shell             2014-06-09 09:58 bin
+-rw-r--r-- root     root         2507 2008-08-01 20:00 build.prop
+drwxr-xr-x root     root              2014-06-09 09:57 etc
+drwxr-xr-x root     root              2014-06-09 09:58 fonts
+drwxr-xr-x root     root              2014-06-09 09:57 framework
+drwxr-xr-x root     root              2014-06-09 09:58 lib
+drwxr-xr-x root     root              1970-01-01 08:00 lost+found
+drwxr-xr-x root     root              2014-06-09 09:57 media
+drwxr-xr-x root     root              2014-06-09 09:57 preinstall
+drwxr-xr-x root     root              2014-06-09 09:57 priv-app
+-rw-r--r-- root     root      2097556 2008-08-01 20:00 recovery-from-boot.p
+drwxr-xr-x root     root              2014-06-09 09:57 tts
+drwxr-xr-x root     root              2014-06-09 09:58 usr
+drwxr-xr-x root     shell             2014-06-09 09:58 vendor
+drwxr-xr-x root     shell             2014-06-09 09:58 xbin
+
+
+
+
+data目录：
+shell@cs1:/data $ ll
+opendir failed, Permission denied
+
+
+mnt目录：
+drwxr-xr-x root     system            2014-06-09 09:58 asec
+d--------- system   system            2014-06-09 09:58 extsd
+drwx------ media_rw media_rw          2014-06-09 09:58 media_rw
+drwxr-xr-x root     system            2014-06-09 09:58 obb
+lrwxrwxrwx root     root              2014-06-09 09:58 sdcard -> /storage/emulated/legacy
+drwx------ root     root              2014-06-09 09:58 secure
+drwx------ shell    shell             2014-06-09 09:58 shell
+d--------- system   system            2014-06-09 09:58 usbhost1
+
+
+mnt/sdcard/目录(无写权限)
+drwxrwx--- root     sdcard_r          2014-06-09 09:42 Alarms
+drwxrwx--x root     sdcard_r          2014-06-09 09:42 Android
+drwxrwx--- root     sdcard_r          2014-06-09 09:42 DCIM
+drwxrwx--- root     sdcard_r          2014-06-09 09:42 Download
+drwxrwx--- root     sdcard_r          2014-06-09 09:42 Movies
+drwxrwx--- root     sdcard_r          2014-06-09 09:42 Music
+drwxrwx--- root     sdcard_r          2014-06-09 09:42 Notifications
+drwxrwx--- root     sdcard_r          2014-06-09 09:42 Pictures
+drwxrwx--- root     sdcard_r          2014-06-09 09:42 Podcasts
+drwxrwx--- root     sdcard_r          2014-06-09 09:42 Ringtones
+-rw-rw---- root     sdcard_r 429361670 2014-06-09 09:53 update.zip
+
+
+user版格式化data分区后，各目录权限
+
+D/Icing   ( 4213): Deleting file /data/data/com.google.android.gms/files/AppDataSearch/main/cur/ds.urifps.h
+D/Icing   ( 4213): Deleting file /data/data/com.google.android.gms/files/AppDataSearch/main/cur/ds.urifps.n
+D/Icing   ( 4213): Deleting file /data/data/com.google.android.gms/files/AppDataSearch/main/cur/ds.urifps.x
+D/Icing   ( 4213): Deleting file /data/data/com.google.android.gms/files/AppDataSearch/main/cur/ds.urifps.s
+D/Icing   ( 4213): Deleting file /data/data/com.google.android.gms/files/AppDataSearch/main/cur/idx.index
+D/Icing   ( 4213): Deleting file /data/data/com.google.android.gms/files/AppDataSearch/main/cur/idx.lite.display.h
+D/Icing   ( 4213): Deleting file /data/data/com.google.android.gms/files/AppDataSearch/main/cur/idx.lite.display.n
+D/Icing   ( 4213): Deleting file /data/data/com.google.android.gms/files/AppDataSearch/main/cur/idx.lite.display.x
+D/Icing   ( 4213): Deleting file /data/data/com.google.android.gms/files/AppDataSearch/main/cur/idx.lite.display.s
+D/Icing   ( 4213): Deleting file /data/data/com.google.android.gms/files/AppDataSearch/main/cur/idx.lite.display.deleted
+D/Icing   ( 4213): Deleting file /data/data/com.google.android.gms/files/AppDataSearch/main/cur/idx.lite.lexicon.h
+D/Icing   ( 4213): Deleting file /data/data/com.google.android.gms/files/AppDataSearch/main/cur/idx.lite.lexicon.n
+D/Icing   ( 4213): Deleting file /data/data/com.google.android.gms/files/AppDataSearch/main/cur/idx.lite.lexicon.x
+D/Icing   ( 4213): Deleting file /data/data/com.google.android.gms/files/AppDataSearch/main/cur/idx.lite.lexicon.s
+D/Icing   ( 4213): Deleting file /data/data/com.google.android.gms/files/AppDataSearch/main/cur/idx.lite.lexicon.deleted
+D/Icing   ( 4213): Deleting file /data/data/com.google.android.gms/files/AppDataSearch/main/cur/idx.lite.hb
+D/Icing   ( 4213): Deleting file /data/data/com.google.android.gms/files/AppDataSearch/main/cur/idx.lexicon.h
+D/Icing   ( 4213): Deleting file /data/data/com.google.android.gms/files/AppDataSearch/main/cur/idx.lexicon.n
+D/Icing   ( 4213): Deleting file /data/data/com.google.android.gms/files/AppDataSearch/main/cur/idx.lexicon.x
+D/Icing   ( 4213): Deleting file /data/data/com.google.android.gms/files/AppDataSearch/main/cur/idx.lexicon.s
+D/Icing   ( 4213): Deleting file /data/data/com.google.android.gms/files/AppDataSearch/main/cur/idx.lexicon.deleted
+D/Icing   ( 4213): Deleting file /data/data/com.google.android.gms/files/AppDataSearch/main/cur/idx.display.h
+D/Icing   ( 4213): Deleting file /data/data/com.google.android.gms/files/AppDataSearch/main/cur/idx.display.n
+D/Icing   ( 4213): Deleting file /data/data/com.google.android.gms/files/AppDataSearch/main/cur/idx.display.x
+D/Icing   ( 4213): Deleting file /data/data/com.google.android.gms/files/AppDataSearch/main/cur/idx.display.s
+D/Icing   ( 4213): Deleting file /data/data/com.google.android.gms/files/AppDataSearch/main/cur/idx.display.deleted
+D/Icing   ( 4213): Deleting file /data/data/com.google.android.gms/files/AppDataSearch/main/cur/ds.docids
+D/Icing   ( 4213): Deleting file /data/data/com.google.android.gms/files/AppDataSearch/main/cur/ds.perdocdata
+D/Icing   ( 4213): Deleting file /data/data/com.google.android.gms/files/AppDataSearch/main/cur/ds.cscoring
+D/Icing   ( 4213): Deleting file /data/data/com.google.android.gms/files/AppDataSearch/main/cur/ds.docs
+D/Icing   ( 4213): Deleting file /data/data/com.google.android.gms/files/AppDataSearch/main/cur/ds.urifps.h
+D/Icing   ( 4213): Deleting file /data/data/com.google.android.gms/files/AppDataSearch/main/cur/ds.urifps.n
+D/Icing   ( 4213): Deleting file /data/data/com.google.android.gms/files/AppDataSearch/main/cur/ds.urifps.x
+D/Icing   ( 4213): Deleting file /data/data/com.google.android.gms/files/AppDataSearch/main/cur/ds.urifps.s
+D/Icing   ( 4213): Deleting file /data/data/com.google.android.gms/files/AppDataSearch/main/cur/ds.urifps.deleted
+D/Icing   ( 4213): Deleting file /data/data/com.google.android.gms/files/AppDataSearch/main/cur/idx.lite.lexicon.h
+D/Icing   ( 4213): Deleting file /data/data/com.google.android.gms/files/AppDataSearch/main/cur/idx.lite.lexicon.n
+D/Icing   ( 4213): Deleting file /data/data/com.google.android.gms/files/AppDataSearch/main/cur/idx.lite.lexicon.x
+D/Icing   ( 4213): Deleting file /data/data/com.google.android.gms/files/AppDataSearch/main/cur/idx.lite.lexicon.s
+D/Icing   ( 4213): Deleting file /data/data/com.google.android.gms/files/AppDataSearch/main/cur/idx.lite.lexicon.deleted
+D/Icing   ( 4213): Deleting file /data/data/com.google.android.gms/files/AppDataSearch/main/cur/idx.lite.display.h
+D/Icing   ( 4213): Deleting file /data/data/com.google.android.gms/files/AppDataSearch/main/cur/idx.lite.display.n
+D/Icing   ( 4213): Deleting file /data/data/com.google.android.gms/files/AppDataSearch/main/cur/idx.lite.display.x
+D/Icing   ( 4213): Deleting file /data/data/com.google.android.gms/files/AppDataSearch/main/cur/idx.lite.display.s
+D/Icing   ( 4213): Deleting file /data/data/com.google.android.gms/files/AppDataSearch/main/cur/idx.lite.display.deleted
+
+
+
+根目录：
+drwxr-xr-x root     root              2014-06-09 10:14 acct
+drwx------ root     system            2014-06-09 10:14 bootloader
+drwxrwx--- system   cache             2014-06-09 10:15 cache
+dr-x------ root     root              2014-06-09 10:14 config
+lrwxrwxrwx root     root              2014-06-09 10:14 d -> /sys/kernel/debug
+drwxrwx--x system   system            2014-06-09 10:16 data
+drwx------ root     system            2014-06-09 10:14 databk
+-rw-r--r-- root     root          117 1970-01-01 08:00 default.prop
+drwxr-xr-x root     root              2014-06-09 10:14 dev
+lrwxrwxrwx root     root              2014-06-09 10:14 etc -> /system/etc
+-rw-r--r-- root     root         9081 1970-01-01 08:00 file_contexts
+-rw-r----- root     root         2270 1970-01-01 08:00 fstab.sun6i
+-rwxr-x--- root     root       187632 1970-01-01 08:00 init
+-rwxr-x--- root     root          919 1970-01-01 08:00 init.environ.rc
+-rwxr-x--- root     root        22864 1970-01-01 08:00 init.rc
+-rwxr-x--- root     root          111 1970-01-01 08:00 init.recovery.sun6i.rc
+-rwxr-x--- root     root         5809 1970-01-01 08:00 init.sun6i.rc
+-rwxr-x--- root     root         3555 1970-01-01 08:00 init.sun6i.usb.rc
+-rwxr-x--- root     root         1795 1970-01-01 08:00 init.trace.rc
+-rwxr-x--- root     root         3915 1970-01-01 08:00 init.usb.rc
+-rwxr-x--- root     root      3145728 1970-01-01 08:00 initlogo.rle
+drwxrwxr-x root     system            2014-06-09 10:14 mnt
+-rw-r--r-- root     root      1462943 1970-01-01 08:00 nand.ko
+dr-xr-xr-x root     root              1970-01-01 08:00 proc
+-rw-r--r-- root     root         2161 1970-01-01 08:00 property_contexts
+drwx------ root     root              2014-06-07 16:16 root
+drwxr-x--- root     root              1970-01-01 08:00 sbin
+lrwxrwxrwx root     root              2014-06-09 10:14 sdcard -> /storage/emulated/legacy
+-rw-r--r-- root     root          656 1970-01-01 08:00 seapp_contexts
+-rw-r--r-- root     root        75297 1970-01-01 08:00 sepolicy
+drwxr-xr-x root     root              1970-01-01 08:00 snsn
+drwxr-x--x root     sdcard_r          2014-06-09 10:14 storage
+drwxr-xr-x root     root              2014-06-09 10:14 sys
+drwxr-xr-x root     root              2014-06-09 09:58 system
+-rw-r--r-- root     root         4024 1970-01-01 08:00 ueventd.rc
+-rw-r--r-- root     root         1118 1970-01-01 08:00 ueventd.sun6i.rc
+lrwxrwxrwx root     root              2014-06-09 10:14 vendor -> /system/vendor
+
+
+system目录：
+drwxr-xr-x root     root              2014-06-09 09:57 app
+drwxr-xr-x root     shell             2014-06-09 09:58 bin
+-rw-r--r-- root     root         2507 2008-08-01 20:00 build.prop
+drwxr-xr-x root     root              2014-06-09 09:57 etc
+drwxr-xr-x root     root              2014-06-09 09:58 fonts
+drwxr-xr-x root     root              2014-06-09 09:57 framework
+drwxr-xr-x root     root              2014-06-09 09:58 lib
+drwxr-xr-x root     root              1970-01-01 08:00 lost+found
+drwxr-xr-x root     root              2014-06-09 09:57 media
+drwxr-xr-x root     root              2014-06-09 09:57 preinstall
+drwxr-xr-x root     root              2014-06-09 09:57 priv-app
+-rw-r--r-- root     root      2097556 2008-08-01 20:00 recovery-from-boot.p
+drwxr-xr-x root     root              2014-06-09 09:57 tts
+drwxr-xr-x root     root              2014-06-09 09:58 usr
+drwxr-xr-x root     shell             2014-06-09 09:58 vendor
+drwxr-xr-x root     shell             2014-06-09 09:58 xbin
+
+
+mnt目录：
+drwxr-xr-x root     system            2014-06-09 10:14 asec
+d--------- system   system            2014-06-09 10:14 extsd
+drwx------ media_rw media_rw          2014-06-09 10:14 media_rw
+drwxr-xr-x root     system            2014-06-09 10:14 obb
+lrwxrwxrwx root     root              2014-06-09 10:14 sdcard -> /storage/emulated/legacy
+drwx------ root     root              2014-06-09 10:14 secure
+drwx------ shell    shell             2014-06-09 10:14 shell
+d--------- system   system            2014-06-09 10:14 usbhost1
+
+
+mnt/sdcard目录：   （一样的权限，却可以新建和删除文件）
+drwxrwx--- root     sdcard_r          2014-06-09 10:15 Alarms
+drwxrwx--x root     sdcard_r          2014-06-09 10:15 Android
+drwxrwx--- root     sdcard_r          2014-06-09 10:15 DCIM
+drwxrwx--- root     sdcard_r          2014-06-09 10:15 Download
+drwxrwx--- root     sdcard_r          2014-06-09 10:15 Movies
+drwxrwx--- root     sdcard_r          2014-06-09 10:15 Music
+drwxrwx--- root     sdcard_r          2014-06-09 10:15 Notifications
+drwxrwx--- root     sdcard_r          2014-06-09 10:15 Pictures
+drwxrwx--- root     sdcard_r          2014-06-09 10:15 Podcasts
+drwxrwx--- root     sdcard_r          2014-06-09 10:15 Ringtones
+
+
+
+
+
+
+

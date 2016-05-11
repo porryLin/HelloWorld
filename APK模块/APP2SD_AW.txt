@@ -1,0 +1,418 @@
+====== APP2SD AW ======
+Created Wednesday 25 June 2014
+
+
+== 一.将内部存储设备和外部SD卡的挂载路径互换 ==
+
+
+在系统中添加一个 persist.sys.removesd 属性值，在开机的时候init.rc中进行判断
+如果 persist.sys.removesd  = 1 则执行 removesd1.sh 脚本
+removesd1.sh 脚本：
+#sd
+   /mnt/sdcard1    -->   /mnt/sdcard-internal
+   /storage/extsd  -->  /mnt/sdcard-internal
+   /mnt/extsd         -->  /mnt/sdcard-internal
+#ext
+   /mnt/sdcard     -->  /mnt/extsd-external
+   /sdcard               -->  /mnt/extsd-external
+
+persist.sys.removesd  = 0 则不执行！！！！！！！！！
+removesd0.sh 脚本：
+#sd
+   /mnt/sdcard     -->  /mnt/sdcard-internal
+   /sdcard               -->  /mnt/sdcard-internal
+
+#ext
+   /mnt/sdcard1       -->  /mnt/extsd-external
+   /storage/extsd    -->  /mnt/extsd-external
+   /mnt/extsd           -->  /mnt/extsd-external
+
+1.新建两个脚本文件
+device/softwinner/fiber-common/removesd0.sh
+device/softwinner/fiber-common/removesd1.sh
+
+2. 将脚本文件编译到 system/bin/ 中
+ device/softwinner/fiber-common/fiber-common.mk
++PRODUCT_COPY_FILES += \
++        device/softwinner/fiber-common/removesd0.sh:system/bin/removesd0.sh \
++        device/softwinner/fiber-common/removesd1.sh:system/bin/removesd1.sh \
+
+3.  在开机时判断执行哪个脚本文件
+device/softwinner/fiber-common/init.rc
++service  removesd1  /system/bin/busybox  sh  /system/bin/removesd1.sh
++  user root
++  group root
++  disabled
++  oneshot
++
++on property:persist.sys.removesd=1
++    start removesd1
++
++service  removesd0  /system/bin/busybox  sh  /system/bin/removesd0.sh
++  user root
++  group root
++  disabled
++  oneshot
++
+
+
+== 二. 将默认安装位置从AUTO改为 INTERNAL ==
+
+frameworks/base/packages/SettingsProvider/src/com/android/providers/settings/DatabaseHelper.java
+-             loadSetting(stmt, Settings.Global.SET_INSTALL_LOCATION, 0);
++            loadSetting(stmt, Settings.Global.SET_INSTALL_LOCATION, 1);    // 决定Settings中是否显示 mInstallLocation 选项， 1为显示，0为不显示
+              loadSetting(stmt, Settings.Global.DEFAULT_INSTALL_LOCATION,
+-                    PackageHelper.APP_INSTALL_AUTO);
++                    PackageHelper.APP_INSTALL_INTERNAL);
+
+
+
+== 三. 在Settings-Storages 中添加选项，当SD卡的状态为mounted时，可以选择将APP安装在哪个位置（变更选项需要重启设备） ==
+packages/apps/Settings/src/com/android/settings/deviceinfo/Memory.java
+
++import android.preference.*;
++import android.os.SystemProperties;
++import android.provider.Settings;
++import android.os.PowerManager;
+
++//app2sd
++    private static final String KEY_APP_INSTALL_LOCATION = "app_install_location";
++
++    // App installation location. Default is ask the user.
++   //    private static final int APP_INSTALL_AUTO = 0;
++    private static final int APP_INSTALL_DEVICE = 1;
++    private static final int APP_INSTALL_SDCARD = 2;
++
++    private static final String APP_INSTALL_DEVICE_ID = "device";
++    private static final String APP_INSTALL_SDCARD_ID = "sdcard";
++   // private static final String APP_INSTALL_AUTO_ID = "auto";
++
++    private ListPreference mInstallLocation;
+
++	//app2sd
++        mInstallLocation = (ListPreference) findPreference(KEY_APP_INSTALL_LOCATION);
++        // Is app default install location set?
++        boolean userSetInstLocation = (Settings.Global.getInt(getContentResolver(),
++                Settings.Global.SET_INSTALL_LOCATION, 0) != 0);       // 根据该值确定是否显示 mInstallLocation
++
++        if (!userSetInstLocation) {
++            getPreferenceScreen().removePreference(mInstallLocation);
++        } else {
++            mInstallLocation.setValue(getAppInstallLocation());
++            mInstallLocation.setSummary(getAppInstallLocation());
++            mInstallLocation.setOnPreferenceChangeListener(null);
++
++ 	        String state = mStorageManager.getVolumeState("/mnt/extsd-external");
++            if (!Environment.MEDIA_MOUNTED.equals(state)){          // 如果SD卡没有挂载上，该项不可选，默认为“device”
++                mInstallLocation.setEnabled(false);
++	        } else {
++                mInstallLocation.setEnabled(true);
++                mInstallLocation.setOnPreferenceChangeListener(new Preference.OnPreferenceChangeListener() {
++                    public boolean onPreferenceChange(Preference preference, Object newValue) {
++                        String value = (String) newValue;
++                        handleUpdateAppInstallLocation(value);
++                        return false;
++                     }
++                 });
++	         }
++        }
+
++    // 处理变更安装位置选项的事件
++    protected void handleUpdateAppInstallLocation(final String value) {
++
++ 	 String state = mStorageManager.getVolumeState("/mnt/extsd-external");
++	 //Log.d("app2sd", " external storage status= " + state);
++	 //Log.d("app2sd", "alen value = "+value);
++         if (!Environment.MEDIA_MOUNTED.equals(state)){
++	     //Log.d("app2sd", " external storage removed , value= " + value);
++	     return ;
++	 }
++
++	 //Log.e("app2sd", "alen get persist.sys.removesd value = "+SystemProperties.get("persist.sys.removesd"));
++
++	 AlertDialog.Builder builder = new AlertDialog.Builder(getActivity());
++	 builder.setMessage("switch storage, please reboot !");
++	 builder.setTitle("Storage tips");
++	 builder.setPositiveButton("OK", new DialogInterface.OnClickListener() {
++	    @Override
++	    public void onClick(DialogInterface dialog, int which) {
++		if(APP_INSTALL_DEVICE_ID.equals(value)) {
++			    Settings.Global.putInt(getContentResolver(),  Settings.Global.DEFAULT_INSTALL_LOCATION, APP_INSTALL_DEVICE);
++	         } else if (APP_INSTALL_SDCARD_ID.equals(value)) {
++			    Settings.Global.putInt(getContentResolver(),  Settings.Global.DEFAULT_INSTALL_LOCATION, APP_INSTALL_SDCARD);
++              }
++              mInstallLocation.setValue(value);
++              mInstallLocation.setSummary(value);
++
++		if (value.equals("sdcard")){
++			   SystemProperties.set("persist.sys.removesd", "1");                 //更改该属性值为1
++			   Log.d("app2sd", "after set prop value, get persist.sys.removesd = "+SystemProperties.get("persist.sys.removesd"));
++		}else{
++			   SystemProperties.set("persist.sys.removesd", "0");
++		}
++
++			    PowerManager pm = (PowerManager)getActivity().getSystemService(Context.POWER_SERVICE);
++			    pm.reboot("reason is switch storage");       // 重启设备
++
++			    //Log.d("app2sd", "3 send reboot persist.sys.removesd= "+SystemProperties.get("persist.sys.removesd"));
++	    }
++	 });
++	 builder.setNegativeButton("CANCEL", new DialogInterface.OnClickListener() {
++	    @Override
++            public void onClick(DialogInterface dialog, int which) {
++	    }
++	 });
++	 builder.create().show();              //显示确认对话框
++    }
++
++    private String getAppInstallLocation() {        // 返回当前安装APP位置
++
++        int selectedLocation = Settings.Global.getInt(getContentResolver(),
++                Settings.Global.DEFAULT_INSTALL_LOCATION, APP_INSTALL_DEVICE);
++        if (selectedLocation == APP_INSTALL_DEVICE) {
++            return APP_INSTALL_DEVICE_ID;
++        } else if (selectedLocation == APP_INSTALL_SDCARD && "1".equals(SystemProperties.get("persist.sys.removesd"))) {
++            return APP_INSTALL_SDCARD_ID;
++        } else {
++            // Default value, should not happen.
++            return APP_INSTALL_DEVICE_ID;
++        }
++
++    }
+
+同时要修改布局文件
+packages/apps/Settings/res/xml/device_info_memory.xml
+<PreferenceScreen xmlns:android="http://schemas.android.com/apk/res/android"
+         android:title="@string/storage_settings_title">
+-
++    <ListPreference
++            android:key="app_install_location"
++            android:title="@string/app_install_location_title"
++            android:summary="@string/app_install_location_summary"
++            android:persistent="false"
++            android:entries="@array/app_install_location_entries2"
++            android:entryValues="@array/app_install_location_values2"/>
+ <!-- Preference categories are dynamically created based on the list of available storage volumes -->
+
+ </PreferenceScreen>
+
+
+
+== 四. 对系统中有关APK推荐安装位置的修改，目测是通过GooglePlay等软件下载安装时会走下面的流程 ==
+
+1.
+/*
+* This service copies a downloaded apk to a file passed in as
+* a ParcelFileDescriptor or to a newly created container specified
+* by parameters. The DownloadManager gives access to this process
+* based on its uid. This process also needs the ACCESS_DOWNLOAD_MANAGER
+* permission to access apks downloaded via the download manager.
+ */
+frameworks/base/packages/DefaultContainerService/src/com/android/defcontainer/DefaultContainerService.java
+--> private int recommendAppInstallLocation(int installLocation, String archiveFilePath, int flags,  long threshold) {    //推荐安装位置
+          ...
++       String removesd = SystemProperties.get("persist.sys.removesd", "0");
++       if(removesd.equals("1")){
++               prefer = PREFER_EXTERNAL;
++        }
+          ...
++        if (removesd.equals("1") && (checkBoth || prefer == PREFER_EXTERNAL)) {
++            try {
++                fitsOnSd = isUnderExternalThreshold(apkFile, isForwardLocked);     //判断是否够空间
++            } catch (IOException e) {
++                return PackageHelper.RECOMMEND_FAILED_INVALID_URI;
++            }
++            if (!fitsOnSd) {
++            	return PackageHelper.RECOMMEND_FAILED_INSUFFICIENT_STORAGE;
++            }
++        }
+
+}
+
+--> private boolean isUnderExternalThreshold(File apkFile, boolean isForwardLocked) throws IOException {   //判断外部空间是否够该APK使用
+-          if (Environment.isExternalStorageEmulated()) {
++	   if (Environment.isExternalStorageEmulated() &&  ! ("1".equals(SystemProperties.get("persist.sys.removesd", "0"))) ) {
+      	             return false;
+          ...
+}
+
+
+
+
+== 五.修改SystemUI状态栏信息，当拔出SD卡时（不通过Settings-Storages途径拔出），重启设备 ==
+
+frameworks/base/packages/SystemUI/src/com/android/systemui/usb/StorageNotification.java
++import android.os.PowerManager;
++import com.android.internal.content.PackageHelper;
+
+private void onStorageStateChangedAsync(String path, String oldState, String newState) {    // 存储状态变化异步调用
+
+          if (newState.equals(Environment.MEDIA_REMOVED)) {        // 当新状态为 REMOVED
+             /*
+			* Storage has been removed. Show nomedia media notification,
+			* and disable UMS notification regardless of connection state.
+             */
+                  list = mStorageManager.getVolumePaths();
+                  if (list != null) {
+                      for (i=0; i < list.length; i++) {
+                         if (path.equals(list[i])) {
+                             if (path.contains("extsd")) {           //  被移除的设备路径包含extsd时
+                                      setMediaStorageNotification(
+                                          com.android.internal.R.string.ext_media_nomedia_notification_title,
+                                          com.android.internal.R.string.ext_media_nomedia_notification_message,
+                                          com.android.internal.R.drawable.stat_notify_sdcard_usb,  true, true, null);
++// app2sd
++			    if(Settings.Global.getInt(mContext.getContentResolver(), Settings.Global.DEFAULT_INSTALL_LOCATION, PackageHelper.APP_INSTALL_INTERNAL) == PackageHelper.APP_INSTALL_EXTERNAL
++					&& "1".equals(SystemProperties.get("persist.sys.removesd"))){
++
++                                     setMediaStorageNotification(
++					  R.string.sd_storage_switch_notification_tile,
++					  R.string.sd_storage_switch_notification_message,
++                                    	  com.android.internal.R.drawable.stat_sys_warning,
++                                          true, true, null);
++
++				     //SystemClock.sleep(3000);
++			             mAsyncEventHandler.postDelayed(new Runnable(){
++					    @Override
++					    public void run(){
++					    //try {
++					    PowerManager pm = (PowerManager)mContext.getSystemService(Context.POWER_SERVICE);       //重启设备
++					    pm.reboot("switch storage");
++					    }},1000);
++			             }
++
++// end
+
+该类中，下面的内部监听类一直在监听存储设备状态变化（包括插入，拔出，卸载，挂载，UMS等）
+private class StorageNotificationEventListener extends StorageEventListener {
+         public void onUsbMassStorageConnectionChanged(final boolean connected) {
+               mAsyncEventHandler.post(new Runnable() {
+                    @Override
+                    public void run() {
+                         onUsbMassStorageConnectionChangedAsync(connected);
+                    }
+               });
+        }
+        public void onStorageStateChanged(final String path, final String oldState, final String newState) {
+              mAsyncEventHandler.post(new Runnable() {
+                   @Override
+                   public void run() {
+                         onStorageStateChangedAsync(path, oldState, newState);
+                   }
+             });
+        }
+ }
+
+
+== 六.修改挂载点！！！目测与CS1不匹配，需要重新修改 ==
+
+1. device/softwinner/fiber-a31stm/fstab.sun6i
++/devices/platform/sunxi-mmc.0/mmc_host  /mnt/extsd-external          vfat    rw,relatime,fmask=0000,dmask=0000                                       wait,check,voldmanaged=extsd:auto
++/devices/platform/sunxi-mmc.1/mmc_host  /mnt/extsd-external          vfat    rw,relatime,fmask=0000,dmask=0000                                       wait,check,voldmanaged=extsd:auto
+
+2. device/softwinner/fiber-a31stm/init.sun6i.rc
++ mkdir /mnt/extsd-external  0000 system system
+
++# 不知道什么作用，暂且注释掉
++#export SECONDARY_STORAGE /storage/sdcard1
+
++symlink /mnt/shell/emulated/0 /storage/emulated/0
+
++symlink /mnt/usbhost1  /storage/usbhost1
++symlink /mnt/usbhost1 /storage/sdcard2
+
++	symlink /mnt/extsd-external /mnt/extsd
++	symlink /mnt/extsd    /storage/extsd
+
+  /**
+	* 该XML文件会在MountService.readStorageListLocked()中被解析
+	* 会根据解析出来的 emulated 来创建不同的卷volume ( true:为每个已知用户单独创建卷 ； false: 创建共用的卷)，并加上锁lock
+   */
+3. device/softwinner/fiber-a31stm/overlay/frameworks/base/core/res/res/xml/storage_list.xml
+
+    <storage android:mountPoint="/mnt/sdcard"
+              android:storageDescription="@string/storage_internal"
+-              android:primary="true"
++             android:primary="false"
+-             android:removable="false"
+              android:emulated="true"
+              android:mtpReserve="100"
+-             android:allowMassStorage="false"
+              android:maxFileSize="0"/>
+-       <storage android:mountPoint="/mnt/sdcard"
++	<storage android:mountPoint="/mnt/extsd-external"
+              android:storageDescription="@string/storage_sd_card"
+              android:primary="false"
+              android:removable="true"
+              ...
+         >
+
+
+== 七. 修改MountService 更新存储设备状态的方法 ==
+
+frameworks/base/services/java/com/android/server/MountService.java
+
+--> private void updatePublicVolumeState(StorageVolume volume, String state) {
+        // Tell PackageManager about changes to primary volume state, but only when not emulated.
+	//if (volume.isPrimary() && !volume.isEmulated()) {
+        if (path.contains("extsd") && volume.isPrimary() && !volume.isEmulated()) {
+                 ...
+        }
+        if (path.contains("extsd") && !volume.isEmulated()) {
+            if (Environment.MEDIA_UNMOUNTED.equals(state)) {
+                  mPms.updateExternalMediaStatus(false, false);
+                  mObbActionHandler.sendMessage(mObbActionHandler.obtainMessage( OBB_FLUSH_MOUNT_STATE, path));
+            } else if (Environment.MEDIA_MOUNTED.equals(state)) {
+                  mPms.updateExternalMediaStatus(true, false);
+            }
+        }
+
+
+== 八. 修改桌面应用程序快捷图标，当移除卡时，有些安装在SD卡中的应用程序图标需要去掉 ==
+ packages/apps/Launcher2/src/com/android/launcher2/LauncherModel.java
+    /**
+	* Make an ShortcutInfo object for a shortcut that is an application.
+     *
+	* If c is not null, then it will be used to fill in missing data like the title and icon.
+     */
+    public ShortcutInfo getShortcutInfo(PackageManager manager, Intent intent, Context context,
+            Cursor c, int iconIndex, int titleIndex, HashMap<Object, CharSequence> labelCache) {
+                      ...
+                      try {
+                                   PackageInfo pi = manager.getPackageInfo(componentName.getPackageName(), 0);
+                                   if (!pi.applicationInfo.enabled) {
+                                            // If we return null here, the corresponding item will be removed from the launcher
+                                            // db and will not appear in the workspace.
+                                             return null;
+                                    }
+                     } catch (NameNotFoundException e) {
+                                   Log.d(TAG, "getPackInfo failed for package " + componentName.getPackageName());
++                                 return null;
+                   }
+                  ...
+    }
+
+
+
+== 九 .修改安装应用程序的界面 ==
+ packages/apps/PackageInstaller/src/com/android/packageinstaller/InstallAppProgress.java
+
+public void initView() {   //该方法决定安装程序的界面，如：是否替换安装等等
+           ...
+	  String removesd = SystemProperties.get("persist.sys.removesd", "0");
+	  if(removesd.equals("1")){
+        	   installFlags |= PackageManager.INSTALL_EXTERNAL;
+	  } else {
+                  installFlags |= PackageManager.INSTALL_INTERNAL;
+	 }
+          ...
+  }
+
+
+
+Patch全部打进去了，目前情况是可以开机，插入SD卡后，能够/mnt/extsd/查看到SD卡内容，但是设备没有显示插入SD卡。目测是挂载点的问题
+1. /mnt/sdcard-internal ，/mnt/extsd-external 是该平台本来的挂载点还是为了APP2SD功能而修改的。
+2. /mnt/sdcard-internal 是在哪里定义的，开机后在设备中并没有看到该目录
+
+
+要不试试直接在storage_list.xml里面把 /mnt/sdcard 改为 /mnt/sdcard-internal ？

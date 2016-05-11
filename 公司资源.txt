@@ -1,0 +1,355 @@
+何依潼 441481199104232927
+
+控件使用
+http://18.8.0.148:8080/?p=787
+
+办公系统   http://16.6.10.18:8088/
+02500504
+linchv5
+
+禅道BUG系统 地址   http://18.8.0.148:88/aurora/my/
+用户：linchunhui
+密码：sNSmtBFC
+
+邮箱 chunhui.lin@iuni.com
+zxcxxxxxxx
+
+RTX linchunhui
+zxcxxxxxxx
+
+
+
+FTP  18.8.5.99
+name :    ftp-aurora
+passwd :  aurora111
+
+name :    IUNI-release
+passwd :  IUNI-release
+===================================================================
+版本存放地址
+开发版：  /IUNI-release/N1-AlphaV3.0/IUNI-N1-AlphaV3.0-201508052119_T1643
+量产版：  /IUNI-release/N1-V3.0/IUNI-N1-V3.0-201508140242_T1676_user/U0001A02_A_IUNI_T1676.zip
+
+
+===================================================================
+alexluo(罗府) 08-11 15:44:06
+新来的同事去这个地方下载控件的相关文档
+ftp://ftp-aurora@18.8.5.99/Aurora_Framework_API
+另外有一部分在
+http://med.com:8080/
+
+
+===================================================================
+Ubuntu 14.04 编译环境
+$ sudo apt-get install git-core gnupg flex bison gperf build-essential \
+  zip curl zlib1g-dev gcc-multilib g++-multilib libc6-dev-i386 \
+  lib32ncurses5-dev x11proto-core-dev libx11-dev lib32z-dev ccache \
+  libgl1-mesa-dev libxml2-utils xsltproc unzip
+
+
+编译失败安装以下包
+sudo apt-get install lib64z1-dev libncurses5-dev
+
+
+error while loading shared libraries: libstdc++.so.6: cannot open shared object file: No such file or directory
+解决办法 sudo apt-get install lib32stdc++6
+sudo apt-get install lib32z1
+
+
+VirtualBox虚拟机问题：
+sudo apt-get install --reinstall virtualbox virtualbox-dkms
+
+
+===================================================================
+svn checkout URL链接
+
+
+http://18.8.5.98/apk_build_env  
+用户: aurora
+密码: aurora
+
+=============================== N1 ====================================
+
+开发流
+http://18.8.5.98/aurora2/7503/trunk
+http://18.8.5.98/aurora/sys/trunk/alps/alps/aurora_data
+http://18.8.5.98/aurora/apps/Aurora_Settings51/trunk/Aurora_Settings51
+http://18.8.5.98/aurora/apps/Aurora_AutoMMI5/trunk/Aurora_AutoMMI5
+http://18.8.5.98/aurora/apps/Aurora_MMITest5/trunk/Aurora_MMITest5
+http://18.8.5.98/aurora/apps/Aurora_Launcher/trunk/Aurora_Launcher
+用户：linchunhui
+密码：sNSmtBFC
+
+量产流
+http://18.8.5.98/aurora2/N1_V3.0_20150810/trunk
+http://18.8.5.98/aurora/apps_V3.0_20150810/Aurora_Settings51/trunk/Aurora_Settings51
+http://18.8.5.98/aurora/apps_V3.0_20150810/Aurora_MMITest5/trunk/Aurora_MMITest5
+
+
+编译指令
+./TmakeGionee U0001A02_A_IUNI -C -n 编译整个系统，第一次用-n，以后可以用-r ，通过fastboot升级
+./TmakeGionee -v userdebug -C -p  frameworks/base/packages/SystemUI  编译单个模块
+./TmakeGionee U0001A02_A_IUNI -p  frameworks/base/packages/SystemUI  编译单个模块
+./TmakeGionee U0001A02_A_IUNI -p  frameworks/base/services  编译单个模块
+
+./TmakeGionee U0001A02_A_IUNI -i otapackage 打包,通过recovery升级
+
+=============================== N1海外版 ====================================
+
+http://18.8.5.98/aurora2/7503_oversea/trunk/gionee/alps_IUNI/
+
+./TmakeGionee -v user U0001A02_A_oversea -n -i otapackage
+./TmakeGionee -v userdebug U0001A02_A_oversea -C -i otapackage
+./TmakeGionee -v userdebug U0001A02_A_oversea -r
+./TmakeGionee -v userdebug U0001A02_A_oversea -p packages/apps/
+
+编译这个工程
+
+================================= N1 OS2.0 ==================================
+
+1. APP，原根路径 apps 增加后缀 _rom_2.0，变为：apps_rom_2.0
+    如，某模块原路径是：http://18.8.5.98/aurora/apps/......
+    现在变为：http://18.8.5.98/aurora/apps_rom_2.0/.....
+http://18.8.5.98/aurora/apps_rom_2.0/Aurora_Settings51/trunk/Aurora_Settings51
+http://18.8.5.98/aurora/apps_rom_2.0/Aurora_FileManager/trunk/Aurora_FileManager
+
+2. N1 系统，原根路径 7503 增加后缀 _rom_2.0，变为：7503_rom_2.0
+    如，某模块原路径是：http://18.8.5.98/aurora2/7503/......
+    现路径变为：http://18.8.5.98/aurora2/7503_rom_2.0/.....
+http://18.8.5.98/aurora2/7503_rom_2.0/trunk
+
+3. aurora框架部分，原路径 sys/trunk/alps/alps 变为：alps_rom_2.0
+    如，某模块原路径是：http://18.8.5.98/aurora/sys/trunk/alps/alps/......
+    现在变为：http://18.8.5.98/aurora/alps_rom_2.0/.....
+http://18.8.5.98/aurora/alps_rom_2.0/aurora_data
+
+================================= 手机暗码 ==================================
+*#8702#  打开MMI测试
+查看版本号的方法，在拨号盘输入：*#837500#  最后一行是版本编译开始的时间
+*#446633#打开mtklogger
+
+
+
+
+================================= fastboot升级步骤 =====================================================
+
+1. adb reboot bootloader
+2. fastboot flash lk '/home/chunhui/shared/lk.bin'
+3. fastboot reboot-bootloader
+4. fastboot flash system /home/porry/release/U0001A02_A_platform_T1129/system.img 想烧录哪个就选哪个
+5. fastboot reboot 烧鸡成功，重启上桌
+
+
+================================== N1 root后门方法 =====================================================
+
+N1 root后门方法，与U3、i1不同，此方法也适用于amigo S4手机
+需要如下密钥文件： rsa_encrypt_favors
+操作步骤如下：
+1. 设置手机日期为20150101或20150102
+2. adb push '/home/porry/shared/rsa_encrypt_favors'  /data/local/tmp
+3. 在手机上断开adb调试开关后，然后再重启开启
+4. adb shell
+5.  echo 0 > /sys/fs/selinux/entry
+
+然后手机就可以root和remount了
+重启手机后，又得重新执行上述步骤4、5。
+
+
+================================== U5 开发版 ==========================================================
+http://18.8.5.98/7505/7505/android_mtk_l1_6753_65c_mp3/trunk
+http://18.8.5.98/7505/7505/packages_mtk_l1_6753_65c_mp3
+
+================================== U5 量产版 ==========================================================
+7505U（U0003）项目，今天下午已完成量产软件拉流，新的代码仓路径为：
+http://18.8.5.98/7505/7505_20160309/android_mtk_l1_6753_65c_mp3/trunk/
+http://18.8.5.98/aurora/apps_rom_2.0_20160309/
+
+
+================================== U5 ROOT 方法 ==========================================================
+
+http://18.8.5.98/7505/7505/android_mtk_l1_6753_65c_mp3/trunk
+
+
+将日期设为2015/01/01，然后在pc端执行root.sh
+
+
+
+U0003 ROOT  步骤跟 N1 完全一样，只是密钥文件不同。
+
+1. 确认手机时间是2015/1/1，或2015/1/2
+2. 将附件密钥文件 push 到手机中：
+    adb push rsa_encrypt_favors /data/local/tmp
+3. 关闭手机 adb 调试模式，然后重启
+4. adb shell
+5. echo 0 > /sys/fs/selinux/entry
+================================== U5 编译 ================================================================
+platform版本：./TmakeGionee -v userdebug BBL7505A02_A_platform -n
+IUNI版本：./TmakeGionee -v userdebug BBL7505A02_A_IUNI -n
+
+iuni修改所在路径：
+trunk/iuni/
+
+编译iuni版本 拷贝顺序 最后拷贝的 优先级最高
+copy ./gionee/alps_build to  trunk 
+copy ./gionee/alps_drv to  trunk 
+copy ./gionee/project/BBL7505 to  trunk 
+copy ./iuni to  trunk
+
+
+===================================================================
+android:typeface="serif" 思源黑体
+android:typeface="sans"  roboto
+
+
+
+===================================================================
+1、删除aurora_data  
+rm -rf trunk/auroa_data
+
+2、更新gn_project
+svn update  trunk/gn_project
+
+3、更新packages
+svn update trunk/packages
+
+===================================================================
+yongliangwang(王永亮) 08-21 09:31:06
+我们的程序，按返回时，都不要退出，按HOME键处理
+alexluo(罗府) 08-21 09:36:04
+什么意思？
+yongliangwang(王永亮) 08-21 09:39:56
+系统程序常驻，不要退出
+jasonzhang(张伟) 08-21 09:45:24
+@Override  
+    public boolean onKeyDown(int keyCode, KeyEvent event) {  
+        if (keyCode == KeyEvent.KEYCODE_BACK) {  
+            moveTaskToBack(false);  
+            return true;  
+        }  
+        return super.onKeyDown(keyCode, event);  
+    }  
+jasonzhang(张伟) 08-21 09:49:45
+先不要提交量产流吧 
+jasonzhang(张伟) 08-21 09:49:48
+开发流都改一下 
+yongliangwang(王永亮) 08-21 09:57:05
+提量产流，我们都体验下
+yongliangwang(王永亮) 08-21 09:57:44
+测试这两天会测试，没问题就上了
+jasonzhang(张伟) 08-21 09:59:01
+通常我们说缓存就是暂时把没在前台的程序放在内存里，比方说我打开短信应用，然后退回到Launcher打开微信，那么短信就成了所谓的后台程序放在了RAM里，这时候短信应用什么也不会干，就是像一个安静的美男子一样呆在RAM里，不会消耗CPU资源，如果你这时候再打开短信应用，会发现载入速度会比你第一次打开短信应用快很多，因为这是从RAM里直接加载的。一些比较低级的清理软件其实清理的就是这个，实际上很没有必要，为了看上去爽，实际上造成了先前加载过的应用需要重新加载，得不偿失。所以你看原生Android（包括iOS）都没有一键清理内存的功能。
+jasonzhang(张伟) 08-21 10:01:10
+方法：public boolean moveTaskToBack(boolean nonRoot)
+
+activity里有这个方法，参数说明如下：
+
+nonRoot=false→ 仅当activity为task根（即首个activity例如启动activity之类的）时才生效
+
+nonRoot=true→ 忽略上面的限制
+
+这个方法不会改变task中的activity中的顺序，效果基本等同于home键
+
+private void gotoHome() {
+		Intent intent = new Intent(Intent.ACTION_MAIN);
+		intent.addCategory(Intent.CATEGORY_HOME);
+		intent.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
+		startActivity(intent);
+	}
+
+如果mActivity.moveTaskToBack返回false又没做退出处理
+就会发生back按键没作用的现象
+
+moveTaskToBack的参数也要注意使用，true和false的作用不同
+     * @param nonRoot If false then this only works if the activity is the root
+     *                of a task; if true it will work for any activity in
+     *                a task.
+
+===================================================================
+85086 MTK wifi 工程师
+85086
+
+
+===================================================================
+另，与高通的Logkit生成日志不同，MTK的MTKLogger当系统发生Kernel、System Server异常等问题时，MTK内部机制会抓取相关异常调试信息，产生对应的DB文件，放到aee_exp文件夹下----在给MTK提交case之前，我们必须先初步分析和过滤一下这些db日志。
+
+
+参考资料：
+http://www.itnose.net/detail/6115110.html
+http://www.doc88.com/p-8989047875601.html ，第15页
+
+http://eService.mediatek.com 
+Account : MTK-CQ 
+Password : hkOZ20 
+
+371260379057  王姣姣 15924231345 浙江
+
+切换jdk版本
+sudo update-alternatives --config java
+sudo update-alternatives --config javac
+sudo update-alternatives --config javap
+
+
+
+全部编译OS2.0源码错误处理：
+1、首先make的版本最好用3.81
+2、报public_api或者system-api类的错误时会给出提示让你执行make update-api来处理，但是我们的编译环境好像不能处理这个命令，所以请手动更新，更新方式为：
+1、out/target/common/obj/PACKAGING/public_api.txt
+和
+frameworks/base/api/current.txt的内容必须一样
+2、out/target/common/obj/PACKAGING/system-api.txt和
+frameworks/base/api/system-current.txt必须一样
+3、使用对比工具对比上面一一配对的文件，将内容多的那个覆盖内容少的那个再从新编译就可以了。
+
+下周二第一次试产，CTA机器送无委（CTA1）。
+本周目标，争取提供基于IUNI OS的软件版本：
+1.从N1移植和合入aurora_framework；
+2.编译IUNI U5版本，并验证OK；
+3.尽量满足工厂测试规范----从N1移植Aurora_MMITest和AutoMMI，合入相关框架代码等。
+
+
+
+
+8910A U3
+BUG #18197 【日志上报】java.lang.NullPointerException
+BUG #18192 【日志上报】java.lang.RuntimeException: Canvas: trying to use a recycled bitmap
+
+
+
+8910A U3 AuroraSettings
+BUG #18181 【日志上报】java.lang.RuntimeException
+
+
+
+U810A_KK U810 
+BUG #18192 【日志上报】java.lang.RuntimeException: Canvas: trying to use a recycled bitmap
+
+
+
+tb8753993
+hhh112233445566
+
+tb8753993:静香
+hhh112233
+
+
+加班时间  30.5h
+2015-08-08  08:52:51  18:14:35  7.5h
+2015-08-15  12:31:04  18:01:46  4.5h
+2015-08-22  09:01:24  15:33:44  5.0h
+2016-01-09  13:31:19  18:22:24  4.5h  已调休 2016-01-26 上午
+2016-01-23  13:58:01  18:23:35  4.5h  已调休 2016-03-17 上午
+2016-03-05  12:55:39  18:00:01  4.5h  已调休 2016-03-22 下午
+
+请假时间 33.5h
+2015-10-23  7.5h
+2015-10-29  7.5h
+2015-11-23  7.5h
+2015-12-01  7.5h
+2016-03-17  3.0h
+
+VPN
+us01.freegjsq.org
+benbom 841207051
+
+
+lmekr_p2  zxc********

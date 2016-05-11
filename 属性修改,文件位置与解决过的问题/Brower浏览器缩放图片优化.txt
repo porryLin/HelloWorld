@@ -1,0 +1,230 @@
+Content-Type: text/x-zim-wiki
+Wiki-Format: zim 0.4
+Creation-Date: 2014-05-13T16:05:46+08:00
+
+====== Brower浏览器缩放图片优化 ======
+Created Tuesday 13 May 2014
+
+================================================================
+根据试验，将touch上报的压力值改为固定20，浏览器界面缩放效果得到明显改善。
+
+
+== CS1: ==
+lichee/linux-3.3/drivers/input/touchscreen/gt9xx.c 
+
+-->  static void gtp_touch_down(struct goodix_ts_data* ts,s32 id,s32 x,s32 y,s32 w) {
+              ...
+               input_report_abs(ts->input_dev, ABS_MT_TRACKING_ID, id);
+              input_report_abs(ts->input_dev, ABS_MT_POSITION_X, y);
+              input_report_abs(ts->input_dev, ABS_MT_POSITION_Y, x);
+-             input_report_abs(ts->input_dev, ABS_MT_TOUCH_MAJOR, w);
+-             input_report_abs(ts->input_dev, ABS_MT_WIDTH_MAJOR, w);
++             input_report_abs(ts->input_dev, ABS_MT_TOUCH_MAJOR, __20__);
++             input_report_abs(ts->input_dev, ABS_MT_WIDTH_MAJOR, __20__);
+          #else
+              input_report_key(ts->input_dev, BTN_TOUCH, 1);
+              input_report_abs(ts->input_dev, ABS_MT_POSITION_X, y);
+              input_report_abs(ts->input_dev, ABS_MT_POSITION_Y, x);
+-             input_report_abs(ts->input_dev, ABS_MT_TOUCH_MAJOR, w);
+-             input_report_abs(ts->input_dev, ABS_MT_WIDTH_MAJOR, w);
++             input_report_abs(ts->input_dev, ABS_MT_TOUCH_MAJOR, __20__);
++             input_report_abs(ts->input_dev, ABS_MT_WIDTH_MAJOR, __20__);
+              input_report_abs(ts->input_dev, ABS_MT_TRACKING_ID, id);
+               input_mt_sync(ts->input_dev);
+               ...
+        }
+
+== F1: ==
+lichee/linux-3.3/drivers/input/touchscreen/ft5x_ts.c
+
+-->  static void ft5x_report_multitouch(void) {
+                ...
+            	for(i = 0; i < event->touch_point; i++) {
+		           input_report_abs(data->input_dev, ABS_MT_TRACKING_ID, event->touch_ID[i]);	
+-		          input_report_abs(data->input_dev, ABS_MT_TOUCH_MAJOR, event->pressure);
++		          input_report_abs(data->input_dev, ABS_MT_TOUCH_MAJOR, __20__);
+                          ...
+                }
+                ...
+         }
+
+
+
+
+
+
+
+
+================================================================
+浏览器上网页面__优先使用内置的缩放机制__  setBuiltInZoomControls(boolean)，
+
+BrowserWebViewFactory.java
+
+--> protected void initWebViewSettings(WebView w) {
+               w.setScrollbarFadingEnabled(true);
+               w.setScrollBarStyle(View.SCROLLBARS_OUTSIDE_OVERLAY);
+               w.setMapTrackballToArrowKeys(false); // use trackball directly
+               // Enable the built-in zoom
+               __w.getSettings().setBuiltInZoomControls(true); __     //注释掉这句话，则browser浏览器不能缩放界面
+               final PackageManager pm = mContext.getPackageManager();
+               boolean supportsMultiTouch =
+                       pm.hasSystemFeature(PackageManager.FEATURE_TOUCHSCREEN_MULTITOUCH)
+                       || pm.hasSystemFeature(PackageManager.FEATURE_FAKETOUCH_MULTITOUCH_DISTINCT);
+               __w.getSettings().setDisplayZoomControls(!supportsMultiTouch);__
+       
+               // Add this WebView to the settings observer list and update the settings
+               final BrowserSettings s = BrowserSettings.getInstance();       
+               s.startManagingSettings(w.getSettings());
+
+               // Remote Web Debugging is always enabled
+               WebView.setWebContentsDebuggingEnabled(true);
+    }
+
+WebView.java
+
+-->   public WebSettings getSettings() {
+               checkThread();
+               return mProvider.getSettings();
+    }
+
+WebViewProvider.java   定义接口
+
+-->   public WebSettings getSettings();
+
+WebViewChromium implements WebViewProvider   实现接口功能
+
+-->   public WebSettings getSettings() {
+              return mWebSettings;
+    } 
+
+-- >   mWebSettings = new ContentSettingsAdapter(new AwSettings(mWebView.getContext(), isAccessFromFileURLsGrantedByDefault,
+                areLegacyQuirksEnabled));
+
+ContentSettingsAdapter.java     //适配类，起到封装的作用
+
+--> mAwSettings = awSettings;
+-->  public void setBuiltInZoomControls(boolean enabled) {
+               mAwSettings.setBuiltInZoomControls(enabled);
+    }
+
+AwSettings.java   //现在进入全志修改过的代码
+
+-->   public void setBuiltInZoomControls(boolean enabled) {
+               synchronized (mAwSettingsLock) {
+                        if (mBuiltInZoomControls != enabled) {
+                                    mBuiltInZoomControls = enabled;
+                                    onGestureZoomSupportChanged(supportsGestureZoomLocked());
+                         }
+                }
+     }
+
+-->   private boolean supportsGestureZoomLocked() {         //简单的判断是否支持手势缩放操作
+                assert Thread.holdsLock(mAwSettingsLock);
+                return mSupportZoom && mBuiltInZoomControls;
+    }
+
+-->   private void onGestureZoomSupportChanged(final boolean supportsGestureZoom) {     //会调用到内置接口mZoomChangeListener去实现功能
+                    // Always post asynchronously here, to avoid doubling back onto the caller.
+                   mEventHandler.maybePostOnUiThread(new Runnable() {
+                   @Override
+                          public void run() {
+                                   synchronized (mAwSettingsLock) {
+                                            if (mZoomChangeListener != null) {
+                                                         mZoomChangeListener.onGestureZoomSupportChanged(supportsGestureZoom);
+                                             }
+                                   }
+                            }
+                   });
+         }
+
+内置接口 private ZoomSupportChangeListener mZoomChangeListener;
+
+AwContents.java 实现接口  ZoomSupportChangeListener 功能
+
+-->   public AwContents( ... ... ) {
+                    ...
+                    AwSettings.ZoomSupportChangeListener zoomListener = new AwSettings.ZoomSupportChangeListener() {
+                             @Override
+                             public void onGestureZoomSupportChanged(boolean supportsGestureZoom) {         //实现接口功能
+                                     mContentViewCore.updateMultiTouchZoomSupport(supportsGestureZoom);        //多点缩放
+                                     mContentViewCore.updateDoubleTapDragSupport(supportsGestureZoom);           //单点双击缩放（上缩下放）
+                             }
+
+                    };
+                   mSettings.setZoomListener(zoomListener);
+                    ...
+        }
+
+mContentViewCore 的创建
+-->  private void setNewAwContents(int newAwContentsPtr) {
+               ...
+               mContentViewCore = createAndInitializeContentViewCore(
+                       mContainerView, mInternalAccessAdapter, nativeWebContents,
+                       new AwGestureStateListener(), mContentsClient.getContentViewClient(), mZoomControls);
+               ...
+      }
+
+-->     private static ContentViewCore createAndInitializeContentViewCore(ViewGroup containerView,
+                                          InternalAccessDelegate internalDispatcher, int nativeWebContents,
+                                          ContentViewCore.GestureStateListener pinchGestureStateListener,
+                                          ContentViewClient contentViewClient,
+                                          ContentViewCore.ZoomControlsDelegate zoomControlsDelegate) {
+                   ContentViewCore contentViewCore = new ContentViewCore(containerView.getContext());
+                   // Note INPUT_EVENTS_DELIVERED_IMMEDIATELY is passed to avoid triggering vsync in the
+                   // compositor, not because input events are delivered immediately.
+                   contentViewCore.initialize(containerView, internalDispatcher, nativeWebContents, null,
+                   ContentViewCore.INPUT_EVENTS_DELIVERED_IMMEDIATELY);
+                   contentViewCore.setGestureStateListener(pinchGestureStateListener);
+                   contentViewCore.setContentViewClient(contentViewClient);
+                   contentViewCore.setZoomControlsDelegate(zoomControlsDelegate);
+                   return contentViewCore;
+        }
+
+ContentViewCore.java
+
+多点缩放
+-->   public void updateMultiTouchZoomSupport(boolean supportsMultiTouchZoom) {
+                mZoomManager.updateMultiTouchSupport(supportsMultiTouchZoom);
+       }
+
+单点双击缩放
+-->  public void updateDoubleTapDragSupport(boolean supportsDoubleTapDrag) {
+                mContentViewGestureHandler.updateDoubleTapDragSupport(supportsDoubleTapDrag);
+      }
+
+初始化 mZoomManager 和 mContentViewGestureHandler
+-->     private void initializeContainerView(InternalAccessDelegate internalDispatcher,   int inputEventDeliveryMode) {
+                 ...
+                 mZoomManager = new ZoomManager(mContext, this);
+                 mContentViewGestureHandler = new ContentViewGestureHandler(mContext, this, mZoomManager,  inputEventDeliveryMode);
+                 ... 
+       }
+
+ZoomManager.java
+
+-->   mMultiTouchListener = new ScaleGestureListener();
+
+多点缩放
+-->   void updateMultiTouchSupport(boolean supportsMultiTouchZoom) {
+                  mMultiTouchListener.setPermanentlyIgnoreDetectorEvents(!supportsMultiTouchZoom);
+       }
+
+
+AwContents.java
+
+缩小图片
+-->   public boolean zoomIn() {
+               if (!canZoomIn()) {
+                        return false;
+                }
+               return mContentViewCore.pinchByDelta(1.25f);
+        }
+放大图片
+-->   public boolean zoomOut() {
+                if (!canZoomOut()) {
+                         return false;
+                 }
+                 return mContentViewCore.pinchByDelta(0.8f); // 0.8f -> 1.25f
+       }
+
+

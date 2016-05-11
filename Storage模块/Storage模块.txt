@@ -1,0 +1,347 @@
+Content-Type: text/x-zim-wiki
+Wiki-Format: zim 0.4
+Creation-Date: 2014-02-26T09:30:29+08:00
+
+====== Storage模块 ======
+Created Wednesday 26 February 2014
+
+研究android系统有关SD卡和u-disk挂载卸载的流程，与此相关的是vold模块
+
+vold的源码位置: androiod/system/vold/
+vold在系统中的位置: system/bin/vold
+vold的启动：
+ 开机过程中，init进程的init.c会去解析device/idsbg/common/init.rc文件来进行初始化，
+ 初始化过程会经历各个阶段，不同的阶段会执行不同的操作。
+                             on early-init 阶段
+                             on init 阶段
+                             on fs 阶段
+                             on post-fs 阶段
+                             on post-fs-data 阶段
+                             on boot 阶段
+在on boot阶段，通过class_start core启动所有class为core的服务，vold服务在此阶段启动。
+
+vold服务在init.rc 中的定义：
+   service vold /system/bin/vold
+       class core
+       **socket** vold stream 0660 root mount
+       ioprio be 2
+
+注册了名称为vold的service(守护进程)，该服务的执行文件的位置在 /system/bin/vold
+同时注册了名称为vold的socket，该socket用于与framework层进行通信。
+
+
+====== vold 的各个文件和类的主要作用 ======
+system/vold/main.cpp : vold的入口函数main()
+其中最先执行的：
+            VolumeManager *vm;
+            CommandListener *cl;
+            NetlinkManager *nm;
+            mkdir("/dev/block/vold", 0755);
+
+
+volume.h/cpp:
+    一个非常重要的类，但是没有直接的实例，提供了sd卡的主要操作功能，包括mount，unmout，format，另一个重要结构android::List<Volume *> VolumeCollection。
+
+
+DirectVolume.h/cpp:
+   继承于volume，在main.cpp文件中，vold(main 函数里）在初始化时，通过调用process_config解析/etc/vold.fstab文件中的每一行信息创建一个DirectVolume实例，并且把该实例存贮在VolumeCollection中.
+主要实现了volume中间的4个虚函数:
+1.handleBlockEvent（处理从各种的block的事件）
+2.getDiskDevice（返回设备编号）
+3.handleVolumeShared
+4.handleVolumeUnshared（更改了状态）
+主要的实现是handleBlockEvent，通过解析事件的信息，调用了相应的处理细节：handleDisk*** 和handlePartition***。
+
+
+Fat.h/cpp:
+  sd基于与普通pc相兼容的考虑，采用的都是fat文件系统，vold采用的是一个与fat16，fat32兼容的vfat文件系统，fat实现了check，mount，format三个最重要的函数实现，check，调用FSCK_MSDOS_PATH（/system/bin/fsck_msdos）check sd信息；mount，主要是设置一些mount的参数；format，调用MKDOSFS_PATH （/system/bin/newfs_msdos),format sd成vfat文件模式，fat类中的三个函数，均在volume类的函数中调用。
+
+VolumeManager.h/cpp:
+   volume的管理函数，主要类成员mVolumes保存着directvolume的指针，主要是负责调用volume和directvolume的各个实现函数，只是一个封装的类。基本上是用handleBlockEvent 和 handleSwitchEvent还处理接受到的不同NetlinkEvent。 其它则是通过const char *label查找到对应的volume，然后调用这个volume的实现函数。单体类。
+
+
+NetlinkHandler.h/cpp:
+   继承自NetlinkListener，实现开始，结束，信息处理的功能。
+
+NetlinkManager.h/cpp:
+   同上，在main函数里面创建，功能同上，实际上只是对上面类的一个封装。与 native 层通信的接口
+
+VoldCommand.h/cpp:
+   继承自FrameworkCommand，没有具体实现
+
+CommandListener.h/cpp:
+   继承自FrameworkListener，实现着一个类似socket 监听接口一样的功能。是vold中对上层，也就是framework的接口。主要是实现了DumpCmd，VolumeCmd，ShareCmd，AsecCmd，StorageCmd，XwarpCmd六个内部类，均继承自VoldCommand，CommandListener类在构造函数里面将上面的内部类作为command注册进来，每个内部类主要的实现函数runCommand，处理接收到数据包以后的具体处理方法。
+
+
+CommandListener类的六个内部类:
+   1, DumpCmd，可以dump出Loop，Devmapper，可以mount的文件系统的信息。
+
+   2，VolumeCmd,处理sd的各种操作，一般是通过调用VolumeManager的各种函数，实现mount,unmount,share,unshare, format,等信息。
+
+   3，ShareCmd，调用VolumeManager的shareAvailable函数实现share的相关内容。
+
+   4，StorageCmd，切换到存储模式的一些相关操作，主要调用了process类的一些操作。
+
+   5，AsecCmd，asec相关的
+
+   6，XwarpCmd，xwarp相关的
+
+
+
+
+/dev/block/vold目录存放所有的usbdisk 或者 sdcard 的挂载点的
+adb shell中查看该目录
+shell@android:/ # ls dev/block/vold/                                 
+          179:0
+          179:1
+          179:10
+          179:11
+          179:12
+          179:13
+          179:14
+          179:16
+          179:2
+          179:3
+          179:32
+          179:5
+          179:6
+          179:7
+          179:8
+          179:9
+插入内存卡，内存卡的设备节点是179:48
+179代表整个disk设备，1~48代表该设备的分区号。
+=========================================
+     设备节点有待研究
+=======================================
+
+coldboot("/sys/block"); // 冷启动，vold错过了一些uevent,重新触发。向sysfs的uevent文件写入”add\n” 字符也可以触发sysfs事件，相当执行了一次热插拔。
+
+====== vold 的工作流程 ======
+
+Vold的工作流程大致可以分为三个部分:创建监听、引导、事件处理。
+
+    
+
+==== (1)创建监听 ====
+
+     创建监听指的是创建监听链接，一方面用于监听来自内核的uevent，另一方面用于监听来自上层的控制命令，这些命令包括控制SD卡的挂载与卸载，这里所说的链接也就是Socket。在Android 系统启动的时候，init进程会去解析init.rc文件，在该文件中，有如下代码：
+
+Service vold /system/bin/vold
+             Socket vold stream 0660 root mount
+             Iprio be 2
+
+     这样系统会在启动的时候创建与上层通信的Socket。
+
+      在Android源码/system/vold路径下的main.cpp中创建了与内核通信的Socket。在main.cpp中通过实例化VolumeManager 和 NetlinkManager 时创建。
+
+在NetlinkManager::start()中有这么一句代码是用来创建uevent socket的：
+if ((mSock = socket(PF_NETLINK,
+                        SOCK_DGRAM,NETLINK_KOBJECT_UEVENT)) < 0)
+
+在SocketListener::startListener() 中启动监听分了两个流程走，一个是mSocketName（init.rc中定义的socket，与framework通信）；另一个是socketFd（NetlinkManager.cpp中创建的socket，与 native 层通信）。
+mSocketName 流程：
+        mSock = android_get_control_socket(mSocketName)；
+        listen(mSock, 4)；
+        pipe(mCtrlPipe)；
+        pthread_create(&mThread, NULL, SocketListener::threadStart, this)；启动监听线程
+socketFd 流程：
+        listen(mSock, 4)；
+        mClients->push_back(new SocketClient(mSock, false, mUseCmdNum));
+        pipe(mCtrlPipe)；
+        pthread_create(&mThread, NULL, SocketListener::threadStart, this)；又启动了一个监听线程
+       
+
+    
+
+==== (2)引导 ====
+
+     Vold进程启动时候会对现有的外部存储设备进行检查。首先加载并解析vold.fstab，并检查挂载点是否已被挂载。然后执行SD卡的挂载，最后处理USB大容量存储。因为系统是按行解析的，通过查看vold.fstab可以很清楚的知道这一点。
+vold.fatab中最重要的语句：
+
+dev_mount	sdcard	/mnt/sdcard	auto	/devices/platform/goldfish_mmc.0	/devices/platform/msm_sdcc.2/mmc_host/mmc1
+
+dev_mount      <lable>  <mount_point>  <part>   <sysfs_path…>
+  挂载命令          标签         挂载点       子分区个数    挂载路径
+
+参数之间不能有空格，只能以tab为间隔(注意：这里为了对齐因此采用空格隔开，如果自行修改vold.fstab之后加以空格的话系统会识别不到的)。
+
+auto: 子分区个数如果为auto则表示只有1个子分区，也可以为任何不为0的整数。
+
+     如果vold.fstab解析无误，VolueManager将创建DirectVolume，若vold.fstab解析不存在或者打开失败，Vold将会读取Linux内核中的参数，此时如果参数中存在SDCARD(也就是SD的默认路径)，VolumeManager则会创建AutoVolume，如果不存在这个默认路径那么就不会创建。
+
+     
+
+==== (3)事件处理 ====
+
+     通过对两个socket的监听，完成对事件的处理以及对上层应用的响应。
+
+a. Kernel发出uevent
+       NetlinkManager检测到kernel发出的uevent，解析后调用NetlinkHandler::onEvent()方法。该方法会分别处理不同的事件，这里重要的事件有：“block”, “switch”
+       “block”事件主要指Volume的mount、unmount、createAsec等。由VolumeManager的handleBlockEvent(evt)来处理，根据多态性最终将会调用AutoVolume或者DirectVolume的handleBlockEvent方法来处理。
+       “switch”事件主要指Volume的connet、disconnet等。根据相关操作，改变设备参数(设备类型、挂载点等)通过CommandListener告知FrameWork层。
+
+b. FrameWork发出控制命令
+       与a相反，CommandListener检测到FrameWork层的命令(MountService发出的命令)调用VolumeManager的函数，VolumeManager找出对应的Volume，调用Volume函数去挂载/卸载操作。而Volume类中的相关操作最终通过调用Linux函数完成。
+
+
+
+
+
+
+=====================================framework 层绑定socket =========================
+在MountService实例化过程中，就开始连接socket：
+
+public MountService(Context context) {
+      ...
+      mConnector = new NativeDaemonConnector(this, "vold", MAX_CONTAINERS * 2, VOLD_TAG, 25);
+      Thread thread = new Thread(mConnector, VOLD_TAG);
+      thread.start(); //启动监听线程
+      ...
+}
+-> thread.start()
+-> NativeDaemonConnector.run()
+-> NativeDaemonConnector.listenToSocket()
+  {
+        try {
+            socket = new LocalSocket();
+            LocalSocketAddress address = new LocalSocketAddress(mSocket,
+                    LocalSocketAddress.Namespace.RESERVED);
+
+            socket.connect(address);     // 连接到socket
+
+            InputStream inputStream = socket.getInputStream();
+            synchronized (mDaemonLock) {
+                mOutputStream = socket.getOutputStream();
+            }
+
+            mCallbacks.onDaemonConnected();  // 回调MountService.onDaemonConnected()方法
+        } ...
+        ...
+}
+-> MountService.onDaemonConnected() 绑定socket后的回调方法，该方法首先发送执行"list"的指令到socket获得volume list
+-> MountService.updatePublicVolumeState(volume, state) 更新各个volume的状态
+
+
+
+==== Settings设置的存储界面 ====
+android/packages/apps/Settings/src/com/android/settings/deviceinfo/Memory.java
+在onCreate() 中首先创建“内部存储空间”的类别：
+addCategory(StorageVolumePreferenceCategory.buildForInternal(context));
+
+然后由mStorageManager.getVolumeList()获得存储设备列表，创建另外的三个类别：buildForPhysical(context, volume);
+       Internal storage,
+       SD card,
+       USB storage
+
+
+
+
+
+
+
+
+
+
+NativeDaemonConnector用于framework层与native层的socket通信，不只是vold通信
+以下是socket通信的两个进程：我们会发现有两组sequenceNumber，一个是从1到15（netd进程）， 一个从1到6（vold进程）
+
+I/Porry   ( 2254): NativeDaemonConnecto.java execute() sequenceNumber = 1
+I/Porry   ( 2254): NativeDaemonConnecto.java execute() sentCmd = 1 volume list��
+I/Porry   ( 2254): NativeDaemonConnecto.java execute() event = 110 1 sdcard /mnt/sdcard 1
+I/Porry   ( 2254): NativeDaemonConnecto.java execute() event = 110 1 extsd /mnt/extsd 0
+I/Porry   ( 2254): NativeDaemonConnecto.java execute() event = 110 1 usbhost1 /mnt/usbhost1 0
+I/Porry   ( 2254): NativeDaemonConnecto.java execute() event = 200 1 Volumes listed.
+
+I/Porry   ( 2254): NativeDaemonConnecto.java execute() sequenceNumber = 2
+I/Porry   ( 2254): NativeDaemonConnecto.java execute() sentCmd = 2 asec list��
+I/Porry   ( 2254): NativeDaemonConnecto.java execute() event = 200 2 asec operation succeeded
+
+I/Porry   ( 2254): NativeDaemonConnecto.java execute() sequenceNumber = 1
+I/Porry   ( 2254): NativeDaemonConnecto.java execute() sentCmd = 1 interface ipv6 wlan0 disable��
+I/Porry   ( 2254): NativeDaemonConnecto.java execute() event = 200 1 IPv6 state changed
+
+I/Porry   ( 2254): NativeDaemonConnecto.java execute() sequenceNumber = 2
+I/Porry   ( 2254): NativeDaemonConnecto.java execute() sentCmd = 2 interface list��
+I/Porry   ( 2254): NativeDaemonConnecto.java execute() event = 110 2 lo
+I/Porry   ( 2254): NativeDaemonConnecto.java execute() event = 110 2 tunl0
+I/Porry   ( 2254): NativeDaemonConnecto.java execute() event = 110 2 gre0
+I/Porry   ( 2254): NativeDaemonConnecto.java execute() event = 110 2 sit0
+I/Porry   ( 2254): NativeDaemonConnecto.java execute() event = 110 2 ip6tnl0
+I/Porry   ( 2254): NativeDaemonConnecto.java execute() event = 110 2 p2p0
+I/Porry   ( 2254): NativeDaemonConnecto.java execute() event = 110 2 wlan0
+I/Porry   ( 2254): NativeDaemonConnecto.java execute() event = 200 2 Interface list completed
+
+I/Porry   ( 2254): NativeDaemonConnecto.java execute() sequenceNumber = 3
+I/Porry   ( 2254): NativeDaemonConnecto.java execute() sequenceNumber = 3
+I/Porry   ( 2254): NativeDaemonConnecto.java execute() sentCmd = 3 volume mount /mnt/sdcard��
+I/Porry   ( 2254): NativeDaemonConnecto.java execute() sentCmd = 3 bandwidth enable��
+I/Porry   ( 2254): NativeDaemonConnecto.java execute() event = 200 3 volume operation succeeded
+
+I/Porry   ( 2254): NativeDaemonConnecto.java execute() sequenceNumber = 4
+I/Porry   ( 2254): NativeDaemonConnecto.java execute() sentCmd = 4 asec list��
+I/Porry   ( 2254): NativeDaemonConnecto.java execute() event = 200 3 Bandwidth command succeeeded
+I/Porry   ( 2254): NativeDaemonConnecto.java execute() sequenceNumber = 4
+I/Porry   ( 2254): NativeDaemonConnecto.java execute() sentCmd = 4 firewall disable��
+I/Porry   ( 2254): NativeDaemonConnecto.java execute() event = 200 4 Firewall command succeeded
+
+I/Porry   ( 2254): NativeDaemonConnecto.java execute() sequenceNumber = 5
+I/Porry   ( 2254): NativeDaemonConnecto.java execute() sentCmd = 5 bandwidth setglobalalert 2097152��
+I/Porry   ( 2254): NativeDaemonConnecto.java execute() event = 200 5 Bandwidth command succeeeded
+
+I/Porry   ( 2254): NativeDaemonConnecto.java execute() sequenceNumber = 6
+I/Porry   ( 2254): NativeDaemonConnecto.java execute() sentCmd = 6 firewall disable��
+I/Porry   ( 2254): NativeDaemonConnecto.java execute() event = 200 6 Firewall command succeeded
+
+I/Porry   ( 2254): NativeDaemonConnecto.java execute() event = 200 4 asec operation succeeded
+
+I/Porry   ( 2254): NativeDaemonConnecto.java execute() sequenceNumber = 7
+I/Porry   ( 2254): NativeDaemonConnecto.java execute() sentCmd = 7 interface setthrottle rmnet0 -1 -1��
+I/Porry   ( 2254): NativeDaemonConnecto.java execute() event = 200 7 Interface throttling set
+
+I/Porry   ( 2254): NativeDaemonConnecto.java execute() sequenceNumber = 8
+I/Porry   ( 2254): NativeDaemonConnecto.java execute() sentCmd = 8 interface setthrottle rmnet0 -1 -1��
+I/Porry   ( 2254): NativeDaemonConnecto.java execute() event = 200 8 Interface throttling set
+
+I/Porry   ( 2254): NativeDaemonConnecto.java execute() sequenceNumber = 9
+I/Porry   ( 2254): NativeDaemonConnecto.java execute() sentCmd = 9 softap fwreload wlan0 STA��
+I/Porry   ( 2254): NativeDaemonConnecto.java execute() event = 200 9 Softap operation succeeded
+
+I/Porry   ( 2254): NativeDaemonConnecto.java execute() sequenceNumber = 10
+I/Porry   ( 2254): NativeDaemonConnecto.java execute() sentCmd = 10 interface getcfg wlan0��
+I/Porry   ( 2254): NativeDaemonConnecto.java execute() event = 213 10 00:90:4c:11:22:33 0.0.0.0 0 down broadcast multicast
+I/Porry   ( 2254): NativeDaemonConnecto.java execute() sequenceNumber = 11
+I/Porry   ( 2254): NativeDaemonConnecto.java execute() sentCmd = 11 interface setcfg wlan0 0.0.0.0 0 multicast broadcast down��
+I/Porry   ( 2254): NativeDaemonConnecto.java execute() event = 200 11 Interface configuration set
+
+I/Porry   ( 2254): NativeDaemonConnecto.java execute() sequenceNumber = 12
+I/Porry   ( 2254): NativeDaemonConnecto.java execute() sentCmd = 12 interface ipv6privacyextensions wlan0 enable��
+I/Porry   ( 2254): NativeDaemonConnecto.java execute() event = 200 12 IPv6 privacy extensions changed
+
+I/Porry   ( 2254): NativeDaemonConnecto.java execute() sequenceNumber = 13
+I/Porry   ( 2254): NativeDaemonConnecto.java execute() sentCmd = 13 interface getcfg p2p0��
+I/Porry   ( 2254): NativeDaemonConnecto.java execute() event = 213 13 02:22:f4:bc:81:ab 0.0.0.0 0 up broadcast multicast
+I/Porry   ( 2254): NativeDaemonConnecto.java execute() sequenceNumber = 14
+I/Porry   ( 2254): NativeDaemonConnecto.java execute() sentCmd = 14 interface setcfg p2p0 0.0.0.0 0 multicast broadcast up��
+I/Porry   ( 2254): NativeDaemonConnecto.java execute() event = 200 14 Interface configuration set
+
+I/Porry   ( 2254): NativeDaemonConnecto.java execute() sequenceNumber = 5
+I/Porry   ( 2254): NativeDaemonConnecto.java execute() sentCmd = 5 cryptfs cryptocomplete
+I/Porry   ( 2254): NativeDaemonConnecto.java execute() event = 200 5 1
+
+I/Porry   ( 2254): NativeDaemonConnecto.java execute() sequenceNumber = 6
+I/Porry   ( 2254): NativeDaemonConnecto.java execute() sentCmd = 6 cryptfs cryptocomplete��
+I/Porry   ( 2254): NativeDaemonConnecto.java execute() event = 200 6 1
+
+I/Porry   ( 2254): NativeDaemonConnecto.java execute() sequenceNumber = 15
+I/Porry   ( 2254): NativeDaemonConnecto.java execute() sentCmd = 15 bandwidth setglobalalert 2097152��
+I/Porry   ( 2254): NativeDaemonConnecto.java execute() event = 200 15 Bandwidth command succeeeded
+
+
+
+
+
+春江水暖鸭先知，冬雨降至点点寒。 十里寒
+霾，霾，霾 
+遛狗不见狗，狗绳牵在手，见绳不见手，狗叫我才走
+
+

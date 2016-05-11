@@ -1,0 +1,21 @@
+Content-Type: text/x-zim-wiki
+Wiki-Format: zim 0.4
+Creation-Date: 2014-06-23T10:49:13+08:00
+
+====== 智能控温频率 ======
+Created Monday 23 June 2014
+
+[dvfs_table]
+max_freq = 1200000000
+min_freq = 120000000
+
+;temp_limit_freq = 1008000000
+;temp_limit_high = 85
+;temp_limit_low  = 75
+
+temp_limit_freq = 864000000
+temp_limit_high = 100
+temp_limit_low  = 85
+
+
+当温度高于100度时，CPU最高频率设定为864MHZ，当温度降到85度时，CPU最高频率恢复到1.2GHZ

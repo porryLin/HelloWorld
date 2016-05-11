@@ -1,0 +1,137 @@
+Content-Type: text/x-zim-wiki
+Wiki-Format: zim 0.4
+Creation-Date: 2014-02-28T08:47:29+08:00
+
+====== 数据库 ======
+Created Friday 28 February 2014
+
+== 由uri求得文件绝对路径 ==
+(http://stackoverflow.com/questions/3401579/get-filename-and-path-from-uri-from-mediastore)
+
+import android.net.Uri;
+import android.database.Cursor;
+import android.os.Environment;
+
+public String getRealPathFromURI(Uri contentUri) {
+             String[] proj = { MediaStore.Audio.Media.DATA };
+            //// Cursor cursor = managedQuery(contentUri, proj, null, null, null); // @deprecated
+             Cursor cursor = getContentResolver().query(contentUri, proj, null, null, null);
+             int column_index = cursor.getColumnIndexOrThrow(MediaStore.Audio.Media.DATA);
+             if (cursor == null) 
+                             return null;
+             cursor.moveToFirst();
+             return cursor.getString(column_index);
+  }
+
+
+一、URI　
+
+　　通用资源标志符（Universal Resource Identifier, 简称"URI"）。
+
+　　Uri代表要操作的数据，Android上可用的每种资源 - 图像、视频片段等都可以用Uri来表示。
+
+　　URI一般由三部分组成：
+
+　　　　访问资源的命名机制。 
+
+　　　　存放资源的主机名。 
+
+　　　　资源自身的名称，由路径表示。 
+
+　　Android的Uri由以下三部分组成： "content://"、数据的路径、标示ID(可选)
+
+　　举些例子，如： 
+
+　　　　所有联系人的Uri： content://contacts/people
+
+　　　　某个联系人的Uri: content://contacts/people/5
+
+　　　　所有图片Uri: content://media/external
+
+　　　　某个图片的Uri：content://media/external/images/media/4
+
+ 
+
+　　二、内部保存
+
+　　首先我们来看一下android是如何管理多媒体文件(音频、视频、图片)的信息。通过DDMS，我们在/data/data/com.android.providers.media下找到数据库文件
+
+　　
+
+　　打开external.db文件进一步查看：在media表格下，可以看到文件路径(_data)和Uri的标示ID(_id)的对应关系。
+
+　　
+
+三、相互转换
+
+1.从URI(content://)获得文件路径
+   private Uri contUriToPath (URI cont_uri) {
+         String[] proj = { MediaStore.Images.Media.DATA };   
+         Cursor cursor = this.ctx.managedQuery(cont_uri, proj, null, null, null);  
+         int index = actualimagecursor.getColumnIndexOrThrow(MediaStore.Images.Media.DATA);   
+         cursor.moveToFirst();   
+          
+         String path = cursor.getString(index); //获得绝对路径
+         return path;
+   }
+   
+2.从URI(content://)获得文件路径     
+   private Uri fileUriToPath (URI file_uri) {
+         //uri = file:///storage/sdcard0/DCIM/Camera/IMG_20150101_012056.jpg
+         //截取file:// 后面的字符串，就是path了
+         return path;
+   }
+   
+3. 从文件路径获得URI (file://)  
+   private Uri pathToFileUri (String fle_path) {
+         File file = new File(file_path);
+         Uri fileUri = Uri.fromFile(file);
+         return fileUri;
+   } 
+
+3. 从文件路径获得URI (content://)  
+
+
+
+4. 从URI (content://) 得到 URI (file://)
+   private Uri contentUriToFileUri (URI cont_uri) {
+         String[] proj = { MediaStore.Images.Media.DATA };   
+         Cursor cursor = getContentResolver().query(uri, proj, null, null, null);
+         int actual_image_column_index = cursor.getColumnIndexOrThrow(MediaStore.Images.Media.DATA);   
+         cursor.moveToFirst();
+     
+         String img_path = cursor.getString(actual_image_column_index);
+         File file = new File(img_path);
+         Uri fileUri = Uri.fromFile(file);
+         return fileUri;
+   }
+
+
+5.从URI (file://) 得到 URI (content://)
+
+
+
+
+如何让其他应用也可以使用sharePreferences
+1.本应用
+      sharedPreferences = getActivity().getSharedPreferences(
+				TABLE_NETWORK_DISPLAY,
+				Context.MODE_WORLD_READABLE | Context.MODE_WORLD_WRITEABLE);
+      editor = sharedPreferences.edit();
+      isOpen = sharedPreferences.getBoolean(DISPLAY, false);
+
+2.使用方（其他应用）
+      private boolean shouldOpenSpeedMonitor(){
+            try {
+	    	Context settingsAppsContext = mContext.createPackageContext("com.android.settings", Context
+	    			.CONTEXT_IGNORE_SECURITY);
+	    	SharedPreferences sharedPreferences = settingsAppsContext
+	        		.getSharedPreferences(TABLE_NETWORK_DISPLAY, Context
+	        				.MODE_WORLD_READABLE);
+	        return sharedPreferences.getBoolean(DISPLAY, false);
+            } catch (NameNotFoundException e) {
+        	return false;
+            }
+      }
+
+

@@ -1,0 +1,508 @@
+Content-Type: text/x-zim-wiki
+Wiki-Format: zim 0.4
+Creation-Date: 2014-03-06T16:19:07+08:00
+
+====== 插拔SD卡导致的异常 ======
+Created Thursday 06 March 2014
+
+== 问题描述： ==
+使用Sandisk 8G 卡快速插拔几次后，出现卡已经拔掉，但是storage里面还存在sd card的信息， 文件浏览器也存在 ext sd信息，同时也可有umount， mount。
+
+== 下面是出现异常时，设备拔掉SD卡后的挂载分区情况： ==
+
+root@F1-D4:/ # mount
+rootfs / rootfs ro,seclabel,relatime 0 0
+tmpfs /dev tmpfs rw,seclabel,nosuid,relatime,mode=755 0 0
+devpts /dev/pts devpts rw,seclabel,relatime,mode=600 0 0
+proc /proc proc rw,relatime 0 0
+sysfs /sys sysfs rw,seclabel,relatime 0 0
+selinuxfs /sys/fs/selinux selinuxfs rw,relatime 0 0
+none /sys/fs/cgroup tmpfs rw,seclabel,relatime,mode=750,gid=1000 0 0
+tmpfs /mnt/secure tmpfs rw,seclabel,relatime,mode=700 0 0
+tmpfs /mnt/asec tmpfs rw,seclabel,relatime,mode=755,gid=1000 0 0
+tmpfs /mnt/obb tmpfs rw,seclabel,relatime,mode=755,gid=1000 0 0
+none /dev/cpuctl cgroup rw,relatime,cpu 0 0
+debugfs /sys/kernel/debug debugfs rw,relatime 0 0
+/dev/block/by-name/system /system ext4 ro,seclabel,relatime,user_xattr,barrier=1,data=ordered 0 0
+/dev/block/by-name/cache /cache ext4 rw,seclabel,nosuid,nodev,noatime,user_xattr,barrier=1,nomblk_io_submit,data=ordered 0 0
+/dev/block/by-name/UDISK /data ext4 rw,seclabel,nosuid,nodev,noatime,user_xattr,barrier=1,nomblk_io_submit,data=ordered,noauto_da_alloc 0 0
+/dev/block/by-name/private /snsn ext4 rw,seclabel,nosuid,nodev,noatime,user_xattr,barrier=1,nomblk_io_submit,data=ordered 0 0
+/dev/fuse /mnt/shell/emulated fuse rw,nosuid,nodev,relatime,user_id=1023,group_id=1023,default_permissions,allow_other 0 0
+**tmpfs /mnt/extsd tmpfs rw,seclabel,nosuid,nodev,relatime,uid=1000,gid=1015 0 0**
+
+
+root@F1-D4:/ # df
+Filesystem               Size     Used     Free   Blksize
+/dev                   797.9M   128.0K   797.8M   4096
+/sys/fs/cgroup         797.9M    12.0K   797.9M   4096
+/mnt/secure            797.9M     0.0K   797.9M   4096
+/mnt/asec              797.9M     0.0K   797.9M   4096
+/mnt/obb               797.9M     0.0K   797.9M   4096
+/system                756.8M   560.0M   196.8M   4096
+/cache                 756.8M    13.6M   743.2M   4096
+/data                   12.7G   231.1M    12.4G   4096
+/snsn                   15.8M     4.1M    11.7M   4096
+/mnt/shell/emulated     12.7G   231.1M    12.4G   4096
+**/mnt/extsd             797.9M     0.0K   797.9M   4096**
+
+
+== 发现多了个tmpfs 挂载在/mnt/extsd ，这是什么情况？ ==
+使用umount /mnt/extsd 之后，可以卸载这个目录。接着插拔8G卡，没有打印出插拔卡的信息，存储界面显示不正常；
+                                                                                                                   插入4G卡，能够读到内存卡插入的信息，存储界面显示正常。
+
+
+== log信息： ==
+I/Sensorsmpltiger( 2136): **** Motion ****
+D/DirectVolume( 1304): Volume extsd /mnt/extsd partition 179:52 removed
+D/Vold    ( 1304): Volume extsd state changing 4 (Mounted) -> 5 (Unmounting)
+D/MountService( 2136): sendStorageIntent Intent { act=android.intent.action.MEDIA_EJECT dat=file:///mnt/extsd (has extras) } to UserHandle{-1}
+D/MediaProvider(12481): deleting all entries for storage StorageVolume [mStorageId=131073 mPath=/mnt/extsd mDescriptionId=17040659 mPrimary=false mRemovable=true mEmulated=false mMtpReserveSpace=0 mAllowMassStorage=true mMaxFileSize=0 mOwner=null]
+I/MediaStoreImporter( 3049): Update: incremental Added music: 0 Updated music: 0 Deleted music: 0 Created playlists: 0 Updated playlists: 0 Deleted playlists: 0 Inserted playlist items: 0 Deleted playlist items: 0 Removed orphaned playlist items: 0
+E/Vold    ( 1304): mPartIdx = -1, mMountedPartNum= 4
+W/Vold    ( 1304): Failed to unmount /mnt/extsd/179_52 (Device or resource busy, retries 59, action 0)
+E/ProcessKiller( 1304): Process /system/bin/mediaserver (12987) has open file /mnt/extsd/179_52/TRIM_20140120_115334.mp4
+W/Vold    ( 1304): Failed to unmount /mnt/extsd/179_52 (Device or resource busy, retries 58, action 1)
+E/ProcessKiller( 1304): Process /system/bin/mediaserver (12987) has open file /mnt/extsd/179_52/TRIM_20140120_115334.mp4
+W/ProcessKiller( 1304): Sending SIGHUP to process 12987
+I/ServiceManager( 1303): service 'media.audio_flinger' died
+I/ServiceManager( 1303): service 'media.player' died
+I/ServiceManager( 1303): service 'media.camera' died
+I/ServiceManager( 1303): service 'media.audio_policy' died
+W/MediaMetadataRetriever(12481): MediaMetadataRetriever server died!
+W/AudioSystem( 2136): AudioPolicyService server died!
+W/AudioSystem( 6791): AudioFlinger server died!
+W/IMediaDeathNotifier( 6791): media server died
+W/AudioSystem( 2136): AudioFlinger server died!
+E/AudioService( 2136): Media server died.
+W/linker  (14049): libve.so has text relocations. This is wasting memory and is a security risk. Please fix.
+I/mediaserver(14049): ServiceManager: 0xb7a214c8
+I/AudioFlinger(14049): Using default 3000 mSec as standby time.
+I/CameraService(14049): CameraService started (pid=14049)
+D/HALCameraFactory(14049): camera hal version: 3000130327_V1.0
+I/CameraService(14049): Loaded "V4L2Camera Module" camera module
+D/HALCameraFactory(14049): There is 2 attached cameras and 0 removable cameras
+I/AudioPolicyManagerBase(14049): loadAudioPolicyConfig() loaded /system/etc/audio_policy.conf
+D/codec_audio(14049): get ro.sw.audio.codec_plan_name =0
+D/codec_audio(14049): get index =0
+V/codec_audio_pad(14049): ****LINE:171,FUNC:pad_init
+V/codec_audio_plan_record(14049): record manager thread sleep
+D/codec_audio(14049): key_name:PHONE_EARPIECE 
+D/codec_audio(14049): key_name:PHONE_HEADSET 
+D/codec_audio(14049): key_name:PHONE_SPEAKER 
+D/codec_audio(14049): key_name:BLUETOOTH_UP 
+D/codec_audio(14049): key_name:FM_HEADSET 
+D/codec_audio(14049): key_name:FM_SPEAKER 
+D/codec_audio(14049): get_volume_config pcm_vol: 8
+D/bp_audio(14049): get ro.sw.audio.bp_device_name=0
+D/bp_audio(14049): bp_device_detect index=0
+I/AudioFlinger(14049): loadHwModule() Loaded primary audio interface from sunxi audio HW HAL (audio) handle 1
+I/AudioFlinger(14049): HAL output buffer size 1056 frames, normal mix buffer size 1056 frames
+I/AudioMixer(14049): found effect "Multichannel Downmix To Stereo" from The Android Open Source Project
+I/AudioFlinger(14049): Using module 1 has the primary audio interface
+I/AudioFlinger(14049): AudioFlinger's thread 0xb5085008 ready to run
+I/audio_a2dp_hw(14049): adev_open:  adev_open in A2dp_hw module
+I/AudioFlinger(14049): loadHwModule() Loaded a2dp audio interface from A2DP Audio HW HAL (audio) handle 3
+I/AudioFlinger(14049): loadHwModule() Loaded usb audio interface from USB audio HW HAL (audio) handle 4
+I/r_submix(14049): adev_open(name=audio_hw_if)
+I/r_submix(14049): adev_init_check()
+I/AudioFlinger(14049): loadHwModule() Loaded r_submix audio interface from Wifi Display audio HAL (audio) handle 5
+I/AudioPolicyService(14049): Loaded audio policy from LEGACY Audio Policy HAL (audio_policy)
+E/AudioService( 2136): Media server started.
+W/AudioPolicyManagerBase(14049): setPhoneState() setting same state 0
+I/Vold    ( 1304): /mnt/extsd/179_52 sucessfully unmounted
+W/Vold    ( 1304): Volume::deleteMountPoint: /mnt/extsd/179_52
+I/Vold    ( 1304): Volume::deleteDeviceNode: path=��>���>�
+E/Vold    ( 1304): Volume::deleteDeviceNode: path(��>���>�) is invalid
+I/Vold    ( 1304): /mnt/extsd sucessfully unmounted
+I/Vold    ( 1304): /mnt/extsd unmounted successfully
+D/Vold    ( 1304): Volume extsd state changing 5 (Unmounting) -> 1 (Idle-Unmounted)
+D/DirectVolume( 1304): Crisis averted
+D/DirectVolume( 1304): Volume extsd /mnt/extsd disk 179:48 removed
+E/Vold    ( 1304): Volume extsd unmount request when not mounted
+D/Vold    ( 1304): Volume extsd state changing 1 (Idle-Unmounted) -> 0 (No-Media)
+D/Vold    ( 1304): Volume extsd state changing 0 (No-Media) -> 2 (Pending)
+D/Vold    ( 1304): Volume extsd state changing 2 (Pending) -> 1 (Idle-Unmounted)
+D/DirectVolume( 1304): Volume extsd /mnt/extsd partition 179:68 removed
+D/DirectVolume( 1304): Volume extsd /mnt/extsd disk 179:64 removed
+E/Vold    ( 1304): Volume extsd unmount request when not mounted
+D/Vold    ( 1304): Volume extsd state changing 1 (Idle-Unmounted) -> 0 (No-Media)
+D/MtpService(12481): onStorageStateChanged /mnt/extsd mounted -> unmounted
+D/MtpService(12481): removeStorageLocked 131073 /mnt/extsd
+E/MtpServerJNI(12481): server is null in remove_storage
+I/MemorySettings( 2453): Received storage state changed notification that /mnt/extsd changed state from mounted to unmounted
+D/MediaScannerReceiver(12481): action: android.intent.action.MEDIA_UNMOUNTED path: /mnt/extsd
+I/MemorySettings( 2453): Received storage state changed notification that /mnt/extsd changed state from unmounted to removed
+D/MtpService(12481): onStorageStateChanged /mnt/extsd unmounted -> removed
+D/MountService( 2136): volume state changed for /mnt/extsd (mounted -> unmounted)
+D/MountService( 2136): sendStorageIntent Intent { act=android.intent.action.MEDIA_UNMOUNTED dat=file:///mnt/extsd (has extras) } to UserHandle{-1}
+W/MountService( 2136): Duplicate state transition (unmounted -> unmounted) for /mnt/extsd
+D/MountService( 2136): sendStorageIntent Intent { act=unmounted dat=file:///mnt/extsd (has extras) } to UserHandle{-1}
+D/MountService( 2136): volume state changed for /mnt/extsd (unmounted -> removed)
+D/MountService( 2136): sendStorageIntent Intent { act=android.intent.action.MEDIA_REMOVED dat=file:///mnt/extsd (has extras) } to UserHandle{-1}
+D/MtpService(12481): onStorageStateChanged /mnt/extsd removed -> unmounted
+I/MemorySettings( 2453): Received storage state changed notification that /mnt/extsd changed state from removed to unmounted
+D/StorageMeasurement( 2453): getDirectorySize(/storage/emulated/0) returned 1699840
+D/MtpService(12481): onStorageStateChanged /mnt/extsd unmounted -> removed
+I/MemorySettings( 2453): Received storage state changed notification that /mnt/extsd changed state from unmounted to removed
+D/MountService( 2136): volume state changed for /mnt/extsd (removed -> unmounted)
+D/MountService( 2136): sendStorageIntent Intent { act=android.intent.action.MEDIA_UNMOUNTED dat=file:///mnt/extsd (has extras) } to UserHandle{-1}
+W/MountService( 2136): Duplicate state transition (unmounted -> unmounted) for /mnt/extsd
+D/MountService( 2136): sendStorageIntent Intent { act=unmounted dat=file:///mnt/extsd (has extras) } to UserHandle{-1}
+D/Vold    ( 1304): mountVol /mnt/extsd
+D/Vold    ( 1304): storage_type =  primaryStorage = 1
+D/MountService( 2136): volume state changed for /mnt/extsd (unmounted -> removed)
+W/MountService( 2136): Insertion mount failed (-2)
+D/MountService( 2136): sendStorageIntent Intent { act=android.intent.action.MEDIA_REMOVED dat=file:///mnt/extsd (has extras) } to UserHandle{-1}
+D/StorageMeasurement( 2453): getDirectorySize(/storage/emulated/0) returned 1699840
+D/MediaScannerReceiver(12481): action: android.intent.action.MEDIA_UNMOUNTED path: /mnt/extsd
+D/StorageMeasurement( 2453): getDirectorySize(/storage/emulated/0) returned 1699840
+I/Sensorsmpltiger( 2136): **** No Motion ****
+
+D/WindowManager( 2136): mBootFastRuning = false shutdhownPending = false
+D/InputManager-JNI( 2136): handleInterceptActions: POLICY_FLAG_PASS_TO_USER.
+D/WindowManager( 2136): mBootFastRuning = false shutdhownPending = false
+D/InputManager-JNI( 2136): handleInterceptActions: POLICY_FLAG_PASS_TO_USER.
+V/codec_audio_pad(14049): in normal mode, headset or speaker on,****LINE:54,FUNC:set_normal_path
+I/ActivityManager( 2136): START u0 {act=android.intent.action.MAIN cat=[android.intent.category.HOME] flg=0x10200000 cmp=com.android.launcher/com.android.launcher2.Launcher} from pid 2136
+W/AudioFlinger(14049): session id 13 not found for pid 2136
+
+I/ActivityManager( 2136): START u0 {act=android.intent.action.MAIN cat=[android.intent.category.LAUNCHER] flg=0x10200000 cmp=com.android.settings/.Settings} from pid 2413
+D/BluetoothAdapter( 2453): 1101252800: getState() :  mService = null. Returning STATE_OFF
+
+D/StorageMeasurement( 2453): getDirectorySize(/storage/emulated/0) returned 1699840
+D/StorageMeasurement( 2453): getDirectorySize(/storage/emulated/0/Android) returned 417792
+D/StorageMeasurement( 2453): getDirectorySize(/storage/emulated/0) returned 1699840
+D/StorageMeasurement( 2453): getDirectorySize(/storage/emulated/0/Podcasts) returned 8192
+D/StorageMeasurement( 2453): getDirectorySize(/storage/emulated/0) returned 1699840
+D/StorageMeasurement( 2453): getDirectorySize(/storage/emulated/0/DCIM) returned 1085440
+D/StorageMeasurement( 2453): getDirectorySize(/storage/emulated/0/Ringtones) returned 8192
+D/StorageMeasurement( 2453): getDirectorySize(/storage/emulated/0/Movies) returned 8192
+D/StorageMeasurement( 2453): getDirectorySize(/storage/emulated/0/Alarms) returned 8192
+D/StorageMeasurement( 2453): getDirectorySize(/storage/emulated/0/Music) returned 8192
+D/StorageMeasurement( 2453): getDirectorySize(/storage/emulated/0/Notifications) returned 8192
+D/StorageMeasurement( 2453): getDirectorySize(/storage/emulated/0/Pictures) returned 8192
+D/StorageMeasurement( 2453): getDirectorySize(/storage/emulated/0/Download) returned 8192
+D/StorageMeasurement( 2453): getDirectorySize(/storage/emulated/0/.estrongs) returned 53248
+D/StorageMeasurement( 2453): getDirectorySize(/storage/emulated/0/backups) returned 20480
+D/StorageMeasurement( 2453): getDirectorySize(/storage/emulated/0) returned 1699840
+D/dalvikvm( 2453): GC_CONCURRENT freed 226K, 16% free 5386K/6360K, paused 3ms+5ms, total 34ms
+D/dalvikvm(11772): GC_CONCURRENT freed 392K, 17% free 4448K/5308K, paused 2ms+1ms, total 16ms
+D/WindowManager( 2136): mBootFastRuning = false shutdhownPending = false
+D/InputManager-JNI( 2136): handleInterceptActions: POLICY_FLAG_PASS_TO_USER.
+D/WindowManager( 2136): mBootFastRuning = false shutdhownPending = false
+D/InputManager-JNI( 2136): handleInterceptActions: POLICY_FLAG_PASS_TO_USER.
+D/dalvikvm( 2136): GC_FOR_ALLOC freed 1235K, 17% free 10258K/12348K, paused 51ms, total 51ms
+I/ActivityManager( 2136): START u0 {act=android.intent.action.MAIN cat=[android.intent.category.LAUNCHER] flg=0x10200000 cmp=com.estrongs.android.pop/.view.FileExplorerActivity} from pid 2413
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+== ============================================================================================================================ ==
+
+== 问题描述： ==
+Bug :1343 插入8G内存卡(卡里很多资料)，进入设置-存储-点击“卸载SD卡”，等待卸载中，“卸载SD卡”变成灰色，字样变成“SD卡卸载中。。。”过一段时间后，又变回“卸载SD卡”，enable，再点击一次
+“卸载SD卡”，没反应，过一会弹出“设置无响应，已关闭”
+
+== log信息： ==
+E/VoldConnector( 2100): NDC Command {5 storage users /mnt/extsd} took too long (508ms)
+W/ActivityManager( 2100): Killing processes unmount media at adjustment 0
+I/MountService( 2100): Retrying to kill storage users again
+W/ActivityManager( 2100): Killing processes unmount media at adjustment 0
+I/MountService( 2100): Retrying to kill storage users again
+W/ActivityManager( 2100): Killing processes unmount media at adjustment 0
+I/MountService( 2100): Retrying to kill storage users again
+W/ActivityManager( 2100): Killing processes unmount media at adjustment 0
+I/MountService( 2100): Retrying to kill storage users again
+W/ActivityManager( 2100): Killing processes unmount media at adjustment 0
+I/MountService( 2100): Failed to unmount media inspite of 4 retries. Forcibly killing processes now
+D/dalvikvm( 2100): GC_EXPLICIT freed 212K, 14% free 8337K/9668K, paused 3ms+6ms, total 58ms
+I/PackageManager( 2100): Updating external media status from unmounted to unmounted
+D/Vold    ( 1304): Volume extsd state changing 4 (Mounted) -> 5 (Unmounting)
+D/MountService( 2100): sendStorageIntent Intent { act=android.intent.action.MEDIA_EJECT dat=file:///mnt/extsd (has extras) } to UserHandle{-1}
+D/MediaProvider( 2318): deleting all entries for storage StorageVolume [mStorageId=131073 mPath=/mnt/extsd mDescriptionId=17040659 mPrimary=false mRemovable=true mEmulated=false mMtpReserveSpace=0 mAllowMassStorage=true mMaxFileSize=0 mOwner=null]
+D/ConnectivityService( 2100): handleInetConditionChange: no active default network - ignore
+D/StorageMeasurement( 2613): getDirectorySize(/storage/emulated/0/Android) returned 413696
+D/StorageMeasurement( 2613): getDirectorySize(/storage/emulated/0) returned 2834432
+D/StorageMeasurement( 2613): getDirectorySize(/storage/emulated/0) returned 2834432
+D/StorageMeasurement( 2613): getDirectorySize(/storage/emulated/0/Podcasts) returned 8192
+D/StorageMeasurement( 2613): getDirectorySize(/storage/emulated/0/DCIM) returned 2306048
+D/StorageMeasurement( 2613): getDirectorySize(/storage/emulated/0/Ringtones) returned 8192
+D/StorageMeasurement( 2613): getDirectorySize(/storage/emulated/0/Movies) returned 8192
+D/StorageMeasurement( 2613): getDirectorySize(/storage/emulated/0/Alarms) returned 8192
+D/StorageMeasurement( 2613): getDirectorySize(/storage/emulated/0/Music) returned 8192
+D/StorageMeasurement( 2613): getDirectorySize(/storage/emulated/0/Notifications) returned 8192
+D/StorageMeasurement( 2613): getDirectorySize(/storage/emulated/0/Pictures) returned 8192
+D/dalvikvm( 3432): GC_CONCURRENT freed 314K, 14% free 5007K/5784K, paused 2ms+2ms, total 19ms
+D/StorageMeasurement( 2613): getDirectorySize(/storage/emulated/0/Download) returned 8192
+D/StorageMeasurement( 2613): getDirectorySize(/storage/emulated/0) returned 2834432
+I/MediaStoreImporter( 3432): Need to delete 6 local files
+D/dalvikvm( 2318): GC_EXPLICIT freed 212K, 25% free 4673K/6228K, paused 3ms+4ms, total 36ms
+I/MediaStoreImporter( 3432): Deleting all local music
+I/RecentItemsManager( 3432): Deleted 4 invalid recent items.
+I/MediaStoreImporter( 3432): Update: incremental Added music: 0 Updated music: 0 Deleted music: 6 Created playlists: 0 Updated playlists: 0 Deleted playlists: 0 Inserted playlist items: 0 Deleted playlist items: 0 Removed orphaned playlist items: 0
+D/dalvikvm( 3311): GC_CONCURRENT freed 395K, 17% free 4445K/5304K, paused 2ms+2ms, total 26ms
+E/Vold    ( 1304): mPartIdx = -1, mMountedPartNum= 1
+W/Vold    ( 1304): Failed to unmount /mnt/extsd (Device or resource busy, retries 59, action 0)
+E/ProcessKiller( 1304): Process /system/bin/mediaserver (1311) has open file /mnt/extsd/3gp/TRIM_20140120_115334.mp4
+W/Vold    ( 1304): Failed to unmount /mnt/extsd (Device or resource busy, retries 58, action 0)
+E/ProcessKiller( 1304): Process /system/bin/mediaserver (1311) has open file /mnt/extsd/3gp/TRIM_20140120_115334.mp4
+
+W/Vold    ( 1304): Failed to unmount /mnt/extsd (Device or resource busy, retries 57, action 0)
+E/ProcessKiller( 1304): Process /system/bin/mediaserver (1311) has open file /mnt/extsd/3gp/TRIM_20140120_115334.mp4
+W/Vold    ( 1304): Failed to unmount /mnt/extsd (Device or resource busy, retries 56, action 0)
+E/ProcessKiller( 1304): Process /system/bin/mediaserver (1311) has open file /mnt/extsd/3gp/TRIM_20140120_115334.mp4
+
+W/Vold    ( 1304): Failed to unmount /mnt/extsd (Device or resource busy, retries 55, action 0)
+E/ProcessKiller( 1304): Process /system/bin/mediaserver (1311) has open file /mnt/extsd/3gp/TRIM_20140120_115334.mp4
+
+W/Vold    ( 1304): Failed to unmount /mnt/extsd (Device or resource busy, retries 54, action 0)
+E/ProcessKiller( 1304): Process /system/bin/mediaserver (1311) has open file /mnt/extsd/3gp/TRIM_20140120_115334.mp4
+W/Vold    ( 1304): Failed to unmount /mnt/extsd (Device or resource busy, retries 53, action 0)
+E/ProcessKiller( 1304): Process /system/bin/mediaserver (1311) has open file /mnt/extsd/3gp/TRIM_20140120_115334.mp4
+W/Vold    ( 1304): Failed to unmount /mnt/extsd (Device or resource busy, retries 52, action 0)
+E/ProcessKiller( 1304): Process /system/bin/mediaserver (1311) has open file /mnt/extsd/3gp/TRIM_20140120_115334.mp4
+W/Vold    ( 1304): Failed to unmount /mnt/extsd (Device or resource busy, retries 51, action 0)
+E/ProcessKiller( 1304): Process /system/bin/mediaserver (1311) has open file /mnt/extsd/3gp/TRIM_20140120_115334.mp4
+W/Vold    ( 1304): Failed to unmount /mnt/extsd (Device or resource busy, retries 50, action 0)
+E/ProcessKiller( 1304): Process /system/bin/mediaserver (1311) has open file /mnt/extsd/3gp/TRIM_20140120_115334.mp4
+W/Vold    ( 1304): Failed to unmount /mnt/extsd (Device or resource busy, retries 49, action 0)
+E/ProcessKiller( 1304): Process /system/bin/mediaserver (1311) has open file /mnt/extsd/3gp/TRIM_20140120_115334.mp4
+W/Vold    ( 1304): Failed to unmount /mnt/extsd (Device or resource busy, retries 48, action 0)
+E/ProcessKiller( 1304): Process /system/bin/mediaserver (1311) has open file /mnt/extsd/3gp/TRIM_20140120_115334.mp4
+
+W/Vold    ( 1304): Failed to unmount /mnt/extsd (Device or resource busy, retries 47, action 0)
+E/ProcessKiller( 1304): Process /system/bin/mediaserver (1311) has open file /mnt/extsd/3gp/TRIM_20140120_115334.mp4
+W/Vold    ( 1304): Failed to unmount /mnt/extsd (Device or resource busy, retries 46, action 0)
+E/ProcessKiller( 1304): Process /system/bin/mediaserver (1311) has open file /mnt/extsd/3gp/TRIM_20140120_115334.mp4
+W/Vold    ( 1304): Failed to unmount /mnt/extsd (Device or resource busy, retries 45, action 0)
+E/ProcessKiller( 1304): Process /system/bin/mediaserver (1311) has open file /mnt/extsd/3gp/TRIM_20140120_115334.mp4
+W/Vold    ( 1304): Failed to unmount /mnt/extsd (Device or resource busy, retries 44, action 0)
+E/ProcessKiller( 1304): Process /system/bin/mediaserver (1311) has open file /mnt/extsd/3gp/TRIM_20140120_115334.mp4
+W/Vold    ( 1304): Failed to unmount /mnt/extsd (Device or resource busy, retries 43, action 0)
+E/ProcessKiller( 1304): Process /system/bin/mediaserver (1311) has open file /mnt/extsd/3gp/TRIM_20140120_115334.mp4
+W/Vold    ( 1304): Failed to unmount /mnt/extsd (Device or resource busy, retries 42, action 0)
+E/ProcessKiller( 1304): Process /system/bin/mediaserver (1311) has open file /mnt/extsd/3gp/TRIM_20140120_115334.mp4
+W/Vold    ( 1304): Failed to unmount /mnt/extsd (Device or resource busy, retries 41, action 0)
+E/ProcessKiller( 1304): Process /system/bin/mediaserver (1311) has open file /mnt/extsd/3gp/TRIM_20140120_115334.mp4
+W/Vold    ( 1304): Failed to unmount /mnt/extsd (Device or resource busy, retries 40, action 0)
+E/ProcessKiller( 1304): Process /system/bin/mediaserver (1311) has open file /mnt/extsd/3gp/TRIM_20140120_115334.mp4
+W/Vold    ( 1304): Failed to unmount /mnt/extsd (Device or resource busy, retries 39, action 0)
+E/ProcessKiller( 1304): Process /system/bin/mediaserver (1311) has open file /mnt/extsd/3gp/TRIM_20140120_115334.mp4
+W/Vold    ( 1304): Failed to unmount /mnt/extsd (Device or resource busy, retries 38, action 0)
+E/ProcessKiller( 1304): Process /system/bin/mediaserver (1311) has open file /mnt/extsd/3gp/TRIM_20140120_115334.mp4
+W/Vold    ( 1304): Failed to unmount /mnt/extsd (Device or resource busy, retries 37, action 0)
+E/ProcessKiller( 1304): Process /system/bin/mediaserver (1311) has open file /mnt/extsd/3gp/TRIM_20140120_115334.mp4
+W/Vold    ( 1304): Failed to unmount /mnt/extsd (Device or resource busy, retries 36, action 0)
+E/ProcessKiller( 1304): Process /system/bin/mediaserver (1311) has open file /mnt/extsd/3gp/TRIM_20140120_115334.mp4
+W/Vold    ( 1304): Failed to unmount /mnt/extsd (Device or resource busy, retries 35, action 0)
+E/ProcessKiller( 1304): Process /system/bin/mediaserver (1311) has open file /mnt/extsd/3gp/TRIM_20140120_115334.mp4
+W/Vold    ( 1304): Failed to unmount /mnt/extsd (Device or resource busy, retries 34, action 0)
+E/ProcessKiller( 1304): Process /system/bin/mediaserver (1311) has open file /mnt/extsd/3gp/TRIM_20140120_115334.mp4
+W/Vold    ( 1304): Failed to unmount /mnt/extsd (Device or resource busy, retries 33, action 0)
+E/ProcessKiller( 1304): Process /system/bin/mediaserver (1311) has open file /mnt/extsd/3gp/TRIM_20140120_115334.mp4
+W/Vold    ( 1304): Failed to unmount /mnt/extsd (Device or resource busy, retries 32, action 0)
+E/ProcessKiller( 1304): Process /system/bin/mediaserver (1311) has open file /mnt/extsd/3gp/TRIM_20140120_115334.mp4
+W/Vold    ( 1304): Failed to unmount /mnt/extsd (Device or resource busy, retries 31, action 0)
+E/ProcessKiller( 1304): Process /system/bin/mediaserver (1311) has open file /mnt/extsd/3gp/TRIM_20140120_115334.mp4
+W/Vold    ( 1304): Failed to unmount /mnt/extsd (Device or resource busy, retries 30, action 0)
+E/ProcessKiller( 1304): Process /system/bin/mediaserver (1311) has open file /mnt/extsd/3gp/TRIM_20140120_115334.mp4
+W/Vold    ( 1304): Failed to unmount /mnt/extsd (Device or resource busy, retries 29, action 0)
+E/ProcessKiller( 1304): Process /system/bin/mediaserver (1311) has open file /mnt/extsd/3gp/TRIM_20140120_115334.mp4
+W/Vold    ( 1304): Failed to unmount /mnt/extsd (Device or resource busy, retries 28, action 0)
+E/ProcessKiller( 1304): Process /system/bin/mediaserver (1311) has open file /mnt/extsd/3gp/TRIM_20140120_115334.mp4
+I/Sensorsmpltiger( 2100): **** Motion ****
+W/Vold    ( 1304): Failed to unmount /mnt/extsd (Device or resource busy, retries 27, action 0)
+E/ProcessKiller( 1304): Process /system/bin/mediaserver (1311) has open file /mnt/extsd/3gp/TRIM_20140120_115334.mp4
+W/Vold    ( 1304): Failed to unmount /mnt/extsd (Device or resource busy, retries 26, action 0)
+
+E/ProcessKiller( 1304): Process /system/bin/mediaserver (1311) has open file /mnt/extsd/3gp/TRIM_20140120_115334.mp4
+
+W/Vold    ( 1304): Failed to unmount /mnt/extsd (Device or resource busy, retries 25, action 0)
+E/ProcessKiller( 1304): Process /system/bin/mediaserver (1311) has open file /mnt/extsd/3gp/TRIM_20140120_115334.mp4
+W/Vold    ( 1304): Failed to unmount /mnt/extsd (Device or resource busy, retries 24, action 0)
+E/ProcessKiller( 1304): Process /system/bin/mediaserver (1311) has open file /mnt/extsd/3gp/TRIM_20140120_115334.mp4
+W/Vold    ( 1304): Failed to unmount /mnt/extsd (Device or resource busy, retries 23, action 0)
+E/ProcessKiller( 1304): Process /system/bin/mediaserver (1311) has open file /mnt/extsd/3gp/TRIM_20140120_115334.mp4
+W/Vold    ( 1304): Failed to unmount /mnt/extsd (Device or resource busy, retries 22, action 0)
+E/ProcessKiller( 1304): Process /system/bin/mediaserver (1311) has open file /mnt/extsd/3gp/TRIM_20140120_115334.mp4
+D/UsbDeviceManager( 2100): mBootFastReceiver reveived ACTION_BATTERY_CHANGE
+D/dalvikvm( 2100): GC_CONCURRENT freed 886K, 15% free 8309K/9668K, paused 10ms+4ms, total 75ms
+E/NativeDaemonConnector.ResponseQueue( 2100): Timeout waiting for response
+E/VoldConnector( 2100): timed-out waiting for response to 15 volume unmount /mnt/extsd force
+W/MountService( 2100): unmount timeout:/mnt/extsd
+I/Sensorsmpltiger( 2100): **** No Motion ****
+W/Vold    ( 1304): Failed to unmount /mnt/extsd (Device or resource busy, retries 21, action 0)
+E/ProcessKiller( 1304): Process /system/bin/mediaserver (1311) has open file /mnt/extsd/3gp/TRIM_20140120_115334.mp4
+W/Vold    ( 1304): Failed to unmount /mnt/extsd (Device or resource busy, retries 20, action 0)
+E/ProcessKiller( 1304): Process /system/bin/mediaserver (1311) has open file /mnt/extsd/3gp/TRIM_20140120_115334.mp4
+W/Vold    ( 1304): Failed to unmount /mnt/extsd (Device or resource busy, retries 19, action 0)
+E/ProcessKiller( 1304): Process /system/bin/mediaserver (1311) has open file /mnt/extsd/3gp/TRIM_20140120_115334.mp4
+W/Vold    ( 1304): Failed to unmount /mnt/extsd (Device or resource busy, retries 18, action 0)
+E/ProcessKiller( 1304): Process /system/bin/mediaserver (1311) has open file /mnt/extsd/3gp/TRIM_20140120_115334.mp4
+
+W/Vold    ( 1304): Failed to unmount /mnt/extsd (Device or resource busy, retries 17, action 0)
+
+E/ProcessKiller( 1304): Process /system/bin/mediaserver (1311) has open file /mnt/extsd/3gp/TRIM_20140120_115334.mp4
+W/Vold    ( 1304): Failed to unmount /mnt/extsd (Device or resource busy, retries 16, action 0)
+E/ProcessKiller( 1304): Process /system/bin/mediaserver (1311) has open file /mnt/extsd/3gp/TRIM_20140120_115334.mp4
+W/Vold    ( 1304): Failed to unmount /mnt/extsd (Device or resource busy, retries 15, action 0)
+E/ProcessKiller( 1304): Process /system/bin/mediaserver (1311) has open file /mnt/extsd/3gp/TRIM_20140120_115334.mp4
+W/Vold    ( 1304): Failed to unmount /mnt/extsd (Device or resource busy, retries 14, action 0)
+E/ProcessKiller( 1304): Process /system/bin/mediaserver (1311) has open file /mnt/extsd/3gp/TRIM_20140120_115334.mp4
+
+W/Vold    ( 1304): Failed to unmount /mnt/extsd (Device or resource busy, retries 13, action 0)
+E/ProcessKiller( 1304): Process /system/bin/mediaserver (1311) has open file /mnt/extsd/3gp/TRIM_20140120_115334.mp4
+
+W/Vold    ( 1304): Failed to unmount /mnt/extsd (Device or resource busy, retries 12, action 0)
+E/ProcessKiller( 1304): Process /system/bin/mediaserver (1311) has open file /mnt/extsd/3gp/TRIM_20140120_115334.mp4
+
+W/Vold    ( 1304): Failed to unmount /mnt/extsd (Device or resource busy, retries 11, action 0)
+E/ProcessKiller( 1304): Process /system/bin/mediaserver (1311) has open file /mnt/extsd/3gp/TRIM_20140120_115334.mp4
+
+W/Vold    ( 1304): Failed to unmount /mnt/extsd (Device or resource busy, retries 10, action 0)
+E/ProcessKiller( 1304): Process /system/bin/mediaserver (1311) has open file /mnt/extsd/3gp/TRIM_20140120_115334.mp4
+W/Vold    ( 1304): Failed to unmount /mnt/extsd (Device or resource busy, retries 9, action 0)
+E/ProcessKiller( 1304): Process /system/bin/mediaserver (1311) has open file /mnt/extsd/3gp/TRIM_20140120_115334.mp4
+W/Vold    ( 1304): Failed to unmount /mnt/extsd (Device or resource busy, retries 8, action 0)
+E/ProcessKiller( 1304): Process /system/bin/mediaserver (1311) has open file /mnt/extsd/3gp/TRIM_20140120_115334.mp4
+W/Vold    ( 1304): Failed to unmount /mnt/extsd (Device or resource busy, retries 7, action 0)
+E/ProcessKiller( 1304): Process /system/bin/mediaserver (1311) has open file /mnt/extsd/3gp/TRIM_20140120_115334.mp4
+W/Vold    ( 1304): Failed to unmount /mnt/extsd (Device or resource busy, retries 6, action 0)
+
+E/ProcessKiller( 1304): Process /system/bin/mediaserver (1311) has open file /mnt/extsd/3gp/TRIM_20140120_115334.mp4
+W/Vold    ( 1304): Failed to unmount /mnt/extsd (Device or resource busy, retries 5, action 0)
+E/ProcessKiller( 1304): Process /system/bin/mediaserver (1311) has open file /mnt/extsd/3gp/TRIM_20140120_115334.mp4
+
+W/Vold    ( 1304): Failed to unmount /mnt/extsd (Device or resource busy, retries 4, action 0)
+E/ProcessKiller( 1304): Process /system/bin/mediaserver (1311) has open file /mnt/extsd/3gp/TRIM_20140120_115334.mp4
+
+W/Vold    ( 1304): Failed to unmount /mnt/extsd (Device or resource busy, retries 3, action 0)
+E/ProcessKiller( 1304): Process /system/bin/''mediaserver'' (1311) has open file /mnt/extsd/3gp/TRIM_20140120_115334.mp4
+
+W/Vold    ( 1304): Failed to unmount /mnt/extsd (Device or resource busy, retries 2, action 1)
+I/ServiceManager( 1303): service 'media.audio_flinger' died
+I/ServiceManager( 1303): service 'media.player' died
+I/ServiceManager( 1303): service 'media.camera' died
+I/ServiceManager( 1303): service 'media.audio_policy' died
+W/AudioSystem( 2367): AudioFlinger server died!
+W/AudioSystem( 2367): AudioPolicyService server died!
+__E/ProcessKiller( 1304): Process /system/bin/mediaserver (1311) has open file /mnt/extsd/3gp/TRIM_20140120_115334.mp4__
+__W/ProcessKiller( 1304): Sending SIGHUP to process 1311__
+W/IMediaDeathNotifier( 2100): media server died
+W/AudioSystem( 2229): AudioFlinger server died!
+W/IMediaDeathNotifier( 2229): media server died
+E/MediaPlayer( 2229): error (100, 0)
+W/AudioSystem( 2229): AudioPolicyService server died!
+E/MediaPlayer( 2229): Error (100,0)
+W/AudioSystem( 2100): AudioFlinger server died!
+E/AudioService( 2100): Media server died.
+W/AudioSystem( 2100): AudioPolicyService server died!
+W/MediaMetadataRetriever( 2318): MediaMetadataRetriever server died!
+W/linker  ( 3890): libve.so has text relocations. This is wasting memory and is a security risk. Please fix.
+I/mediaserver( 3890): ServiceManager: 0xb84fe4c8
+I/AudioFlinger( 3890): Using default 3000 mSec as standby time.
+I/CameraService( 3890): CameraService started (pid=3890)
+D/HALCameraFactory( 3890): camera hal version: 3000130327_V1.0
+I/CameraService( 3890): Loaded "V4L2Camera Module" camera module
+D/HALCameraFactory( 3890): There is 2 attached cameras and 0 removable cameras
+I/AudioPolicyManagerBase( 3890): loadAudioPolicyConfig() loaded /system/etc/audio_policy.conf
+D/codec_audio( 3890): get ro.sw.audio.codec_plan_name =0
+D/codec_audio( 3890): get index =0
+V/codec_audio_pad( 3890): ****LINE:171,FUNC:pad_init
+V/codec_audio_plan_record( 3890): record manager thread sleep
+D/codec_audio( 3890): key_name:PHONE_EARPIECE 
+D/codec_audio( 3890): key_name:PHONE_HEADSET 
+D/codec_audio( 3890): key_name:PHONE_SPEAKER 
+D/codec_audio( 3890): key_name:BLUETOOTH_UP 
+D/codec_audio( 3890): key_name:FM_HEADSET 
+D/codec_audio( 3890): key_name:FM_SPEAKER 
+D/codec_audio( 3890): get_volume_config pcm_vol: 8
+D/bp_audio( 3890): get ro.sw.audio.bp_device_name=0
+D/bp_audio( 3890): bp_device_detect index=0
+I/AudioFlinger( 3890): loadHwModule() Loaded primary audio interface from sunxi audio HW HAL (audio) handle 1
+I/AudioFlinger( 3890): HAL output buffer size 1056 frames, normal mix buffer size 1056 frames
+I/AudioMixer( 3890): found effect "Multichannel Downmix To Stereo" from The Android Open Source Project
+I/AudioFlinger( 3890): Using module 1 has the primary audio interface
+I/AudioFlinger( 3890): AudioFlinger's thread 0xb50a8008 ready to run
+I/audio_a2dp_hw( 3890): adev_open:  adev_open in A2dp_hw module
+I/AudioFlinger( 3890): loadHwModule() Loaded a2dp audio interface from A2DP Audio HW HAL (audio) handle 3
+I/AudioFlinger( 3890): loadHwModule() Loaded usb audio interface from USB audio HW HAL (audio) handle 4
+I/r_submix( 3890): adev_open(name=audio_hw_if)
+I/r_submix( 3890): adev_init_check()
+I/AudioFlinger( 3890): loadHwModule() Loaded r_submix audio interface from Wifi Display audio HAL (audio) handle 5
+I/AudioPolicyService( 3890): Loaded audio policy from LEGACY Audio Policy HAL (audio_policy)
+E/AudioService( 2100): Media server started.
+W/AudioPolicyManagerBase( 3890): setPhoneState() setting same state 0
+I/MemorySettings( 2613): Received storage state changed notification that /mnt/extsd changed state from mounted to unmounted
+D/MediaScannerReceiver( 2318): action: android.intent.action.MEDIA_UNMOUNTED path: /mnt/extsd
+V/MediaScannerReceiver4k( 2935): >>>>>>>> onReceive action=android.intent.action.MEDIA_UNMOUNTED uri=file:///mnt/extsd
+D/MediaScannerReceiver4k( 2935): action: android.intent.action.MEDIA_UNMOUNTED path: /mnt/extsd
+I/Vold    ( 1304): /mnt/extsd sucessfully unmounted
+I/Vold    ( 1304): /mnt/extsd unmounted successfully
+D/Vold    ( 1304): Volume extsd state changing 5 (Unmounting) -> 1 (Idle-Unmounted)
+D/MountService( 2100): volume state changed for /mnt/extsd (mounted -> unmounted)
+D/MountService( 2100): sendStorageIntent Intent { act=android.intent.action.MEDIA_UNMOUNTED dat=file:///mnt/extsd (has extras) } to UserHandle{-1}
+V/LocalMediaScannerService( 2935): >>>> onHandleIntentandroid.intent.action.MEDIA_UNMOUNTED devPath = /mnt/extsd
+D/StorageMeasurement( 2613): getDirectorySize(/storage/emulated/0) returned 2834432
+
+D/WindowManager( 2100): mBootFastRuning = false shutdhownPending = false
+D/InputManager-JNI( 2100): handleInterceptActions: POLICY_FLAG_PASS_TO_USER.
+D/WindowManager( 2100): mBootFastRuning = false shutdhownPending = false
+D/InputManager-JNI( 2100): handleInterceptActions: POLICY_FLAG_PASS_TO_USER.
+
+
+== 关键代码： ==
+int Volume::doUnmount(const char *path, bool force) {
+    int retries = 60;
+    while (retries--) {
+        if (!umount(path) || errno == EINVAL || errno == ENOENT) {
+            SLOGI("%s sucessfully unmounted", path);
+            return 0;
+        }
+        int action = 0;
+        if (force) {
+            if (retries == 1) {
+                action = 2; // SIGKILL
+            } else if (retries == 2) {
+                action = 1; // SIGHUP
+            }
+        }
+        SLOGW("Failed to unmount %s (%s, retries %d, action %d)",
+                path, strerror(errno), retries, action);
+
+        __Process::killProcessesWithOpenFiles(path, action);__
+        usleep(1000*1000);
+    }
+    errno = EBUSY;
+    SLOGE("Giving up on unmount %s (%s)", path, strerror(errno));
+    return -1;
+}
+
+== 进程1034的含义: ==
+根据 system/core/include/private/android_filesystem_config.h (该文件还定义了哪些用户可以读哪些文件,哪些文件夹)可知
+#define AID_SDCARD_AV     1034  /* external storage audio/video access */
+
+== 解决方法: ==
+**经验证，将损坏的视频TRIM_20140120_115334.mp4删掉后，卸载SD卡正常，也可以将retries == 2 改为 retries == 58 ，缩短时间.**
+
+================================================================================================================
+
+
+
+
+
+
+
+

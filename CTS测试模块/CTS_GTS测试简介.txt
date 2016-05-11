@@ -1,0 +1,81 @@
+Content-Type: text/x-zim-wiki
+Wiki-Format: zim 0.4
+Creation-Date: 2014-02-26T09:45:31+08:00
+
+====== CTS GTS测试简介 ======
+Created Wednesday 26 February 2014
+
+====== CTS测试 ======
+
+CTS官方文档   http://source.android.com/compatibility/cts-development.html#setting-up-eclipse
+
+    CTS（全称“Compatibility Test Suite”，即“兼容性测试包”）的认证，这是一组用以测试的.apk程序之类的集合，它能够在官网（http://source.android.com/compatibility/downloads.html）上面免费下载，并且测试也非常简单——只是结果非常苛刻。
+ CTS的目的就是让Android设备（如：手机）开发商能够开发出兼容性更好的Android设备。
+
+====== CTS测试 ======
+
+    CTS（全称“Compatibility Test Suite”，即“兼容性测试包”）的认证，这是一组用以测试的.apk程序之类的集合，它能够在官网（http://source.android.com/compatibility/downloads.html）上面免费下载，并且测试也非常简单——只是结果非常苛刻。
+ CTS的目的就是让Android设备（如：手机）开发商能够开发出兼容性更好的Android设备。
+
+
+====== GTS测试 ======
+1.什么是GTS测试？
+　 GMS全称为Google Mobile Service，即谷歌移动服务。GMS是Google开发并推动Android的动力，也是Android系统的灵魂所在。 
+　 GMS目前提供有Search、Search by Voice、Gmail、Contact Sync、Calendar Sync、Talk、Maps、Street View、YouTube、Android Market(ICS上更改为Play store)服务。源码位置(device/idsbg/common/prebuild/google/apk/)。
+
+2.为什么谷歌要推行GMS认证？
+   当用户使用谷歌服务的时候，谷歌可以把广告嵌入各种谷歌的服务中，比如：用户在使用谷歌地图的时候，就能发现搜索地名关键字的广告。在使用谷歌移动搜索的时候，不用说，当然也是有广告的。谷歌其实是拿用户的注意力来换取广告主的金钱。而且Android智能手机操作系统其实也就是谷歌把自己的服务主动放到了手机上，进一步巩固自己的市场地位。 
+　　依据GMS，谷歌对android手机给予不同程度的授权，把搭载Android系统的手机厂商分为三个级别， 
+　　1.免费使用Android操作系统，但不内嵌GMS； 
+　　2.内嵌部分GMS服务，但手机不能打上谷歌的商标； 
+　　3.内嵌所有的GMS服务，也可以使用谷歌商标。如果在android手机中内置有谷歌GMS服务的话，是等同被谷歌官方认证过的产品
+
+3. 哪些公司通过了GMS认证？
+    GMS的认证主要是Google为手机厂商进行认证，所以得到认证的主要厂商如下，而与芯片厂商关系不大。目前在市面上，只有少数的手机厂商通过了GMS认证，比如
+   HTC（宏达国际电子）- 中国台湾 
+　　Samsung Electronics（三星电子）- 韩国 
+　　Motorola Mobility（摩托罗拉移动技术）- 美国 
+　　Sony Ericsson（索尼爱立信）- 英国 
+　　LG Electronics（LG电子）- 韩国 
+　　Lumigon （丹麦陆力更手机公司）- 丹麦 
+　　ARCHOS（爱可视）- 法国 
+　　TOSHIBA（东芝）- 日本 
+
+4. 通过认证的好处？
+　　而在大陆地区，目前所有行货手机都不能通过GMS认证。GMS认证并不是想象的那么容易，谷歌要根据厂商的实力和地区因素来考虑是否认证。对于厂商来说，GMS除了获得更多的谷歌服务权限之外，还是拉开品牌区隔度的有效手段，也就是身份证明。由此可见从一个厂商是否通过GMS认证，来简单的判断这个厂商的综合能力。 
+
+====== GPS测试 ======
+
+   产线自测，非谷歌要求！
+   GPS TEST是一个简单易用的Android系统上的GPS工具，它支持自动探测Android设备上的GPS，还可以显示多种GPS数据，并支持选择多种不 同的GPS坐标格式。
+
+====== GTS测试 ======
+1.什么是GTS测试？
+　 GMS全称为Google Mobile Service，即谷歌移动服务。GMS是Google开发并推动Android的动力，也是Android系统的灵魂所在。 
+　 GMS目前提供有Search、Search by Voice、Gmail、Contact Sync、Calendar Sync、Talk、Maps、Street View、YouTube、Android Market(ICS上更改为Play store)服务。源码位置(device/idsbg/common/prebuild/google/apk/)。
+
+2.为什么谷歌要推行GMS认证？
+   当用户使用谷歌服务的时候，谷歌可以把广告嵌入各种谷歌的服务中，比如：用户在使用谷歌地图的时候，就能发现搜索地名关键字的广告。在使用谷歌移动搜索的时候，不用说，当然也是有广告的。谷歌其实是拿用户的注意力来换取广告主的金钱。而且Android智能手机操作系统其实也就是谷歌把自己的服务主动放到了手机上，进一步巩固自己的市场地位。 
+　　依据GMS，谷歌对android手机给予不同程度的授权，把搭载Android系统的手机厂商分为三个级别， 
+　　1.免费使用Android操作系统，但不内嵌GMS； 
+　　2.内嵌部分GMS服务，但手机不能打上谷歌的商标； 
+　　3.内嵌所有的GMS服务，也可以使用谷歌商标。如果在android手机中内置有谷歌GMS服务的话，是等同被谷歌官方认证过的产品
+
+3. 哪些公司通过了GMS认证？
+    GMS的认证主要是Google为手机厂商进行认证，所以得到认证的主要厂商如下，而与芯片厂商关系不大。目前在市面上，只有少数的手机厂商通过了GMS认证，比如
+   HTC（宏达国际电子）- 中国台湾 
+　　Samsung Electronics（三星电子）- 韩国 
+　　Motorola Mobility（摩托罗拉移动技术）- 美国 
+　　Sony Ericsson（索尼爱立信）- 英国 
+　　LG Electronics（LG电子）- 韩国 
+　　Lumigon （丹麦陆力更手机公司）- 丹麦 
+　　ARCHOS（爱可视）- 法国 
+　　TOSHIBA（东芝）- 日本 
+
+4. 通过认证的好处？
+　　而在大陆地区，目前所有行货手机都不能通过GMS认证。GMS认证并不是想象的那么容易，谷歌要根据厂商的实力和地区因素来考虑是否认证。对于厂商来说，GMS除了获得更多的谷歌服务权限之外，还是拉开品牌区隔度的有效手段，也就是身份证明。由此可见从一个厂商是否通过GMS认证，来简单的判断这个厂商的综合能力。 
+
+====== GPS测试 ======
+
+   产线自测，非谷歌要求！
+   GPS TEST是一个简单易用的Android系统上的GPS工具，它支持自动探测Android设备上的GPS，还可以显示多种GPS数据，并支持选择多种不 同的GPS坐标格式。

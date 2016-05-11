@@ -1,0 +1,393 @@
+Content-Type: text/x-zim-wiki
+Wiki-Format: zim 0.4
+Creation-Date: 2014-02-28T13:47:43+08:00
+
+====== SDcard的常见Bug ======
+Created Friday 28 February 2014
+
+=================================================================================
+
+===== 无法新建，删除，移动SDcard中的文件 =====
+
+解决办法：
+打开 android4.4/system/vold/Volume.cpp
+
+  int Volume::mountVol()
+ {
+      ...
+      primaryStorage = 0;
+      if (primaryStorage!=0) {            // Special case the primary SD card. 
+          aid = AID_SYSTEM;
+          gid = AID_SDCARD_RW;         // __For this we grant write access to the SDCARD_RW group__.
+
+          permMask = 0702;
+      } else {
+          //  aid = AID_MEDIA_RW;
+          //  gid = AID_MEDIA_RW;        // __For secondary external storage we keep things locked up__.
+          //  permMask = 0002;
+          aid = AID_SYSTEM;
+          gid = AID_SDCARD_RW;
+          permMask = 0702;
+      }
+      ...
+ }
+
+原因分析：
+permMask = 0702 是权限掩码，/mnt/extsd/是目录，所以实际权限为0075 （文件所有者 0, 用户组 7, 其他用户5）
+Primary SD  card指的是设备的INAD内存，secondary external storage 指的是可以插拔的SD card。基于商业考虑或者其他方面的考虑，Google公司对于可插拔的SD card的支持越来越差。
+
+
+
+=================================================================================
+
+===== 无法挂载SDcard =====
+
+== 解决办法： ==
+打开android4.4/device/softwinner/fiber-a31stm/fiber_a31stm.mk
+PRODUCT_PROPERTY_OVERRIDES += \
+	persist.sys.usb.config=mtp,adb \
+	ro.udisk.lable=FIBER \
+	ro.font.scale=1.0 \
+	ro.sys.bootfast=false \
+        #ro.sys.storage_type=emulated 
+
+== 原因分析： ==
+
+ -> system/vold/DirectVolume.h
+	const char *getFuseMountpoint() { 
+		char storage_type[PROPERTY_VALUE_MAX] = {0};
+		property_get("**ro.sys.storage_type**",storage_type,"");
+		if(!strncmp(storage_type,"**emulated**",sizeof("emulated")))
+			return mFuseMountpoint;           //     “/storage/extsd”
+		else
+			return mMountpoint;                    //      “/mnt/extsd”
+	}
+
+-> system/vold/DirectVolume.cpp
+
+    snprintf(mount, PATH_MAX, "%s/%s", Volume::MEDIA_DIR, rec->label);
+    mMountpoint = strdup(mount);
+    snprintf(mount, PATH_MAX, "%s/%s", Volume::FUSE_DIR, rec->label);
+    mFuseMountpoint = strdup(mount);
+
+->  system/vold/Volume.cpp
+/*
+* Media directory - stuff that only media_rw user can see
+ */
+const char *Volume::MEDIA_DIR           = "/mnt";
+
+/*
+* Fuse directory - location where fuse wrapped filesystems go
+ */
+const char *Volume::FUSE_DIR           = "/storage";
+
+
+打印log信息（在最后），下面的地方会调用到__getFuseMountpoint()__：
+-> void Volume::setState(int state)
+ { 
+            ...  
+             snprintf(msg, sizeof(msg),   "Volume %s %s state changed from %d (%s) to %d (%s)", getLabel(),   __getFuseMountpoint()__, oldState, stateToStr(oldState), mState,  stateToStr(mState)); 
+             mVm->getBroadcaster()->sendBroadcast(ResponseCode::VolumeStateChange,   msg, false);
+}
+
+-> SocketClient::sendMsg(int code, const char *msg, bool addErrno, bool useCmdNum);
+-> SocketClient::sendMsg(const char *msg);
+-> SocketClient::sendData(const void *data, int len);
+-> SocketClient::sendDataLocked(const void *data, int len)
+   {
+       ...
+       rc = send(mSocket, p, brtw, MSG_NOSIGNAL); //向已连接的mSocket发送数据p，数据长度为brtw，发送方式为MSG_NOSIGNAL。
+                                                                                                              // 也就是将挂载成功的信息发送回给framework层
+       ...
+   }
+
+== framework层对应的socket客户端接收到发送的消息 ==
+
+-> NativeDaemonConnector.listenToSocket()
+   {
+       ...
+       int count = inputStream.read(buffer, start, BUFFER_SIZE - start);
+       ...
+       if (event.isClassUnsolicited()) {
+            // TODO: migrate to sending NativeDaemonEvent instances
+            mCallbackHandler.sendMessage(mCallbackHandler.obtainMessage(event.getCode(), event.getRawEvent()));
+       }
+       ...
+   }
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+log信息：
+D/Vold    ( 1305): Volume extsd state changing 0 (No-Media) -> 2 (Pending)
+D/Vold    ( 1305): Volume.cpp ====setState=========================getFuseMountpoint = [[/storage/extsd]]
+
+I/DEBUG   ( 1308): *** *** *** *** *** *** *** *** *** *** *** *** *** *** *** ***
+I/DEBUG   ( 1308): Build fingerprint: 'InFocus/fiber_a31stm/fiber-a31stm:4.4/KOT49H/20140228:eng/test-keys'
+I/DEBUG   ( 1308): Revision: '12'
+I/DEBUG   ( 1308): pid: 1305, tid: 1595, name: vold  >>> /system/bin/vold <<<
+I/DEBUG   ( 1308): AM write failure (32 / Broken pipe)
+I/DEBUG   ( 1308): signal 11 (SIGSEGV), code 1 (SEGV_MAPERR), fault addr 00000002
+W/NativeCrashListener( 2122): Couldn't find ProcessRecord for pid 1305
+I/DEBUG   ( 1308):     r0 00000002  r1 00000002  r2 00000073  r3 00000006
+I/DEBUG   ( 1308):     r4 00000000  r5 b6d2a914  r6 b6d2a910  r7 00000002
+I/DEBUG   ( 1308):     r8 00000000  r9 b6d29e84  sl b6d2a494  fp 00000002
+I/DEBUG   ( 1308):     ip 00000002  sp b6d29dc8  lr b6ee1673  pc b6edcdcc  cpsr 200f0030
+I/DEBUG   ( 1308):     d0  656761726f74732f  d1  746e756f4d657365
+I/DEBUG   ( 1308):     d2  3d3d3d3d3d3d3d78  d3  3d3d3d3d3d3d3d74
+I/DEBUG   ( 1308):     d4  6d6d2f302e636d6d  d5  6d2f74736f685f63
+I/DEBUG   ( 1308):     d6  31636d6d2f31636d  d7  6c622f343236653a
+I/DEBUG   ( 1308):     d8  0000000000000000  d9  0000000000000000
+I/DEBUG   ( 1308):     d10 0000000000000000  d11 0000000000000000
+I/DEBUG   ( 1308):     d12 0000000000000000  d13 0000000000000000
+I/DEBUG   ( 1308):     d14 0000000000000000  d15 0000000000000000
+I/DEBUG   ( 1308):     d16 4163758366e978d5  d17 3f50624dd2f1a9fc
+I/DEBUG   ( 1308):     d18 41a818cca0000000  d19 0000000000000000
+I/DEBUG   ( 1308):     d20 0000000000000000  d21 0000000000000000
+I/DEBUG   ( 1308):     d22 0000000000000000  d23 0000000000000000
+I/DEBUG   ( 1308):     d24 0000000000000000  d25 0000000000000000
+I/DEBUG   ( 1308):     d26 0000000000000000  d27 0000000000000000
+I/DEBUG   ( 1308):     d28 0000000000000000  d29 0000000000000000
+I/DEBUG   ( 1308):     d30 0000000000000000  d31 0000000000000000
+I/DEBUG   ( 1308):     scr 00000010
+I/DEBUG   ( 1308): 
+I/DEBUG   ( 1308): backtrace:
+I/DEBUG   ( 1308):     #00  pc 00022dcc  /system/lib/libc.so (strlen+43)
+I/DEBUG   ( 1308):     #01  pc 0002766f  /system/lib/libc.so (__vfprintf+1998)
+I/DEBUG   ( 1308):     #02  pc 00028965  /system/lib/libc.so (vsnprintf+72)
+I/DEBUG   ( 1308):     #03  pc 00006a61  /system/lib/libcutils.so (__android_log_buf_print+44)
+I/DEBUG   ( 1308):     #04  pc 00007109  /system/bin/vold
+I/DEBUG   ( 1308):     #05  pc 000091cb  /system/bin/vold
+I/DEBUG   ( 1308):     #06  pc 00002fe9  /system/bin/vold
+I/DEBUG   ( 1308):     #07  pc 00002cb9  /system/lib/libsysutils.so (NetlinkListener::onDataAvailable(SocketClient*)+164)
+I/DEBUG   ( 1308):     #08  pc 0000264b  /system/lib/libsysutils.so (SocketListener::runListener()+466)
+I/DEBUG   ( 1308):     #09  pc 0000271f  /system/lib/libsysutils.so (SocketListener::threadStart(void*)+2)
+I/DEBUG   ( 1308):     #10  pc 0000d208  /system/lib/libc.so (__thread_entry+72)
+I/DEBUG   ( 1308):     #11  pc 0000d3a4  /system/lib/libc.so (pthread_create+240)
+I/DEBUG   ( 1308): 
+I/DEBUG   ( 1308): stack:
+I/DEBUG   ( 1308):          b6d29d88  b6d2a494  
+I/DEBUG   ( 1308):          b6d29d8c  b6d29e40  
+I/DEBUG   ( 1308):          b6d29d90  0000000e  
+I/DEBUG   ( 1308):          b6d29d94  b6d29e40  
+I/DEBUG   ( 1308):          b6d29d98  00000000  
+I/DEBUG   ( 1308):          b6d29d9c  b6d2a914  
+I/DEBUG   ( 1308):          b6d29da0  00000002  
+I/DEBUG   ( 1308):          b6d29da4  00000000  
+I/DEBUG   ( 1308):          b6d29da8  b6d29e84  
+I/DEBUG   ( 1308):          b6d29dac  b6d2a494  
+I/DEBUG   ( 1308):          b6d29db0  b8e30878  [heap]
+I/DEBUG   ( 1308):          b6d29db4  b6ee0e95  /system/lib/libc.so
+I/DEBUG   ( 1308):          b6d29db8  00000052  
+I/DEBUG   ( 1308):          b6d29dbc  00000052  
+I/DEBUG   ( 1308):          b6d29dc0  00000000  
+I/DEBUG   ( 1308):          b6d29dc4  b6ee1f99  /system/lib/libc.so (__vfprintf+4344)
+I/DEBUG   ( 1308):     #00  b6d29dc8  00000000  
+I/DEBUG   ( 1308):          ........  ........
+I/DEBUG   ( 1308):     #01  b6d29dc8  00000000  
+I/DEBUG   ( 1308):          b6d29dcc  00000000  
+I/DEBUG   ( 1308):          b6d29dd0  00000000  
+I/DEBUG   ( 1308):          b6d29dd4  00000000  
+I/DEBUG   ( 1308):          b6d29dd8  00000000  
+I/DEBUG   ( 1308):          b6d29ddc  00000000  
+I/DEBUG   ( 1308):          b6d29de0  00000000  
+I/DEBUG   ( 1308):          b6d29de4  00000000  
+I/DEBUG   ( 1308):          b6d29de8  00000000  
+I/DEBUG   ( 1308):          b6d29dec  00000073  
+I/DEBUG   ( 1308):          b6d29df0  00000000  
+I/DEBUG   ( 1308):          b6d29df4  00000000  
+I/DEBUG   ( 1308):          b6d29df8  b6f556ff  /system/bin/vold
+I/DEBUG   ( 1308):          b6d29dfc  0000000e  
+I/DEBUG   ( 1308):          b6d29e00  00000039  
+I/DEBUG   ( 1308):          b6d29e04  00000000  
+I/DEBUG   ( 1308):          ........  ........
+I/DEBUG   ( 1308):     #02  b6d2a480  00000003  
+I/DEBUG   ( 1308):          b6d2a484  00000000  
+I/DEBUG   ( 1308):          b6d2a488  00000000  
+I/DEBUG   ( 1308):          b6d2a48c  b6f20943  /system/lib/libcutils.so (__android_log_buf_write+214)
+I/DEBUG   ( 1308):          b6d2a490  00004000  
+I/DEBUG   ( 1308):          b6d2a494  b6d2a4f4  
+I/DEBUG   ( 1308):          b6d2a498  00000000  
+I/DEBUG   ( 1308):          b6d2a49c  000003ff  
+I/DEBUG   ( 1308):          b6d2a4a0  ffff0208  [vectors]
+I/DEBUG   ( 1308):          b6d2a4a4  b6d2a4f4  
+I/DEBUG   ( 1308):          b6d2a4a8  000003ff  
+I/DEBUG   ( 1308):          b6d2a4ac  b6d2a4f4  
+I/DEBUG   ( 1308):          b6d2a4b0  00000053  
+I/DEBUG   ( 1308):          b6d2a4b4  00000000  
+I/DEBUG   ( 1308):          b6d2a4b8  00000000  
+I/DEBUG   ( 1308):          b6d2a4bc  00000000  
+I/DEBUG   ( 1308):          ........  ........
+I/DEBUG   ( 1308): 
+I/DEBUG   ( 1308): memory near r5:
+I/DEBUG   ( 1308):     b6d2a8f4 b7c2364c b8e30258 00000000 00000002  
+I/DEBUG   ( 1308):     b6d2a904 b6f53b10 b6f4a10d b6f556c4 00000002  
+I/DEBUG   ( 1308):     b6d2a914 00000000 b6f5556e 00000002 b6f55586  
+I/DEBUG   ( 1308):     b6d2a924 00000000 00000000 756c6f56 6520656d  
+I/DEBUG   ( 1308):     b6d2a934 64737478 74732f20 6761726f 78652f65  
+I/DEBUG   ( 1308):     b6d2a944 20647374 74617473 68632065 65676e61  
+I/DEBUG   ( 1308):     b6d2a954 72662064 30206d6f 6f4e2820 64654d2d  
+I/DEBUG   ( 1308):     b6d2a964 20296169 32206f74 65502820 6e69646e  
+I/DEBUG   ( 1308):     b6d2a974 00002967 00000000 00000000 00000000  
+I/DEBUG   ( 1308):     b6d2a984 00000000 00000000 00000000 00000000  
+I/DEBUG   ( 1308):     b6d2a994 00000000 00000000 b7c2364c 00000000  
+I/DEBUG   ( 1308):     b6d2a9a4 00000000 00000000 00000000 00000000  
+I/DEBUG   ( 1308):     b6d2a9b4 00000000 b8e31148 b8e31ec8 b6d2aa6c  
+I/DEBUG   ( 1308):     b6d2a9c4 000000b3 b8e31f30 b6f08384 00000030  
+I/DEBUG   ( 1308):     b6d2a9d4 b6ee0561 00000000 00000000 b6d2aa54  
+I/DEBUG   ( 1308):     b6d2a9e4 00000000 00000000 00000000 00004000  
+I/DEBUG   ( 1308): 
+I/DEBUG   ( 1308): memory near r6:
+I/DEBUG   ( 1308):     b6d2a8f0 00000000 b7c2364c b8e30258 00000000  
+I/DEBUG   ( 1308):     b6d2a900 00000002 b6f53b10 b6f4a10d b6f556c4  
+I/DEBUG   ( 1308):     b6d2a910 00000002 00000000 b6f5556e 00000002  
+I/DEBUG   ( 1308):     b6d2a920 b6f55586 00000000 00000000 756c6f56  
+I/DEBUG   ( 1308):     b6d2a930 6520656d 64737478 74732f20 6761726f  
+I/DEBUG   ( 1308):     b6d2a940 78652f65 20647374 74617473 68632065  
+I/DEBUG   ( 1308):     b6d2a950 65676e61 72662064 30206d6f 6f4e2820  
+I/DEBUG   ( 1308):     b6d2a960 64654d2d 20296169 32206f74 65502820  
+I/DEBUG   ( 1308):     b6d2a970 6e69646e 00002967 00000000 00000000  
+I/DEBUG   ( 1308):     b6d2a980 00000000 00000000 00000000 00000000  
+I/DEBUG   ( 1308):     b6d2a990 00000000 00000000 00000000 b7c2364c  
+I/DEBUG   ( 1308):     b6d2a9a0 00000000 00000000 00000000 00000000  
+I/DEBUG   ( 1308):     b6d2a9b0 00000000 00000000 b8e31148 b8e31ec8  
+I/DEBUG   ( 1308):     b6d2a9c0 b6d2aa6c 000000b3 b8e31f30 b6f08384  
+I/DEBUG   ( 1308):     b6d2a9d0 00000030 b6ee0561 00000000 00000000  
+I/DEBUG   ( 1308):     b6d2a9e0 b6d2aa54 00000000 00000000 00000000  
+I/DEBUG   ( 1308): 
+I/DEBUG   ( 1308): memory near r9:
+I/DEBUG   ( 1308):     b6d29e64 00000000 00000000 00000000 00000000  
+I/DEBUG   ( 1308):     b6d29e74 00000000 00000000 b6f556c4 00000039  
+I/DEBUG   ( 1308):     b6d29e84 b8e30878 0000000e 00000000 00000000  
+I/DEBUG   ( 1308):     b6d29e94 00000000 00000000 00000000 00000000  
+I/DEBUG   ( 1308):     b6d29ea4 00000000 00000000 00000000 00000000  
+I/DEBUG   ( 1308):     b6d29eb4 00000000 00000000 00000000 00000000  
+I/DEBUG   ( 1308):     b6d29ec4 00000000 00000000 00000000 00000000  
+I/DEBUG   ( 1308):     b6d29ed4 00000000 00000000 00000000 00000000  
+I/DEBUG   ( 1308):     b6d29ee4 00000000 00000000 00000000 00000000  
+I/DEBUG   ( 1308):     b6d29ef4 00000000 00000000 00000000 00000000  
+I/DEBUG   ( 1308):     b6d29f04 00000000 00000000 00000000 00000000  
+I/DEBUG   ( 1308):     b6d29f14 00000000 00000000 00000000 00000000  
+I/DEBUG   ( 1308):     b6d29f24 00000000 00000000 00000000 00000000  
+I/DEBUG   ( 1308):     b6d29f34 00000000 00000000 00000000 00000000  
+I/DEBUG   ( 1308):     b6d29f44 00000000 00000000 00000000 00000000  
+I/DEBUG   ( 1308):     b6d29f54 00000000 00000000 00000000 00000000  
+I/DEBUG   ( 1308): 
+I/DEBUG   ( 1308): memory near sl:
+I/DEBUG   ( 1308):     b6d2a474 b8e30838 b8e30878 b6ee2969 00000003  
+I/DEBUG   ( 1308):     b6d2a484 00000000 00000000 b6f20943 00004000  
+I/DEBUG   ( 1308):     b6d2a494 b6d2a4f4 00000000 000003ff ffff0208  
+I/DEBUG   ( 1308):     b6d2a4a4 b6d2a4f4 000003ff b6d2a4f4 00000053  
+I/DEBUG   ( 1308):     b6d2a4b4 00000000 00000000 00000000 00000000  
+I/DEBUG   ( 1308):     b6d2a4c4 b6d2a484 00000000 00000000 00000000  
+I/DEBUG   ( 1308):     b6d2a4d4 b7c2364c 00000000 b6f08384 b6f53b10  
+I/DEBUG   ( 1308):     b6d2a4e4 00000003 b6f08384 b6f20a65 b6d2a910  
+I/DEBUG   ( 1308):     b6d2a4f4 756c6f56 632e656d 3d207070 733d3d3d  
+I/DEBUG   ( 1308):     b6d2a504 74537465 3d657461 3d3d3d3d 3d3d3d3d  
+I/DEBUG   ( 1308):     b6d2a514 3d3d3d3d 3d3d3d3d 3d3d3d3d 3d3d3d3d  
+I/DEBUG   ( 1308):     b6d2a524 46746567 4d657375 746e756f 6e696f70  
+I/DEBUG   ( 1308):     b6d2a534 203d2074 6f74732f 65676172 7478652f  
+I/DEBUG   ( 1308):     b6d2a544 00006473 00000000 00000000 00000000  
+I/DEBUG   ( 1308):     b6d2a554 00000000 00000000 00000000 00000000  
+I/DEBUG   ( 1308):     b6d2a564 00000000 00000000 00000000 00000000  
+I/DEBUG   ( 1308): 
+I/DEBUG   ( 1308): memory near sp:
+I/DEBUG   ( 1308):     b6d29da8 b6d29e84 b6d2a494 b8e30878 b6ee0e95  
+I/DEBUG   ( 1308):     b6d29db8 00000052 00000052 00000000 b6ee1f99  
+I/DEBUG   ( 1308):     b6d29dc8 00000000 00000000 00000000 00000000  
+I/DEBUG   ( 1308):     b6d29dd8 00000000 00000000 00000000 00000000  
+I/DEBUG   ( 1308):     b6d29de8 00000000 00000073 00000000 00000000  
+I/DEBUG   ( 1308):     b6d29df8 b6f556ff 0000000e 00000039 00000000  
+I/DEBUG   ( 1308):     b6d29e08 00000000 b6f556c4 00000000 00000000  
+I/DEBUG   ( 1308):     b6d29e18 b6f08384 b6efc6a8 00000000 00000000  
+I/DEBUG   ( 1308):     b6d29e28 00000000 00000000 00000000 b6d2a910  
+I/DEBUG   ( 1308):     b6d29e38 00000000 00000000 b6d29e7c 00000001  
+I/DEBUG   ( 1308):     b6d29e48 00000039 00000000 00000000 00000000  
+I/DEBUG   ( 1308):     b6d29e58 00000000 00000000 00000000 00000000  
+I/DEBUG   ( 1308):     b6d29e68 00000000 00000000 00000000 00000000  
+I/DEBUG   ( 1308):     b6d29e78 00000000 b6f556c4 00000039 b8e30878  
+I/DEBUG   ( 1308):     b6d29e88 0000000e 00000000 00000000 00000000  
+I/DEBUG   ( 1308):     b6d29e98 00000000 00000000 00000000 00000000  
+I/DEBUG   ( 1308): 
+I/DEBUG   ( 1308): code around pc:
+I/DEBUG   ( 1308):     b6edcdac f1c38023 ea5f0308 f0007cc3 f8118003  
+I/DEBUG   ( 1308):     b6edcdbc b37a2b01 800af0c0 0c02f013 8006f000  
+I/DEBUG   ( 1308):     b6edcdcc 2b01f811 f811b332 b31a2b01 0f04f013  
+I/DEBUG   ( 1308):     b6edcddc 800af000 3b04f851 3c01f1a3 0c03ea2c  
+I/DEBUG   ( 1308):     b6edcdec 3c80f01c 8033f040 2302e8f1 f040f891  
+I/DEBUG   ( 1308):     b6edcdfc 3c01f1a2 0c02ea2c 3c80f01c 800ff040  
+I/DEBUG   ( 1308):     b6edce0c 3c01f1a3 0c03ea2c 3c80f01c 801ff040  
+I/DEBUG   ( 1308):     b6edce1c bfeaf7ff 0000eba1 0001f1a0 eba14770  
+I/DEBUG   ( 1308):     b6edce2c ea5f0000 f040434c f0808009 ea5f800a  
+I/DEBUG   ( 1308):     b6edce3c f0400c4c f1a08009 47700005 0008f1a0  
+I/DEBUG   ( 1308):     b6edce4c f1a04770 47700007 0006f1a0 eba14770  
+I/DEBUG   ( 1308):     b6edce5c ea5f0000 f040434c f0808009 ea5f800a  
+I/DEBUG   ( 1308):     b6edce6c f0400c4c f1a08009 47700001 0004f1a0  
+I/DEBUG   ( 1308):     b6edce7c f1a04770 47700003 0002f1a0 bf004770  
+I/DEBUG   ( 1308):     b6edce8c f000f890 b430b501 46054696 0404ea84  
+I/DEBUG   ( 1308):     b6edce9c f0114608 d01d0307 0308f1c3 7cc3ea5f  
+I/DEBUG   ( 1308): 
+I/DEBUG   ( 1308): code around lr:
+I/DEBUG   ( 1308):     b6ee1650 21004662 c020f8cd fe25f012 c020f8dd  
+I/DEBUG   ( 1308):     b6ee1660 ebcbb148 45640400 4664bfa8 f7fbe004  
+I/DEBUG   ( 1308):     b6ee1670 4604fb97 4664e000 462e2100 105ff88d  
+I/DEBUG   ( 1308):     b6ee1680 910a460d f048e116 f4180810 d0005f80  
+I/DEBUG   ( 1308):     b6ee1690 f018e002 d00c0f20 b1099919 6027f851  
+I/DEBUG   ( 1308):     b6ee16a0 f0221df2 37010307 0608f103 4500e9d3  
+I/DEBUG   ( 1308):     b6ee16b0 f018e016 9c190f10 e013d000 7f00f418  
+I/DEBUG   ( 1308):     b6ee16c0 e00fd000 6f80f418 e00bd000 0f40f018  
+I/DEBUG   ( 1308):     b6ee16d0 b10cd008 6027f854 37018834 36042500  
+I/DEBUG   ( 1308):     b6ee16e0 e0442301 f854b10c 68356027 462c3701  
+I/DEBUG   ( 1308):     b6ee16f0 4ddce7f4 f418447d 95105f80 e002d000  
+I/DEBUG   ( 1308):     b6ee1700 0f20f018 9b19d00c f853b10b 36076027  
+I/DEBUG   ( 1308):     b6ee1710 0007f026 f1003701 e9d00608 e01d4500  
+I/DEBUG   ( 1308):     b6ee1720 0f10f018 d0009919 f418e010 d0007f00  
+I/DEBUG   ( 1308):     b6ee1730 f418e00c d0006f80 f018e008 d0050f40  
+I/DEBUG   ( 1308):     b6ee1740 f851b109 37016027 e0058834 f851b109 
+I/BootReceiver( 2122): Copying /data/tombstones/tombstone_07 to DropBox (SYSTEM_TOMBSTONE)
+E/VoldConnector( 2122): got -1 reading with start = 0
+E/VoldConnector( 2122): closing stream for vold
+E/VoldConnector( 2122): Communications error: java.io.IOException: Connection refused
+E/VoldConnector( 2122): Error in NativeDaemonConnector: java.io.IOException: Connection refused
+E/DirectVolume(11198): Vold managed volumes must have auto mount point; ignoring /storage/extsd
+E/DirectVolume(11198): Vold managed volumes must have auto mount point; ignoring /mnt/usbhost1
+I/Vold    (11198): Vold 2.1 (the revenge) firing up
+D/Vold    (11198): Volume extsd state changing -1 (Initializing) -> 0 (No-Media)
+D/Vold    (11198): Volume.cpp ====setState=========================getFuseMountpoint = /storage/extsd
+D/Vold    (11198): Volume.cpp ====setState=========================mState = (null)
+D/Vold    (11198): Volume usbhost1 state changing -1 (Initializing) -> 0 (No-Media)
+D/Vold    (11198): Volume.cpp ====setState=========================getFuseMountpoint = /storage/usbhost1
+D/Vold    (11198): Volume.cpp ====setState=========================mState = (null)
+F/libc    (11198): Fatal signal 11 (SIGSEGV) at 0x00000002 (code=1), thread 11199 (vold)
+D/Vold    (11198): Volume extsd state changing 0 (No-Media) -> 2 (Pending)
+D/Vold    (11198): Volume.cpp ====setState=========================getFuseMountpoint = /storage/extsd
+
+
+
+
+
+
+
+
+

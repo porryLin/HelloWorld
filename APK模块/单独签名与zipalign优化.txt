@@ -1,0 +1,56 @@
+====== 预安装与单独签名 ======
+Created Thursday 27 February 2014
+
+============================================================================
+
+===== 预安装apk =====
+
+==== 1.可卸载式预安装： ====
+     将apk文件放在源码目录：android/device/idsbg/common/prebuild/preinstall/preinstallapk/
+     需要修改的文件： android/device/idsbg/common/prebuild/preinstall/preinstallapk/Android.mk
+                                              android/device/idsbg/common/common.mk
+
+     编译后生成位置：out/target/product/f1/system/preinstall/
+     开机成功后存在设备中的路径：/system/preinstall/
+
+     注：不需要将lib文件加入PRODUCT_PACKAGES属性
+     注：**烧录成功,第一次开机完成后，系统才开始安装可卸载式的apk**
+
+==== 2.不可卸载式预安装： ====
+     将apk文件放在源码目录：android/device/idsbg/common/prebuild/preinstall/apk/
+     需要修改的文件：android/device/idsbg/common/prebuild/preinstall/apk/Android.mk
+                                             android/device/idsbg/common/common.mk
+
+     将libxxx.so 提取出来放到 android/device/idsbg/common/prebuild/preinstall/apklib/目录下面
+                  修改 android/device/idsbg/common/prebuild/preinstall/apklib/Android.mk
+
+     编译后生成位置：out/target/product/f1/system/app/
+     开机成功后存在设备中的路径：/system/app/
+
+     注：**需要将apk解压出来的lib文件加入PRODUCT_PACKAGES属性**
+     注：**烧录成功,第一次开机完成后,所有不可卸载的apk都已经安装完成**
+
+
+============================================================================
+
+===== 使用signapk.jar 单独为apk签名 =====
+signapk.jar:
+     由 /build/tools/signapk/ 编译产生
+
+编译后生成路径：
+    android/out/host/linux-x86/framework/
+
+签名方法：（将signapk.jar,待签名APK，platform.x509.pem, platform.pk8放在同一目录中）
+$java -jar signapk.jar platform.x509.pem platform.pk8 MyDemo.apk MyDemo_signed.apk
+
+
+============================================================================
+
+===== 优化apk =====
+zipalign优化的最根本目的是帮助操作系统更高效率的根据请求索引资源，将resource-handling code统一将Data structure alignment（数据结构对齐标准:DSA）限定为4-byte boundaries。
+
+优化APK：
+    $zipalign -v 4 MyDemo_signed.apk MyDemo_new.apk
+
+查循APK是否优化过：
+    $zipalign -c -v 4 MyDemo_new.apk

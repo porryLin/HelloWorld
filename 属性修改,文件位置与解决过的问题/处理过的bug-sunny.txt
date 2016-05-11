@@ -1,0 +1,651 @@
+出货国家：巴基斯坦 （乌尔都语 ur_PK）
+
+发布版本位置
+ftp://10.240.3.16/SW_Release/SW_Release/HWDSLS/S06A/OFFICIAL/SUNNY-S06A_GMOBILE_L49EN_203/141120/47_[zhuang.lu]_e617685ed31a2549463a1a5e962446767548a43b/
+
+
+=============================================
+TTP-7429 飞行模式下进入设置选择清除FM数据后可以进入FM，且能搜索频道并播放。
+
+    原来的代码是通过 AirplaneBroadReceiver.java 接收设置飞行模式的广播，并把状态值通过下面方式保存：
+
+        FMRadioActivity.mAirplaneModeEnabled = intent.getBooleanExtra("state", false);
+        
+        SharedPreferences sharedPreferences =context.getSharedPreferences(AIRPLANE_NAME,0);
+        SharedPreferences.Editor editor = sharedPreferences.edit();
+        editor.putBoolean(FLAG_AIRPLANE_NAME, FMRadioActivity.mAirplaneModeEnabled);
+        editor.commit();
+    清除数据后保存的值就被还原了。
+
+FMRadio/src/com/mediatek/FMRadio/FMRadioActivity.java
+
++ import android.provider.Settings;
+--> public void onStart() {
+          ...
+          int isAirplaneMode = Settings.System.getInt(this.getContentResolver(), 
+                  Settings.System.AIRPLANE_MODE_ON, 0);
+          if(isAirplaneMode == 1) {
+                AirplanDialog();
+          }
+          ...
+    }
+
+
+
+=============================================
+TTP-7386  添加闹钟，闹钟显示为重复，但周期并没有选择
+
+DeskClock/src/com/android/deskclock/AlarmClockFragment.java
+-->  private void bindExpandArea(final ItemHolder itemHolder, final Alarm alarm) {
+            ...
+           // if (mRepeatChecked.contains(alarm.id) || itemHolder.alarm.daysOfWeek.isRepeating()) {
+           // 删除闹钟时没有把mRepeatChecked里面的相关信息删除
+            if (itemHolder.alarm.daysOfWeek.isRepeating()) {
+                itemHolder.repeat.setChecked(true);
+                itemHolder.repeatDays.setVisibility(View.VISIBLE);
+            } else {
+                itemHolder.repeat.setChecked(false);
+                itemHolder.repeatDays.setVisibility(View.GONE);
+            }
+     }
+     
+     
+
+=============================================
+TTP-7630  手机SIM卡颜色第一蓝色与第四紫色太接近
+
+选颜色时的四个图标位置：
+res/drawable-xhdpi/color_00.png
+res/drawable-hdpi/color_00.png
+res/drawable-mdpi/color_00.png
+
+颜色的RBG值定义：
+res/values/mtk_colors.xml 
+    <color name="sim_blue">#ff0000</color>	
+    <color name="sim_orange">#ff7214</color>
+    <color name="sim_green">#35b800</color>
+    <color name="sim_purple">#735ce1</color>
+    
+状态栏图标
+frameworks/base/packages/SystemUI/res/drawable-hdpi/
+                           stat_sys_gemini_signal_4_blue 信号图标
+                           stat_sys_gemini_signal_4g_blue 4G图标
+                           stat_sys_gemini_signal_3g_blue  3G图标
+                           ... 上传下载信号等
+                           
+                           
+=============================================
+TTP-7608  进入时钟，切换到计时器，输入数字并计时，将手机横屏，等待计时结束铃声响起，再将手机竖屏删除计时记录
+
+packages/apps/DeskClock/src/com/android/deskclock/DeskClock.java
+--> private void createTabs(int selectedIndex) {
+            mTabsAdapter.addTab(mAlarmTab, AlarmClockFragment.class, ALARM_TAB_INDEX); //闹钟
+            mTabsAdapter.addTab(mClockTab, ClockFragment.class, CLOCK_TAB_INDEX);    //时钟
+            mTabsAdapter.addTab(mTimerTab, TimerFragment.class, TIMER_TAB_INDEX);    //定时器
+            mTabsAdapter.addTab(mStopwatchTab, StopwatchFragment.class,STOPWATCH_TAB_INDEX); //计时器
+    }
+
+packages/apps/DeskClock/src/com/android/deskclock/timer/TimerFragment.java
+-->  public void setPage() {
+        if (mViewState != null) {    //应该为null的，转屏时变成了非null
+            switchToSetupView = mViewState.getBoolean(KEY_SETUP_SELECTED, false);
+            mTimerSetup.restoreEntryState(mViewState, KEY_ENTRY_STATE);
+            mViewState = null;
+        } else {
+            switchToSetupView = mAdapter.getCount() == 0;
+        }
++       switchToSetupView = mAdapter.getCount() == 0;  //增加这一句
+        if (switchToSetupView) {
+            gotoSetupView();
+        } else {
+            gotoTimersView();
+        }
+     }
+     
+     
+     
+=============================================
+TTP-7433 短信自定义T卡铃声，拔掉T卡后铃声名以数字显示
+
+packages/apps/Mms/src/com/android/mms/ui/NotificationPreferenceActivity.java
+import android.database.Cursor;
+import android.os.Environment;
+import android.provider.MediaStore;
+import android.util.Log;
+-->  private void setRingtoneSummary(String soundValue) {
+           Uri soundUri = TextUtils.isEmpty(soundValue) ? null : Uri.parse(soundValue);
+           String realPath = null;
+           try {
+               realPath = getPathFromUri(soundUri);
+           } catch(Exception e) {
+               Log.i("chunhui", "e = " + e);
+           }
+           if(realPath == null || ((realPath.indexOf("sd") != -1) && Environment.MEDIA_UNMOUNTED.equals(Environment
+				           .getExternalStorageState()))) {
+               soundUri = Uri.parse(DEFAULT_RINGTONE);
+           }
+           
+-->  private String getPathFromUri(Uri contentUri) {
+        String [] proj = {MediaStore.Audio.Media.DATA};
+        Cursor cursor = getContentResolver().query(contentUri, proj, null, null, null);
+        int column_index = cursor.getColumnIndexOrThrow(MediaStore.Audio.Media.DATA);
+        if (cursor == null)
+               return null;
+        cursor.moveToFirst();
+        String path = cursor.getString(column_index);
+        return path;
+    }
+    
+    
+    
+=============================================
+TTP-7655 下载一张图片，进入“图库”里删除该图片，再在下载内容里查看，提示“无法生成缩略图”或显示黑色
+
+
+
+
+=============================================
+TTP-7789 
+4 58
+
+
+
+=============================================
+TTP-8732 电量低于15%时无法进行高级回复出厂设置
+vendor/ckt/AdvanceFactoryReset/src/com/ckt/factoryreset/AdvanceFactoryResetActivity.java
+vendor/ckt/AdvanceFactoryReset/res/values-zh-rTW/strings.xml
+vendor/ckt/AdvanceFactoryReset/res/values-zh-rCN/strings.xml
+
+--> public void onCreate(Bundle savedInstanceState) {
+        showProgressDialog(context.getString(R.string.advanced_progress_message));
+        // set factory flag value:
+        FactoryResetServerMananger.resetNvram(); //由于这里处理太久了，导致低电量提醒对话框一直出不来
+        
+        
+        
+        
+        
+===============================================
+TTP-7435 短信中显示手机号码不全，位置不够导致
+packages/apps/Mms/src/com/android/mms/ui/ComposeMessageActivity.java
+
+
+===============================================
+TTP-7854
+
+
+
+
+
+===============================================
+TTP-7497 已登录QQ，点击图片小部件中任一图片，弹出选项，选择发送QQ好友后，手机不能左右滑动屏幕，快捷菜单，主菜单均不能使用
+
+com.tencent.mobileqq/com.tencent.mobileqq.activity.JumpActivity  获取了焦点， 但是不响应intent 
+根本原因是，qq 接收了intent，跳转到它的JumpActivity界面（空白） ， launcher失去焦点，所以无响应，
+
+packages/apps/Gallery2/src/com/android/gallery3d/gadget/WidgetClickHandler.java
+--> onCreate()
+      intent = new Intent(Intent.ACTION_VIEW, uri);
+      // ckt-chunhui, TTP-7497
+      ComponentName componentName = new ComponentName(  
+                   "com.android.gallery3d",  
+                   "com.android.gallery3d.app.GalleryActivity");  
+      intent.setComponent(componentName);
+      
+      
+      
+
+
+
+===============================================
+TTP-8777 查看设置-电池中已用时间，拔电池开机后进设置中重新查看，发现电池已用时间没有清零。
+
+和系统时钟有关, 系统时钟不清零, 电池使用时间不会被置零
+拔电池后,系统时钟多久清零,和主板备用电池有关.
+
+
+
+
+
+
+
+
+===============================================
+TTP-8768 设置->添加账户->点击skype，无反应
+
+Settings_headers.xml
+    <header
+            android:id="@+id/account_add"
+            android:title="@string/add_account_label"
+            android:icon="@drawable/ic_menu_add_dark">
+        <intent
+            android:action="android.settings.ADD_ACCOUNT_SETTINGS"/>
+    </header>
+
+AndroidManifest.xml
+        <activity android:name="com.android.settings.accounts.AddAccountSettings"
+            android:theme="@android:style/Theme.Translucent.NoTitleBar"
+            android:configChanges="orientation|keyboardHidden|screenSize"
+            android:label="@string/header_add_an_account"
+            android:taskAffinity="com.android.settings"
+            android:parentActivityName="Settings$ManageAccountsSettingsActivity">
+            <intent-filter>
+                <action android:name="android.intent.action.MAIN" />
+                <action android:name="android.settings.ADD_ACCOUNT_SETTINGS" />
+                <category android:name="android.intent.category.DEFAULT" />
+            </intent-filter>
+        </activity>
+
+AddAccountSettings.java
+--> onCreate()
+        final String[] authorities =
+                getIntent().getStringArrayExtra(AccountPreferenceBase.AUTHORITIES_FILTER_KEY);
+        final String[] accountTypes =
+                getIntent().getStringArrayExtra(AccountPreferenceBase.ACCOUNT_TYPES_FILTER_KEY);
+        final Intent intent = new Intent(this, ChooseAccountActivity.class);
+        if (authorities != null) {
+            intent.putExtra(AccountPreferenceBase.AUTHORITIES_FILTER_KEY, authorities);
+        }
+        if (accountTypes != null) {
+            intent.putExtra(AccountPreferenceBase.ACCOUNT_TYPES_FILTER_KEY, accountTypes);
+        }
+        startActivityForResult(intent, CHOOSE_ACCOUNT_REQUEST);
+        
+ChooseAccountActivity.java
+--> onCreate()
+        mAuthorities = getIntent().getStringArrayExtra(AccountPreferenceBase.AUTHORITIES_FILTER_KEY);
+        String[] accountTypesFilter = getIntent().getStringArrayExtra(
+                AccountPreferenceBase.ACCOUNT_TYPES_FILTER_KEY);
+
+--> onAuthDescriptionsUpdated()
+        for (int i = 0; i < mAuthDescs.length; i++) {
+            String accountType = mAuthDescs[i].type;
+            CharSequence providerName = getLabelForType(accountType);
+ +          if ("com.skype.contacts.sync".equals(accountType)) //如果判断到是SKYPE就跳过
+ +              continue;
+           ...     
+           mProviderList.add(new ProviderEntry(providerName, accountType));
+           ...
+           for (ProviderEntry pref : mProviderList) {
+                Drawable drawable = getDrawableForType(pref.type);
+                ProviderPreference p =
+                        new ProviderPreference(this, pref.type, drawable, pref.name);
+                mAddAccountGroup.addPreference(p); //增加每一项可以当成账户的选项
+            }
+
+--> onPreferenceTreeClick()
+
+--> private void finishWithAccountType(String accountType) {
+        Intent intent = new Intent();
+        intent.putExtra(AddAccountSettings.EXTRA_SELECTED_ACCOUNT, accountType);
+        setResult(RESULT_OK, intent);
+        finish();
+    }
+
+
+
+
+
+
+
+
+
+===============================================
+TTP-8811 图库中选择一张照片通过facebook分享，提示图库停止运行
+
+frameworks/base/core/java/android/widget/ListPopupWindow.java
+    public void dismiss() {
+        mPopup.dismiss();  //和removePromptView()可以调换位置试试
+        removePromptView();
+        mPopup.setContentView(null);
+        mDropDownList = null;
+        mHandler.removeCallbacks(mResizePopupRunnable);
+    }
+    
+
+
+    
+===============================================
+TTP-7427 进入相机，选择编辑图片，按MENU，选择信息或导出，长按HOME键从列表中删除图库，从列表中进去图片编辑器，提示：图库停止运行
+
+packages/apps/Gallery2/src/com/android/gallery3d/filtershow/ui/ExportDialog.java
++    private boolean isDestroy = false;
+-->  onCreateView()
++        if(mOriginalBounds != null) {
+             mOriginalBounds = preset.finalGeometryRect(mOriginalBounds.width(),
+                     mOriginalBounds.height());
+             mRatio = mOriginalBounds.width() / (float) mOriginalBounds.height();
+             mWidthText.setText("" + mOriginalBounds.width());
+             mHeightText.setText("" + mOriginalBounds.height());
+             mExportWidth = mOriginalBounds.width();
+             mExportHeight = mOriginalBounds.height();
+             mWidthText.addTextChangedListener(new Watcher(mWidthText));
+             mHeightText.addTextChangedListener(new Watcher(mHeightText));
++	      } else {isDestroy = true;}
+
++ @Override
++ public void onActivityCreated(Bundle savedInstanceState) {
++   	super.onActivityCreated(savedInstanceState);
++	    if(isDestroy) {
++	         dismiss();
++	         isDestroy = false;	
++	    }
++ }
+
+
+
+
+
+===============================================
+TTP-7488 短信设置中点击MENU还原默认设置，编辑常用短语没有恢复默认
+常用短语保存在数据库EncapsulatedTelephony.MmsSms.CONTENT_URI_QUICKTEXT之中，清空就好了
+
+packages/apps/Mms/src/com/android/mms/ui/SmsPreferenceActivity.java
++import com.mediatek.encapsulation.android.telephony.EncapsulatedTelephony;
+--> private void restoreDefaultPreferences() {
+          ...
++          resetInitQuickText();
+    }
+    
++    private void resetInitQuickText() {
++        SharedPreferences sp = PreferenceManager.getDefaultSharedPreferences(MmsApp.getApplication());
++        SharedPreferences.Editor editor = sp.edit();
++        editor.putBoolean("InitQuickText", true);
++        editor.commit();
++        getContentResolver().delete(EncapsulatedTelephony.MmsSms.CONTENT_URI_QUICKTEXT, null, null);
++    }
+
+
+
+
+===============================================
+TTP-8757 停用联系人后，点击信息的联系人图标，新增联系人，没有反应
+
+原因分析：启动Contact时，Contact不存在导致的Runtime异常
+解决方法：捕获异常，弹出Toast提醒用户应用不存在
+
+packages/apps/Mms/src/com/android/mms/ui/ComposeMessageActivity.java //进入某个联系人的信息界面
+-->  public boolean onPrepareOptionsMenu(Menu menu)
+                if (contact.existsInDatabase()) {   //联系人已保存，则显示联系人
+                    menu.add(0, MENU_SHOW_CONTACT, 0, R.string.menu_view_contact)
+                        .setIcon(R.drawable.ic_menu_recipients)
+                        .setTitle(R.string.menu_view_contact)
+                        .setShowAsAction(MenuItem.SHOW_AS_ACTION_ALWAYS);
+                    mQuickContact.assignContactUri(contact.getUri());
+                } else if (MessageUtils.canAddToContacts(contact)  //联系人未保存，显示添加到联系人
+                        /// M: add for ipmessage
+                        || IpMessageUtils.canAddToContactsEx(this, contact)) {
+                    menu.add(0, MENU_CREATE_CONTACT, 0, R.string.menu_add_to_contacts)
+                        .setIcon(R.drawable.ic_menu_recipients)
+                        .setTitle(R.string.menu_add_to_contacts)
+                        .setShowAsAction(MenuItem.SHOW_AS_ACTION_ALWAYS);
+                    String number = contact.getNumber();
+                    // add for joyn converged inbox mode
+                    if (number.startsWith(IpMessageConsts.JOYN_START)) {
+                        number = number.substring(4);
+                    }
+                    if (Mms.isEmailAddress(number)) {
+                        mQuickContact.assignContactFromEmail(number, true);
+                    } else {
+                        mQuickContact.assignContactFromPhone(number, true); //chunhui
+                    }
+                }
+
+-->  public boolean onOptionsItemSelected(MenuItem item) {
+            case MENU_SHOW_CONTACT:   //点击联系人图标
+            case MENU_CREATE_CONTACT:
+                hideInputMethod();
+                mQuickContact.onClick(mActionBarCustomView);
+                break;
+
+mQuickContact = (MmsQuickContactBadge) findViewById(R.id.avatar);
+  
+packages/apps/Mms/src/com/android/mms/ui/ConversationList.java //全部联系人信息界面，即主界面
+-->  private void initListAdapter() {
+        mListAdapter = new ConversationListAdapter(this, null);
+        setListAdapter(mListAdapter);    //这里是填充信息列表的
+        getListView().setRecyclerListener(mListAdapter);
+    }
+    
+packages/apps/Mms/src/com/android/mms/ui/ConversationListItem.java  //填充到信息列表的每一列信息
+-->  public ConversationListItem(Context context, AttributeSet attrs)
+        if (sDefaultContactImage == null) {
+            sDefaultContactImage = context.getResources().getDrawable(R.drawable.ic_contact_picture); //此处是联系人头像
+        }
+        
+private MmsQuickContactBadge mAvatarView; //联系人头像的类
+
+-->  public void bindDefault(Conversation conversation)
+        mAvatarView.setImageDrawable(sDefaultContactImage);
+
+           
+packages/apps/Mms/src/com/android/mms/ui/MmsQuickContactBadge.java
+-->  public void onClick(View v) {
++            Intent intent = new Intent(Intent.ACTION_INSERT_OR_EDIT);
++            intent.setType(Contacts.CONTENT_ITEM_TYPE);
++            if(mContext.getPackageManager().resolveActivity(intent, 0) == null) {
++                  Toast.makeText(mContext, R.string.noApplication, Toast.LENGTH_SHORT).show();
++            } else {
+              super.onClick(v); //两个地方都会调用到这里
++            }
+
+FRAMEWORK层
+frameworks/base/core/java/android/widget/QuickContactBadge.java
+-->  public void onClick(View v) {
+         if (mContactUri != null) {
+             QuickContact.showQuickContact(getContext(), QuickContactBadge.this, mContactUri,
+                    QuickContact.MODE_LARGE, mExcludeMimes);
+         ...
+         
+
+frameworks/base/core/java/android/provider/ContactsContract.java
+-->  showQuickContact()
+
+
+找不到应用时会跑到下面的类
+frameworks/base/core/java/com/android/internal/app/ResolverActivity.java
+-->  protected void onCreate(...)
+        ap.mMessage = getResources().getText(R.string.noApplications); //会调用到这里来
+        
+
+
+
+
+
+
+===============================================
+TTP-9074 手机登陆QQ后，进入短信添加幻灯片，添加图片后点击Preview，按返回再点击Preview无效
+
+packages/apps/Mms/src/com/android/mms/ui/SlideEditorActivity.java
+
+--> private final OnClickListener mOnPreview = new OnClickListener() {
+        public void onClick(View v) {
+            if (mIsCanPreview) {
+                previewSlideshow();
+                mIsCanPreview = false;//由于这个参数的问题导致TTP-9074
+            }
+        }
+    };
+
+--> protected void onStop() {
+        super.onStop();
+        mIsCanPreview = true; //当打开图库或者其他Activity界面时，onStop()方法被调用
+    }                         //弹出选择应用对话框，我们按返回键时，onStop()方法没有被调用
+
+解决方法：固定使用Gallery来Preview
+packages/apps/Mms/src/com/android/mms/ui/MessageUtils.java
+--> public static void viewSimpleSlideshow(Context context, SlideshowModel slideshow) {
+        intent.putExtra(EXTRA_FULLSCREEN_NOTIFICATION, true);
+        ComponentName componentName = new ComponentName(
+               "com.android.gallery3d",
+               "com.android.gallery3d.app.GalleryActivity");
+        intent.setComponent(componentName);
+
+
+
+
+===============================================
+录音过程插拔SD卡
+
+packages/apps/SoundRecorder/src/com/android/soundrecorder/SoundRecorderService.java
+-->  private void registerBroadcastReceivcer()
+         receiveBroadcast(context, intent);
+         
+-->  private void receiveBroadcast(Context context, Intent intent)
+           if (Intent.ACTION_MEDIA_EJECT.equals(action)
+                  || Intent.ACTION_MEDIA_UNMOUNTED.equals(action)) { //拔卡流程，问题是插卡时也跑这里
+                //弹出对话框
+                reset();
+           } else if (Intent.ACTION_MEDIA_MOUNTED.equals(action)) { //插卡流程
+                // tell activity to remove SD_UNMOUNTED dialog
+                if (null != mOnEventListener) {
+                     mOnEventListener.onEvent(EVENT_STORAGE_MOUNTED);
+                }
+            }
+         
+
+packages/apps/SoundRecorder/src/com/android/soundrecorder/SoundRecorder.java
+-->  public void onEvent(int eventCode) {
+           ...
+           case SoundRecorderService.EVENT_STORAGE_MOUNTED:
+           // remove error dialog after sd card mounted
+           removeOldFragmentByTag(ErrorHandle.ERROR_DIALOG_TAG); //移除刚才弹出的对话框
+           break;
+     }
+     
+
+packages/apps/SoundRecorder/src/com/android/soundrecorder/ErrorHandle.java //各种类型错误的提示信息和对话框的处理
+
+
+
+
+===============================================
+TTP-7611 将保存有“环聊”即时消息的联系人放到手机桌面，点击环聊即时消息，提示：no app can handle this action
+可以登录Gmail帐号再去试验一次
+
+
+
+===============================================
+TTP-7622 增加乌尔都语的重启字符串显示
+
+frameworks/base/core/res/res/values-ur-rPK/strings.xml
+<string name="global_action_reboot">????</string>
+
+
+
+
+
+===============================================
+TTP-7632 手机通话设置中的快速回复，更改语言还是显示为中文
+
+见【FAQ11397】
+这是Google design，快速回复本身就不支持多语言，因为是user可以编辑的，所以存在preference里面，存的是什么就是什么。
+
+此行为是正常的.
+
+
+
+===============================================
+TTP-7644 谷歌帐号的日历事件不能同步到日历中
+
+由于缺少关键组件 GoogleCalendarSyncAdapter.apk
+
+
+
+
+===============================================
+TTP-8777 查看设置-电池中已用时间，拔电池开机后进设置中重新查看，发现电池已用时间没有清零
+
+电池使用时间和系统时钟有关, 系统时钟不清零, 电池使用时间不会被置零
+拔电池后,系统时钟多久清零,和主板备用电池有关.
+
+
+
+
+===============================================
+TTP-7636 进入环聊通知铃声设置查看，外面显示为Hangouts Message，进入查看，里面找不到该铃声，且铃声没有被选中
+
+[Root cause] 1.MTK在RingtoneManager中新增了对DRM的支持，使得ringtone查询的SQL为 select ringtone from audio_meta where is_drm != 1;  2.环聊APP在首次运行时会在/phonestorage/ringtones目录下生成两个ringtone，但是环聊未主动调用MediaScanner去做扫描，而是直接将ringtone info写入 audio db  3.is_drm字段是在MediaScanner扫描时去赋值的，因为没有扫描，所以此字段为null，导致不符合 id_drm != 1，使得其他平台可以搜寻出来，而我们平台搜寻不出来
+
+[Solution]将查询SQL改为 select ringtone from audio_meta where is_drm != 1 or is_drm  is null;
+
+
+
+===============================================
+TTP-7635 环聊默认铃声为Hangouts Message，设置其他铃声，无法再切换到Hangouts Message铃声
+
+[Root cause] 1.MTK在RingtoneManager中新增了对DRM的支持，使得ringtone查询的SQL为 select ringtone from audio_meta where is_drm != 1;  2.环聊APP在首次运行时会在/phonestorage/ringtones目录下生成两个ringtone，但是环聊未主动调用MediaScanner去做扫描，而是直接将ringtone info写入 audio db  3.is_drm字段是在MediaScanner扫描时去赋值的，因为没有扫描，所以此字段为null，导致不符合 id_drm != 1，使得其他平台可以搜寻出来，而我们平台搜寻不出来
+
+[Solution]将查询SQL改为 select ringtone from audio_meta where is_drm != 1 or is_drm  is null;
+
+frameworks/base/media/java/android/media/RingtoneManager.java
+-->   private String appendDrmToWhereClause() {
+        //sb.append(MediaStore.Audio.Media.IS_DRM).append("!=1");
+        sb.append(MediaStore.Audio.Media.IS_DRM).append("=0 or ");/*add this line*/ 
+        sb.append(MediaStore.Audio.Media.IS_DRM).append(" is NULL");/*add this line*/ 
+        
+        
+        
+===============================================
+TTP-7633 环聊中开启SMS功能，选择一个联系人，添加图片，选择一个音频，提示：不能发送
+
+GoogleAPK的问题，更换Hangouts.apk即可解决问题
+
+
+
+
+===============================================
+TTP-7634 环聊中添加表情符号，只有数字10显示正常，数字“0到9”不正常
+GoogleAPK的问题
+
+
+
+
+===============================================
+TTP-7551 录音过程中，插拔SD卡，录音失败，录音不被保存
+
+应该是与SWAP宏定义有关，该宏开启则手机存储与SD卡可以互换
+mediatek/config/ckt72_we_kk/ProjectConfig.mk
+MTK_2SDCARD_SWAP=yes 改为no
+
+===============================================
+
+一般：
+TTP-7426 文件管理中的菜单图标，为半透明灰色显示，建议优化，附图
+TTP-7435 未存联系人号码，来短信后查看号码显示不全
+TTP-7446 状态栏，SIM卡信号图标的数字1和2 如若不是客户需求建议去掉。
+TTP-7543 当状态栏满时，会有一个小图标一直闪烁，建议状态栏满时不闪烁或者闪烁不那么快
+TTP-7602 短信中有字符和电话号码，长按该短信弹出信息中没有保存号码选项  （功能）
+
+TTP-7480 进入设置-语言与键盘，开启键盘音效，在虚拟键盘输入表情，最后一页的表情输入无音效（其他手机也会）
+TTP-7453 手机在使用一段时间后，进入设置，手机卡死提示“设置”无响应，后黑屏 （只出现一次，附log）
+TTP-7597 输入表情后手机接收，表情符号中间有两个问号，见图
+TTP-7599 进入图库，下拉通知栏，横竖屏切换，按返回键退出，退出到主菜单
+TTP-7605 下载一张图片，进入“图库”里删除该图片，再在下载内容里查看，提示“无法生成缩略图”或显示黑色
+TTP-7610 联系人中保存了环聊的即时消息，点击即时消息无反应
+TTP-7611 将保存有“环聊”即时消息的联系人放到手机桌面，点击环聊即时消息，提示：no app can handle this action
+TTP-7619 通话过程中，接近感应器靠近黑色头发，屏幕不会灭。（出现几次）
+TTP-7626 拍照有时候按钮至灰很久，需要切换到录像才能恢复或者退出相机重新进入，附视频和log （概率性）
+
+TTP-
+
+TTP-
+
+TTP-
+
+TTP-
+
+TTP-
+
+严重：
+TTP-7604 图库中播放视频，手机重启，附log (只出现一次)
+
+TTP-
+
+TTP-
+
+TTP-
+
+TTP-
+
+TTP-

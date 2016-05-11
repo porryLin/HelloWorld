@@ -1,0 +1,156 @@
+概要：运动模式拍照过程中，长按音量键，快门声不停
+预置条件：
+复现步骤：1、进入相机
+          2、将音量键设置为拍照
+          3、开启运动模式
+          4、长按拍照图标进行拍照
+          5、拍照过程中，长按或短按按音量下键
+期望结果：拍照无异常
+实际结果：会出现以下3种不同的结果，且有1张照片为纯绿色
+          1、拍照结束，按快门声音一直都有，直到重启才恢复正常
+          2、界面卡住，最后出现图库无响应提示
+          3、快门声音不消失，但开启录像后，声音消失，恢复正常
+出现概率：100%
+
+
+packages/apps/Camera/src/com/android/camera/Camera.java
+--> private OnShutterButtonListener mPhotoShutterListener = new OnShutterButtonListener() {
+        
+        // 长按快门图标调用的方法
+        @Override
+        public void onShutterButtonLongPressed(ShutterButton button) {
+            mSettingManager.collapse(true);
+          //For tablet
+            if (FeatureSwitcher.isTablet()){
+            	mSubSettingManager.collapse(true);
+            }
+            OnShutterButtonListener listener = mCameraActor.getPhotoShutterButtonListener();
+            if (listener != null) {
+                listener.onShutterButtonLongPressed(button);
+            }
+        }
+        ...
+    };
+    
+packages/apps/Camera/src/com/android/camera/actor/PhotoActor.java
+--> public boolean onKeyDown(int keyCode, KeyEvent event) {
+        //按音量上键与按音量下键处理流程相同
+	      case KeyEvent.KEYCODE_VOLUME_DOWN:
+            	switch (volumeFunction) {
+	        	       case SettingChecker.VOLUME_KEY_ZOOM:  //缩放功能流程
+				                  int zoom = mCamera.getZoomManager().decrementZoom();
+	        		            mCamera.getZoomManager().performZoom(zoom, true);
+	        	             	return true;	        		
+		               case SettingChecker.VOLUME_KEY_TAKE_PICTURE:  //拍照功能流程
+				                  if(!mVolumeDownKeyLongPressed && event.getRepeatCount() > 0){
+					                        mVolumeDownKeyLongPressed = true;   //长按音量下键
+				                  }
+                          if (!mDoingContinuous && canTakePicture() && mVolumeDownKeyLongPressed) {
+					                        onShutterButtonLongPressed(null);
+				                          mDoingContinuous =true;
+				                  }
+            				      return true;
+                    default:
+				      return true;	
+         }
+         ...
+    }
+    
+--> public boolean onKeyUp(int keyCode, KeyEvent event) {
+       //松开音量上键与松开音量下键处理流程相同
+       case KeyEvent.KEYCODE_VOLUME_DOWN:
+		         switch (volumeFunction) {
+		             case SettingChecker.VOLUME_KEY_START_VIDEO:   //录相流程，开始录相
+		                   if (mCamera != null && mCamera.getCameraDevice() != null && (mCamera.getCameraState() != Camera.STATE_SNAPSHOT_IN_PROGRESS)&&(mCamera.getCameraState() != Camera.STATE_PREVIEW_STOPPED)
+                          && mSelfTimerManager.isSelfTimerIdle() && !mCamera.isImageCaptureIntent()) { 
+				                        mCamera.startVideo();
+			                 }
+				               return true;
+		             case SettingChecker.VOLUME_KEY_TAKE_PICTURE:	 //拍照流程，停止拍照/连拍
+		                  	if(!mVolumeDownKeyLongPressed && mCamera.getShutterManager().isVideoShutterEnabled()){
+				                        shutterButtonClick(null);
+		            	              return true;	
+			                  }
+			                  if (mDoingContinuous && mVolumeDownKeyLongPressed) {  // ckt xiezhangxing modify 20140521
+			                        mDoingContinuous=false;		
+				                      mVolumeDownKeyLongPressed = false;
+			                        cancelContinuousShot();   //chunhui
+                  			}			
+			                  onShutterButtonFocus(null, false);
+			                  return true;
+		             default:
+				                return true;		
+		         }
+		     ...
+		}
+
+--> private void cancelContinuousShot() {
+        if (mCamera != null && mCamera.getCameraDevice() != null) {
+             mCamera.getCameraDevice().cancelContinuousShot();
+             stopContinuousSound();
+	      }  
+   }
+   
+packages/apps/Camera/src/com/android/camera/actor/MotionTrackActor.java
+   /*不管是长按快门图标还是长按音量键，最终都会调用到下面的连拍方法；
+    * 由于调用了两次，可是只调用一次cancelContinuousShot，所以导致快门声音一直还在
+    */
+--> public void onShutterButtonLongPressed(ShutterButton button);
+
+尝试解决方法
+1.静态参数法
+    增加静态参数 private static boolean isLongPressProcessing = false;
+    在onShutterButtonLongPressed开始时增加判断，如果为true,则返回;如果是false则继续，并赋值为true,执行完再赋值为false
+    
+    根据log显示，onShutterButtonLongPressed执行完，将该参数赋值为false后才又继续调用一次该方法。
+    
+2.利用原有参数mLongPressed
+    在 onShutterButtonLongPressed 开始时增加判断，如果该参数为true则返回；如果是false则继续。
+    经验证有效果，不过还有其他问题
+    
+        // avoid double long pressed
+        if (mLongPressed) { //ckt-chunhui.lin, TTP-4210
+             return;
+        }
+    
+还原所有代码发现，运动模式连拍之后，触摸屏幕进行对焦，图库报错退出；如果是只拍一张照片后触摸屏幕对焦则无问题。
+
+================================================================
+触摸屏幕对焦
+
+根据log报错信息
+W System.err: java.lang.IndexOutOfBoundsException: Invalid index 0, size is 0
+4165  4165 W System.err: 	at java.util.ArrayList.throwIndexOutOfBoundsException(ArrayList.java:255)
+4165  4165 W System.err: 	at java.util.ArrayList.get(ArrayList.java:308)
+4165  4165 W System.err: 	at com.android.camera.FocusManager.onSingleTapUp(FocusManager.java:425)
+4165  4165 W System.err: 	at com.android.camera.actor.PhotoActor$7.onSingleTapUp(PhotoActor.java:361)
+4165  4165 W System.err: 	at com.android.camera.Camera.onSingleTapUp(Camera.java:1293)
+4165  4165 W System.err: 	at com.android.camera.ActivityBase.onTouchScreen(ActivityBase.java:423)
+4165  4165 W System.err: 	at com.android.camera.ActivityBase.onSingleTapUp(ActivityBase.java:401)
+4165  4165 W System.err: 	at com.android.camera.ActivityBase.access$800(ActivityBase.java:35)
+4165  4165 W System.err: 	at com.android.camera.ActivityBase$MyAppBridge.onSingleTapUp(ActivityBase.java:506)
+4165  4165 W System.err: 	at com.android.gallery3d.app.PhotoPage.onSingleTapUp(PhotoPage.java:2124)
+4165  4165 W System.err: 	at com.android.gallery3d.ui.PhotoView$MyGestureListener.onSingleTapUp(PhotoView.java:1525)
+4165  4165 W System.err: 	at com.android.camera.manager.ZoomManager$MyListener.onSingleTapUp(ZoomManager.java:163)
+4165  4165 W System.err: 	at com.android.gallery3d.ui.GestureRecognizer$MyGestureListener.onSingleTapUp(GestureRecognizer.java:90)
+4165  4165 W System.err: 	at android.view.GestureDetector.onTouchEvent(GestureDetector.java:595)
+
+
+在出错的地方增加一个异常捕捉
+packages/apps/Camera/src/com/android/camera/FocusManager.java
+-->  public void onSingleTapUp(int x, int y) {
+        ...
+        try {
+               calculateTapArea(focusWidth, focusHeight, 1f, x, y, previewWidth, previewHeight,
+                     mFocusArea.get(0).rect);
+               calculateTapArea(focusWidth, focusHeight, 1.5f, x, y, previewWidth, previewHeight,
+                     mMeteringArea.get(0).rect);
+        } catch (Exception e) {
+               Log.i("chunhui", "FocusManager ... --> Exception = " + e);
+        }
+        ...
+    }
+    
+    由于运动模式需要将照片进行合成，长按流程还未结束又开始按键流程，造成冲突
+    
+    按键松开后即停止长按拍照流程

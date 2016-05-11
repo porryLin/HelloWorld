@@ -1,0 +1,178 @@
+
+============================ 无分支时处理方法： ==================
+
+$ git pull
+You are not currently on a branch, so I cannot use any
+'branch.<branchname>.merge' in your configuration file.
+Please specify which remote branch you want to use on the command
+line and try again (e.g. 'git pull <repository> <refspec>').
+See git-pull(1) for details.
+
+查看分支
+$ git branch -a
+* (no branch)     //绿色字体表示本地分支
+  remotes/origin/BULMA-154
+  remotes/origin/BULMA_262
+  remotes/origin/VEGETA-1141
+  remotes/origin/VEGETA-1215_test
+  remotes/origin/VEGETA-1253
+  remotes/origin/VEGETA-1312
+  remotes/origin/VEGETA-1312-improve
+  remotes/origin/VEGETA-1312-saturation
+  remotes/origin/VEGETA-1312-saturation2
+  remotes/origin/VEGETA-1312-soft
+  remotes/origin/VEGETA-1396
+  remotes/origin/VEGETA-1427
+  remotes/origin/VEGETA-352
+  remotes/origin/VEGETA-689
+  remotes/origin/VEGETA-847
+  remotes/origin/VEGETA-847-GAMMA2.4
+  remotes/origin/VEGETA-bootanimation
+  remotes/origin/VEGETA-dolby
+  remotes/origin/VEGETA_CAMERA
+  remotes/origin/bootanimation_optimization
+  remotes/origin/gmp_test
+  remotes/origin/master
+  remotes/origin/mt6592_cts_R3
+  remotes/origin/mt6592_cts_R3_QA
+  remotes/origin/test-dolby
+  remotes/origin/test-flash
+  remotes/origin/test-patch
+  remotes/origin/test-reboot-issue2
+  remotes/origin/test_BULMA-120
+  remotes/origin/test_BULMA-233
+  remotes/origin/test_BULMA-93
+  remotes/origin/test_BULMA_218
+  remotes/origin/test_BULMA_262
+  remotes/origin/test_nxp
+  remotes/origin/test_phone
+  remotes/origin/test_phone_kk
+  remotes/origin/test_speaker
+  remotes/origin/test_volume
+  remotes/origin/vegetafhd_RC_1.1.0
+
+再创建个本地分支
+
+============================= 创建本地分支 =========================
+
+创建本地分支 master 追踪服务器分支 remotes/origin/master
+$ git branch master remotes/origin/master
+Branch master set up to track remote branch master from origin.
+ckt@ckt-desktop:~/work/hostdiskF/sourcecode/ckt-mtk-6592$ git branch
+* (no branch)
+  master
+
+切换到本地分支 master上
+$ git checkout master
+
+
+============================= 删除本地分支 =========================
+
+删除本地分支   git branch -d xxxxx
+
+
+======================通过commit ID 查看代码==========================
+git show commitID
+
+
+
+============================git pull --rebase =========================
+直接git pull会产生merge信息
+
+
+=======================git lg 快捷方式查看分支信息=====================
+
+在用户根目录下编辑 .gitconfig 文件
+在文件末尾加入
+[alias]
+ lg = log --graph --pretty=formar:'%Cred%h%Creset-%C(yellow)%d%Creset %s %Cgreen(%cr) %C(bold blue)<%an>%Creset' --abbrev-commit --
+[alias]        
+        ediff = difftool -y -t bc3
+ lsg = log --graph --pretty=format:'%Cred%h%Creset-%C(yellow)%d%Creset %s %Cgreen(%cr) %C(bold blue)<%an>%Creset' --abbrev-commit
+
+
+
+============================= git cherry-pick =========================
+Apply the changes introduced by some existing commits 
+
+$ git cherry-pick <commit id>
+
+1.如果顺利，就会正常提交。结果：
+Finished one cherry-pick.
+# On branch old_cc
+# Your branch is ahead of 'origin/old_cc' by 3 commits.
+$ git push 
+
+2.如果在cherry-pick 的过程中出现了冲突
+
+    Automatic cherry-pick failed.  After resolving the conflicts,
+    mark the corrected paths with 'git add <paths>' or 'git rm <paths>'
+    and commit the result with:
+
+            git commit -c 15a2b6c61927e5aed6718de89ad9dafba939a90b
+
+
+就跟普通的冲突一样，手工解决：
+2.1 $ git status    # 看哪些文件出现冲突
+
+    both modified:      app/models/user.rb
+
+
+2.2 $ vim app/models/user.rb  # 手动解决它。
+2.3 $ git add app/models/user.rb
+2.4 git commit -c <新的commit号码>
+
+
+
+修改commit描述
+$ git cherry-pick xxx -e
+Finished one cherry-pick. 之后会进入一个编辑界面，修改描述之后按 ctrl+X 退出 Y 保存 回车退出
+
+
+
+============================= git revert commitID =========================
+
+可以将某个提交的commit的代码还原为提交前的状态，对该commit之后提交的commit不造成影响
+
+
+
+============================= git commit --amend  =========================
+已经git commit 但是还没有 git push的情况下可以修改
+然后在出来的编辑界面，直接编辑注释的信息
+
+ git修改历史提交
+2011-06-16 17:58
+
+       git使用amend选项提供了最后一次commit的反悔。但是对于历史提交呢，就必须使用rebase了。
+
+       git rebase -i HEAD~3
+
+       表示要修改当前版本的倒数第三次状态。
+
+        这个命令出来之后，会出来三行东东：
+
+        pick:*******
+
+        pick:*******
+
+        pick:*******
+
+        如果你要修改哪个，就把那行的pick改成edit，然后退出。
+
+ 
+
+        这时通过git log你可以发现，git的最后一次提交已经变成你选的那个了，这时再使用：
+
+        git commit --amend
+
+        来对commit进行修改。
+
+        修改完了之后，要回来对不对？
+
+        使用git rebase --continue
+
+        OK，一切都搞定了。
+
+
+
+

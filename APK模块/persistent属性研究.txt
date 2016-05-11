@@ -1,0 +1,122 @@
+Content-Type: text/x-zim-wiki
+Wiki-Format: zim 0.4
+Creation-Date: 2014-03-04T09:23:21+08:00
+
+====== persistent属性研究 ======
+Created Tuesday 04 March 2014
+
+前段时间在研究telephony时，一直没有在framework下发现对telephony的初始化(PhoneFactory.java中的makeDefaultPhones函数)的调用。
+结果全局搜索之后发现在application PhoneApp(packages/apps/Phone)中调用了。
+但是application PhoneApp既没有被Broadcast唤醒，也没有被其他service调用，那么是Android是通过什么方式来启动PhoneApp，所以就发现了属性android:persistent。
+
+在AndroidManifest.xml定义中，application有这么一个属性android:persistent，根据字面意思来理解就是说该应用是可持久的，也即是常驻的应用。
+其实就是这么个理解，被android:persistent修饰的应用会在系统启动之后被AM启动。
+
+AM首先去PM(PackageManagerService)中去查找设置了android:persistent的应用。
+
+    public void systemReady(final Runnable goingCallback) {
+                if (mFactoryTest != SystemServer.FACTORY_TEST_LOW_LEVEL) {
+                    try {
+                        List apps = AppGlobals.getPackageManager().
+                            getPersistentApplications(STOCK_PM_FLAGS);
+                        if (apps != null) {
+                            int N = apps.size();
+                            int i;
+                            for (i=0; i<N; i++) {
+                                ApplicationInfo info
+                                    = (ApplicationInfo)apps.get(i);
+                                if (info != null &&
+                                        !info.packageName.equals("android")) {
+                                    addAppLocked(info);
+                                }
+                            }
+                        }
+                    } catch (RemoteException ex) {
+                        // pm is in same process, this will never happen.
+                    }
+                }
+    }
+
+假如该被android:persistent修饰的应用此时并未运行的话，那么AM将调用startProcessLocked启动该app，
+关于startProcessLocked不再描述，另外一篇文章《How to start a new process for Android?》中做了详细的介绍。
+
+app的启动过程就是启动app所在的package对应的进程。
+
+    final ProcessRecord addAppLocked(ApplicationInfo info) {
+            ProcessRecord app = getProcessRecordLocked(info.processName, info.uid);
+            if (app == null) {
+                app = newProcessRecordLocked(null, info, null);
+                mProcessNames.put(info.processName, info.uid, app);
+                updateLruProcessLocked(app, true, true);
+            }
+            if ((info.flags&(ApplicationInfo.FLAG_SYSTEM|ApplicationInfo.FLAG_PERSISTENT))
+                    == (ApplicationInfo.FLAG_SYSTEM|ApplicationInfo.FLAG_PERSISTENT)) {
+                app.persistent = true;
+                app.maxAdj = CORE_SERVER_ADJ;
+            }
+            if (app.thread == null && mPersistentStartingProcesses.indexOf(app) < 0) {
+                mPersistentStartingProcesses.add(app);
+                startProcessLocked(app, "added application", app.processName);
+            }
+            return app;
+        }
+
+
+下面介绍app所在的package对应的进程启动完成之后，app是如何被create的。
+
+从文章《How to start a new process for Android?》中可知，zygote在创建新的进程均会启动它的mainThread android.app.ActivityThread，因此我们从ActivityThread的main函数中接着分析app的create过程。
+
+在main中有下面这个操作
+
+thread.attach(false);
+
+在attach过程中，ActivityThread会将对应的application attach到AM中去，交与AM去管理。这里需要注意一个变量
+
+final ApplicationThread mAppThread = new ApplicationThread();
+
+mAppThread是一个ApplicationThread对象，mAppThread可以看作是当前进程主线程的核心，它负责处理本进程与其他进程(主要是AM)之间的通信，同时通过attachApplication将mAppThread的代理Binder传递给AM。
+
+    private final void attach(boolean system) {
+            sThreadLocal.set(this);
+            mSystemThread = system;
+            if (!system) {
+                ViewRoot.addFirstDrawHandler(new Runnable() {
+                    public void run() {
+                        ensureJitEnabled();
+                    }
+                });
+                android.ddm.DdmHandleAppName.setAppName("<pre-initialized>");
+                RuntimeInit.setApplicationObject(mAppThread.asBinder());
+                IActivityManager mgr = ActivityManagerNative.getDefault();
+                try {
+                    mgr.attachApplication(mAppThread);
+                } catch (RemoteException ex) {
+                }
+            }
+        }
+
+上面的attach代码中，我们顺着IPC调用AM的attachApplication过程再往下看。
+
+在该过程中，AM调用到了IPC通信调用mAppThread的bindApplication；
+
+    private final boolean attachApplicationLocked(IApplicationThread thread,
+
+            int pid) {
+
+            thread.bindApplication(processName, app.instrumentationInfo != null
+                    ? app.instrumentationInfo : app.info, providers,
+                    app.instrumentationClass, app.instrumentationProfileFile,
+                    app.instrumentationArguments, app.instrumentationWatcher, testMode,
+                    isRestrictedBackupMode || !normalMode,
+                    mConfiguration, getCommonServicesLocked());
+            updateLruProcessLocked(app, false, true);
+            app.lastRequestedGc = app.lastLowMemory = SystemClock.uptimeMillis();
+}
+
+mAppThread的bindApplication再通过消息机制向ActivityThread自身维护的handler发送BIND_APPLICATION消息。下面看看ActivityThread自身维护的handler对消息BIND_APPLICATION的处理，最终会调用到handleBindApplication函数
+
+你会发现在handleBindApplication函数中有这么一句
+
+mInstrumentation.callApplicationOnCreate(app);
+
+我们最终在绕了好大一圈之后，调用了app的onCreate函数来启动这个application。

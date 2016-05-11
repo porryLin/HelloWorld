@@ -1,0 +1,56 @@
+Content-Type: text/x-zim-wiki
+Wiki-Format: zim 0.4
+Creation-Date: 2014-04-16T17:36:54+08:00
+
+====== mtp各种操作指令 ======
+Created Wednesday 16 April 2014
+
+=========================================================================
+
+== 创建新文件夹 ==
+
+operation: MTP_OPERATION_SEND_OBJECT_INFO
+V/MtpServer( 5018): received data:
+V/MtpServer( 5018): handleRequest()............................ operation = 4108
+V/MtpServer( 5018): name: 新文件夹 format: 3001
+D/MtpServer( 5018): path: /storage/emulated/0/新文件夹 parent: 0 storageID: 00010001
+V/MtpServer( 5018): sending response 2001
+
+
+
+=========================================================================
+
+== 文件夹改名 ==
+
+并没有操作指令，所以没有后续的一系列触发事件
+
+
+
+=========================================================================
+
+== 复制音乐文件 ==
+
+V/MtpServer( 2643): operation: MTP_OPERATION_SEND_OBJECT_INFO
+V/MtpServer( 2643): received data:
+V/MtpServer( 2643): handleRequest()............................ operation = 4108
+V/MtpServer( 2643): name: 岁月如歌.mp3 format: 3009
+D/MtpServer( 2643): path: /storage/emulated/0/aaaaaaaaaaa/岁月如歌.mp3 parent: 15 storageID: 00010001
+V/MtpServer( 2643): sending response 2001
+
+V/MtpServer( 2643): operation: MTP_OPERATION_SEND_OBJECT
+V/MtpServer( 2643): handleRequest()............................ operation = 4109
+V/MtpServer( 2643): receiving /storage/emulated/0/aaaaaaaaaaa/岁月如歌.mp3
+V/MtpServer( 2643): MTP_RECEIVE_FILE returned 0
+V/MtpServer( 2643): sending response 2001
+
+
+
+=========================================================================
+
+== 退出MTP ==
+
+V/MtpServer( 2643): request read returned -1, errno: 5       //此处代表拔出USB线
+V/MtpServer( 2643): sendStoreAdded 00010001
+V/MtpServer( 2643): MtpServer::run fd: 58
+
+

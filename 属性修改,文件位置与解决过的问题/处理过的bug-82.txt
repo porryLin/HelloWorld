@@ -1,0 +1,329 @@
+=========================================
+20140731 TTP-1243 : 视频通话中将“截图已保存入SD卡”改为“截图已保存”
+
+packages/apps/InCallUI/res/values-zh-rCN/mtk_strings.xml
+-    <string name="vt_pic_saved_to_sd">截图已保存入SD卡</string>
++    <string name="vt_pic_saved_to_sd">截图已保存</string>
+还有英语和繁体中文也修改了
+
+
+
+
+=========================================
+20140808 KRILLIN-753 & VEGETA-1707 : Catalonian wrong translation
+
+packages/apps/Settings/res/values-ca/mtk_arrays.xml
+
+
+
+
+=========================================
+20140811 TTP-4212 English mode, GPS location info translation errors in camera settings
+
+packages/apps/Camera/res/values-en-rGB/mtk_strings.xml
+-    <string name="pref_camera_record_location_title">"Store location"</string>
++    <string name="pref_camera_record_location_title">"GPS location info"</string>
+
+
+
+
+=========================================
+20140826 KRILLIN-780 VEGETA-1793 : Modify Welcom prompt size in German language
+
+packages/apps/Launcher3/res/layout-land/first_run_cling.xml
+            <TextView
+                style="@style/ClingAltTitleText"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_gravity="center_horizontal"
+                android:layout_marginBottom="10dp"
+                android:text="@string/first_run_cling_title"
+                android:textColor="#FFFFFFFF"
+                android:textSize="25sp"  //30sp -> 25sp ，一共有2处
+                android:gravity="center" />
+
+
+
+
+=========================================
+20140827 VEGETA-1816 : Add phone number with + doesn't work fine  44ca5ec
+
+packages/apps/Dialer/src/com/android/dialer/dialpad/LatinSmartDialMap.java
+public class LatinSmartDialMap implements SmartDialMap {
+         /**
+          * origin code: return ((ch >= '0' && ch <= '9');
+          */
+-        return ((ch >= '0' && ch <= '9') || ch == ',' || ch == ';');
++        return ((ch >= '0' && ch <= '9') || ch == ',' || ch == ';' || ch == '+'); //ckt-chunhui.lin, support "+"
+         /// M: @}
+     }
+
+
+
+
+=========================================
+20140902 VEGETA-1853 : Change the default wallpaper d0891af
+
+默认壁纸文件位置
+vendor/star_tic/vegetahd/bq/resource_overlay/generic/frameworks/base/core/res/res/drawable-nodpi/default_wallpaper.jpg
+vendor/star_tic/vegetahd/bq/resource_overlay/generic/frameworks/base/core/res/res/drawable-xhdpi/default_wallpaper.jpg
+
+
+
+静态壁纸位置
+packages/apps/Launcher3/res/values-nodpi/wallpapers.xml
+packages/apps/Launcher3/res/drawable
+试过将壁纸放在drawable_xxxhdi/目录下面，但是系统读取不到
+
+
+
+
+=========================================
+20140903 TTP-4202 TTP-4214 运动模式长按拍照同时按音量键的问题
+
+
+
+
+=========================================
+20140904 VEGETA-1877 : Reboot menu is incorrect
+
+frameworks/base/services/java/com/android/server/power/ShutdownThread.java
+                    sConfirmDialog = new AlertDialog.Builder(context)
+                    .setTitle(mRebootSafeMode
+                            ? com.android.internal.R.string.reboot_safemode_title
+                           : (mReboot ? com.android.internal.R.string.global_action_reboot :
+                              com.android.internal.R.string.power_off))
+                    .setMessage(mReboot ? com.android.internal.R.string.reboot_confirm : resourceId)
+
+frameworks/base/core/res/res/values-ca/strings.xml
+    <string name="global_action_reboot">"reprendre"</string>
+    <string name="global_action_screenshot">"imatges"</string>
+    <string name="reboot_confirm">"El telèfon es reiniciarà"</string>
+
+frameworks/base/core/res/res/values-es-rUS/strings.xml
+    <string name="global_action_reboot">Reiniciar</string>
+    <string name="reboot_confirm">EI teléfono se reiniciará</string>
+    <string name="global_action_screenshot">Captura de Pantalla</string>
+
+frameworks/base/core/res/res/values-zh-rHK/strings.xml
+    <string name="global_action_reboot">"重啟"</string>
+    <string name="global_action_screenshot">"截屏"</string>
+    <string name="reboot_confirm">"您的手機將會重啟"</string>
+
+frameworks/base/core/res/res/values-zh-rTW/strings.xml
+    <string name="global_action_reboot">"重啟"</string>
+    <string name="global_action_screenshot">"截屏"</string>
+    <string name="reboot_confirm">"您的手機將會重啟"</string>
+
+
+
+
+=========================================
+ TTP-5932 进入短信中添加拍摄录像时，音量键功能错乱
+
+packages/apps/Mms/src/com/android/mms/ui/SlideEditorActivity.java
+-->  public boolean onOptionsItemSelected(MenuItem item) {
+           case MENU_TAKE_PICTURE:  //拍照片的流程
+                MessageUtils.capturePicture(this, REQUEST_CODE_TAKE_PICTURE);
+                break;
+
+           case MENU_TAKE_VIDEO:  //拍摄视频的流程，需要限制大小
+                slide = mSlideshowModel.get(mPosition);
+                sizeLimit = ComposeMessageActivity.computeAttachmentSizeLimitForAppen(mSlideshowModel);
+                /// M: Code analyze 018, fix bug ALPS00241584, VideoRereveSize must > 10K. @{
+                if (sizeLimit > ComposeMessageActivity.MIN_SIZE_FOR_CAPTURE_VIDEO) {
+                /// @}
+                    MessageUtils.recordVideo(this, REQUEST_CODE_TAKE_VIDEO, sizeLimit);
+                } else {
+                    Toast.makeText(this,
+                            getString(R.string.message_too_big_for_video),
+                            Toast.LENGTH_SHORT).show();
+                }
+                break;
+     }
+
+packages/apps/Mms/src/com/android/mms/ui/MessageUtils.java
+
+-->  public static void capturePicture(Activity activity, int requestCode) { //拍照片的流程
+
+        /// M: Code analyze 027, new feature, to improve the performance of Mms by Hongduo Wang. @{
+        Intent intent = MmsConfig.getCapturePictureIntent();
+        /// @}
+        activity.startActivityForResult(intent, requestCode);
+    }
+
+-->  public static void recordVideo(Activity activity, int requestCode, long sizeLimit) { //拍视频的流程
+        // The video recorder can sometimes return a file that's larger than the max we
+        // say we can handle. Try to handle that overshoot by specifying an 85% limit.
+        // M: media recoder can handle this issue,so mark it.
+        //  sizeLimit *= .85F;
+            int durationLimit = getVideoCaptureDurationLimit();
+
+            Intent intent = new Intent(MediaStore.ACTION_VIDEO_CAPTURE);
+            intent.putExtra(MediaStore.EXTRA_VIDEO_QUALITY, 0);
+            intent.putExtra("android.intent.extra.sizeLimit", sizeLimit);
+            intent.putExtra("android.intent.extra.durationLimit", durationLimit);
+            /// M: Code analyze 009, For fix bug ALPS00241707, You can not add
+            // capture video to Messaging after you preview it in Gallery. @{
+            intent.putExtra(MediaStore.EXTRA_OUTPUT, TempFileProvider.SCRAP_VIDEO_URI);
+            /// M: fix bug ALPS01043585
+            intent.putExtra("CanShare", false);
+            activity.startActivityForResult(intent, requestCode);
+
+
+packages/apps/Mms/src/com/android/mms/MmsConfig.java
+-->  public static Intent getCapturePictureIntent(){
+        Intent intent = mMmsConfigPlugin.getCapturePictureIntent();
+        if(intent == null){
+            intent = new Intent(MediaStore.ACTION_IMAGE_CAPTURE);
+            intent.putExtra(MediaStore.EXTRA_OUTPUT, TempFileProvider.SCRAP_CONTENT_URI);
+        }
+        return intent;
+     }
+
+
+frameworks/base/core/java/android/provider/MediaStore.java
+--> public final static String ACTION_IMAGE_CAPTURE = "android.media.action.IMAGE_CAPTURE";
+--> public final static String ACTION_VIDEO_CAPTURE = "android.media.action.VIDEO_CAPTURE";
+
+
+
+打开照相机
+packages/apps/Camera/src/com/android/camera/Camera.java
+-->  public void onCreate(Bundle icicle) {
+        if (isVideoCaptureIntent() || isVideoWallPaperIntent()) {
+            mCameraActor = new VideoActor(this);
+        } else if (isStereo3DImageCaptureIntent() && FeatureSwitcher.isStereoSingle3d()) {
+            mCameraActor = new SingleStereoPhotoActor(this);
+        } else {
+            mCameraActor = new PhotoActor(this);
+        }
+     }
+
+-->  public boolean onKeyDown(int keyCode, KeyEvent event) {
+        // Do not handle any key if the activity is paused.
+        if (mPaused) {
+            return true;
+        }
+        if (isFullScreen() && KeyEvent.KEYCODE_MENU == keyCode && event.getRepeatCount() != 0
+                && mSettingManager.handleMenuEvent()) {
+            return true;
+        }
+        if (!mCameraActor.onKeyDown(keyCode, event)) { //调用不同的actor的onKeyDown方法
+            return super.onKeyDown(keyCode, event);
+        }
+        return true;
+     }
+
+packages/apps/Camera/src/com/android/camera/actor/PhotoActor.java    //拍照片的actor
+--> public boolean onKeyUp(int keyCode, KeyEvent event) {
+       //松开音量下键
+       case KeyEvent.KEYCODE_VOLUME_DOWN:
+		         switch (volumeFunction) {
+		             case SettingChecker.VOLUME_KEY_START_VIDEO:   //录相流程，开始录相
+		                   // 从短信添加拍照时 mCamera.isImageCaptureIntent() 的值为true
+		                   // 所以按音量键没反应，不会开始拍摄
+		                   if (mCamera != null && mCamera.getCameraDevice() != null && (mCamera.getCameraState() != Camera.STATE_SNAPSHOT_IN_PROGRESS)&&(mCamera.getCameraState() != Camera.STATE_PREVIEW_STOPPED)
+                          && mSelfTimerManager.isSelfTimerIdle() && !mCamera.isImageCaptureIntent()) {
+				                        mCamera.startVideo();
+			                 }
+				               return true;
+		             case SettingChecker.VOLUME_KEY_TAKE_PICTURE:	 //拍照流程，停止 拍照/连拍
+		                  	if(!mVolumeDownKeyLongPressed && mCamera.getShutterManager().isVideoShutterEnabled()){
+				                        shutterButtonClick(null);
+		            	              return true;
+			                  }
+			                  if (mDoingContinuous && mVolumeDownKeyLongPressed) {  // ckt xiezhangxing modify 20140521
+			                        mDoingContinuous=false;
+				                      mVolumeDownKeyLongPressed = false;
+			                        cancelContinuousShot();   //chunhui
+                  			}
+			                  onShutterButtonFocus(null, false);
+			                  return true;
+		             default:
+				                return true;
+		         }
+		     ...
+		}
+
+
+packages/apps/Camera/src/com/android/camera/actor/VideoActor.java
+-->  public boolean onKeyDown(int keyCode, KeyEvent event) {
+        case SettingChecker.VOLUME_KEY_TAKE_PICTURE:
+	         if (mCamera.isFullScreen() && !mVolumeKeyPressed && !mIsVideoSnapShot){
+	             //增加了这一判断后就无法在信息添加视频中拍照了
+			         if( !mCamera.isVideoCaptureIntent()){ //ckt zhangyan add :ttp 3865  when set the volume key to “take picture”，take viedo in the Messaging, the DUT pop up “unfortunately ，the Gallery has stopped”
+			              mPhotoShutterListener.onShutterButtonClick(null);
+			              mVolumeKeyPressed = true;
+				       }
+		       }
+		       return true;
+
+
+
+
+=========================================
+20140928  TTP-4228
+问题描述：图库停止运行
+预置条件：无
+操作步骤：1.开启屏幕录像，录制一段后保存
+          2.进入图库查看录像，退出后弹出“图库停止运行”
+预期结果：图库正常运行
+实际结果：图库报停
+发生几率：随机
+附：图片，日志
+
+packages/apps/Gallery2/src/com/android/gallery3d/ui/SynchronizedHandler.java
+--> dispatchMessage(Message message)
+
+packages/apps/Gallery2/src/com/android/gallery3d/app/AlbumSetDataLoader.java
+-->  mMainHandler = new SynchronizedHandler(activity.getGLRoot()) {
+            @Override
+            public void handleMessage(Message message) {
+                switch (message.what) {
+                    case MSG_RUN_OBJECT:
+                        ((Runnable) message.obj).run();
+                        return;
+
+-->  private class UpdateContent implements Callable<Void> {
+-->         public Void call() {
+                    mDataListener.onContentChanged(info.index);
+
+packages/apps/Gallery2/src/com/mediatek/gallery3d/util/MediatekFeature.java
+     // M: added for mtk plug-in
+-->  public static void prepareImageOptions(Context context) {
+        if (context == null) {
+            return;
+        }
+        if (sImageOptions == null) {
+            try {  //增加异常处理
+                sImageOptions = (IImageOptions) PluginManager.createPluginObject(
+                        context.getApplicationContext(), IImageOptions.class.getName());
+                Log.i(TAG,"prepareImageOptions:sImageOptions="+sImageOptions);
+            } catch (Plugin.ObjectCreationException e) {
+                e.printStackTrace();
+                Log.w(TAG,"prepareImageOptions:JE happened"+e);
+                sImageOptions = new ImageOptions();
+            }
+            sIsImageOptionsPrepared = true;
+        }
+    }
+
+W System.err: com.mediatek.pluginmanager.Plugin$ObjectCreationException: No such plugin 'com.mediatek.gallery3d.ext.IImageOptions' exist
+W System.err: 	at com.mediatek.pluginmanager.PluginManager.createPluginObject(SourceFile:126)
+W System.err: 	at com.mediatek.pluginmanager.PluginManager.createPluginObject(SourceFile:103)
+W System.err: 	at com.mediatek.pluginmanager.PluginManager.createPluginObject(SourceFile:86)
+W System.err: 	at com.mediatek.gallery3d.util.MediatekFeature.prepareImageOptions(MediatekFeature.java:884)
+W System.err: 	at com.mediatek.gallery3d.util.MediatekFeature.preferDisplayOriginalSize(MediatekFeature.java:244)
+W System.err: 	at com.android.gallery3d.data.LocalImage.getSubType(LocalImage.java:757)
+W System.err: 	at com.android.gallery3d.ui.AlbumSetSlidingWindow.updateAlbumSetEntry(AlbumSetSlidingWindow.java:321)
+W System.err: 	at com.android.gallery3d.ui.AlbumSetSlidingWindow.onContentChanged(AlbumSetSlidingWindow.java:414)
+
+
+还有可能是下面的错误信息导致的：
+07-25 16:33:23.519  2019  8099 W System.err: 	at com.mediatek.gallery3d.videothumbnail.VideoThumbnailDirector$PlayerHandler.run(VideoThumbnailDirector.java:409)
+
+
+
+
+=========================================

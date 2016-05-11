@@ -1,0 +1,32 @@
+Content-Type: text/x-zim-wiki
+Wiki-Format: zim 0.4
+Creation-Date: 2014-03-14T09:42:15+08:00
+
+====== 开机动画和音乐 ======
+Created Friday 14 March 2014
+
+== ====================================================================== ==
+
+开机图片——uboot阶段
+
+图片文件位置：lichee/tools/pack_brandy/chips/sun6i/configs/android/fiber-a31stm/bootlogo.bmp
+
+
+== ====================================================================== ==
+
+开机动画和音乐——android阶段
+
+动画和音乐文件位置：android/device/softwinner/fiber-a31stm/media/boot.wav
+                                           android/device/softwinner/fiber-a31stm/media/bootanimation.zip
+
+
+播放源码位置：android/frameworks/base/cmds/bootanimation/
+
+由init.rc调用： android/devices/softwinner/fiber-common/init.rc
+
+service bootanim /system/bin/bootanimation
+    class main
+    user graphics
+    group graphics
+    disabled
+    oneshot

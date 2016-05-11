@@ -1,0 +1,94 @@
+Content-Type: text/x-zim-wiki
+Wiki-Format: zim 0.4
+Creation-Date: 2014-06-23T15:17:04+08:00
+
+====== system-level和application-level的service ======
+Created Monday 23 June 2014
+
+
+==== system-level service ====
+ =====================================
+
+从Context.java 类中的抽象方法getSystemService() 的说明中可以看出：目前系统级别的service有 "window"， "layout_inflater"， "activity"， "power"， "alarm"， "notification"， "keyguard"， "location"，"search"， "vibrator"， "connection"， "wifi"， "input_method"， "uimode"，"download"
+后面还有好多个service，如"usb", "storage", "user"等，但是却没有添加在getSystemService()这个方法的说明里面，因此这里存在疑问
+
+
+system-level service 的调用：
+    context.getSystemService(name);
+     例子 ： mStorageManager = (StorageManager) context.getSystemService(Context.STORAGE_SERVICE);
+注：   Context.getSystemService() 是一个抽象方法，具体实现 在 ContextImpl.java 的方法 getSystemService() 中。
+
+
+system-level service 的创建：
+      在ContextImpl.java 类中有两个内部抽象类：StaticServiceFetcher 和 ServiceFetcher ，在抽象类中分别定义了抽象方法
+     createStaticService() {
+         //重写此方法创建 static service
+     }
+     createService() {
+         //重写此方法创建 service
+     }
+
+
+system-level service 的集合：
+     在ContextImpl.java 类中通过registerService() 将service添加到集合 SYSTEM_SERVICE_MAP ，
+     如果service 属于 ServiceFetcher 则队列 mContextCacheIndex + 1
+
+
+
+system-level service 的通信连接：
+     也是通过类似如下形式来创建客户端与服务端的通信连接的，不过不需要创建ServiceConnection, 也不需要使用 binService()
+    mMountService = IMountService.Stub.asInterface(ServiceManager.getService("mount"));
+
+
+
+======================================== 
+
+==== application service ====
+ =======================================
+frameworks/base/core/java/android/content/Context.java
+
+
+/**
+* 绑定服务，没有该服务则创建一个。
+* Connect to an application service, creating it if needed.
+* conn must not be null
+  */
+bindService(Intent service, ServiceConnection conn, int flags);     
+bindService(Intent service, ServiceConnection conn, int flags, int userHandle);
+
+
+
+/**
+* 启动服务，如果服务没有在运行则实例化一个服务然后启动，运行过程中报错的话服务会自动重启
+* If this service is not already running, it will be instantiated and started (creating a
+* process for it if needed); if it is running then it remains running.
+  *
+* 会自动触发目标service 的onStartCommand() 方法，如果需要实现的功能在该方法中定义了，则不需要再去调用bindService()
+  *
+* If any errors happen in the service's process, it will automatically be restarted.
+  */
+startService(Intent service);
+startServiceAsUser(Intent service, UserHandle user);
+
+
+
+/**
+* 断开绑定
+* Disconnect from an application service.  You will no longer receive
+* calls as the service is restarted, and the service is now allowed to
+* stop at any time.
+* conn must not be null
+  */
+unbindService(ServiceConnection conn);
+
+
+
+/**
+* 如果没有断开所有绑定 bindings，该服务并没有被销毁
+* Request that a given application service be stopped.  If the service is
+* not running, nothing happens.  Otherwise it is stopped.  Note that calls
+* to startService() are not counted -- this stops the service no matter
+* how many times it was started.
+  */
+stopServiceAsUser(Intent service, UserHandle user);
+stopService(Intent service);

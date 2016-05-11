@@ -1,0 +1,148 @@
+================共享文件
+\\10.240.2.185
+  共享文件地址
+  
+  
+\\10.240.3.0
+  公用帐号ckt密码cktckt
+  
+ERAPLUS服务器编译生成包位置
+  \\10.240.3.201\SW_Release\ERAPLUS02A\
+  ftp://10.240.3.201/SW_Release/spirit01A/P10_PM/CI/EV/IV/21_[]_HEAD/
+帐号 ：sw_downloader 密码：Swload1013$%
+
+苏海龙 (D22228) 2015-4-13 14:31:38
+
+@大家  可以上该服务器上去 userdebug版本和成都基线版本（s00a)  
+ftp://10.240.3.16/spirit/SPIRIT01A-S10A/L/Temp/
+================FTP
+  
+发布版本的FTP地址
+  ftp://10.240.3.16 用户名：softcs 密码：2088302
+  如下载QUARTZ的发布版本为  ftp://10.240.3.16/QUARTZ01A/QUARTZ01A-S10A/
+
+
+AOSP的学习资料
+  ftp://ftp.ck-telecom.com/VEGETA/VEGETAHD_AndroidL/
+
+虚拟机已经放到
+  ftp://ftp.ck-telecom.com/Android L/ 
+  vm_ubuntu_12.04.rar 镜像 
+  VMware-workstation-full-11.0.0-2305329.exe 工具
+帐号密码 softcs 2088302
+
+
+
+================公司内部网站
+WIKI网址
+http://10.240.3.117:8011/CKTWIKI/index.php/Telephony_Group
+帐号：chunhui.lin@ck-telecom.com 密码:888888
+
+
+西可百科
+http://10.240.3.117:8011/CKTWIKI/index.php/SmartPhone_Software_Team
+
+
+
+================编译用
+Jenkins
+  客户的Jenkins服务器我们平时也可以用来编译正式、临时版本，速度会比较快。
+  地址：http://10.240.3.5:8080/ 用户密码都是cktdev，
+  mtk-6582和mtk-6592分别对应82、92的仓库，
+  点击build with parameters，填写编译参数，注意branch和commit id只需要填写一个，
+  其他信息可以参考之前编译的版本。
+ 
+
+================BQ客户bug系统
+ JIRA
+   https://jira.bq.com/issues 帐号chunhui.lin 密码 chunhu1.j1r4# 新密码 linchv5
+
+
+联机登陆
+   D22246 zxc+
+
+
+================公司内部bug系统
+TTP
+  帐号 D22246 初始密码 123456 改为linchv5
+
+
+================MTK网站
+MTK首页
+  地址：http://online.mediatek.com/ 帐号：bright.han@ck-telecom.com 密码：dccckt
+
+  [FAQ11088] MTK BT Profile支持状况(用于KK版本的BQB认证表格填写）
+  [FAQ11310] 关闭 BT profile 的方法
+  [FAQ11126] Google 默认支持的 BT profile 
+  
+  我想第三方的电源调节工具都有标明需要root以后才能使用。
+  而第三方工具在root后无法获得root权限,是android 4.4设计上防root的一种方式，见以下MOL FAQ.
+  [FAQ11538] android KK 4.4 版本后，app 使用root(su) 权限受到严格限制说明
+  [FAQ11414] android KK 4.4 版本后，user 版本su 权限严重被限制问题说明
+
+  PDF加密文档的密码是 9621073404
+
+
+MTK eservice，请求MTK工程师支援
+  http://eportal.mediatek.com/eservice 帐号：cktsw 密码：scvj32
+
+  [ALPS01674217] KAITO的蓝牙profile支持确认： 
+
+
+MTK patch 下载网站
+  https://fex.mediatek.com/LoginWebUser.aspx?ReturnUrl=/DownloadFiles.aspx?DownloadId=b3FYM4A&DownloadId=b3FYM4A
+  cktelecom-4
+  ps:811112
+
+================github帐号
+porryLin
+porry.lin@qq.com
+zxc......
+
+
+================GMail帐号
+  porry.ch.lin@gmail.com
+  zxc......
+
+
+================163帐号
+  841207051@163.com
+  zxc790712
+  
+
+================VPN账户
+  f.vbtwo.info 
+  用户名：cktvpn
+  密码：test8888
+
+
+  Server address:   202.104.115.161
+  Username:    china4
+  Password:    chINa2966
+不选中 PPP encryption(MPPE) 
+
+
+================蓝牙官网
+  https://developer.bluetooth.org/TechnologyOverview/Pages/HOGP.aspx
+
+华为WIFI密码
+cktsoft777
+
+NEXUS5 密码 qwer
+
+打开mtkloger
+*#*#13646633#*#*
+
+
+测试要用出货正式版！！！
+
+
+将公司当成一个施展才华，提升自我的平台，而不是避风港！ ——林春辉 2014/12/4
+
+不满足公司给予的待遇或没有施展的平台时，自身做好准备果断撤。
+
+
+安全生产不松懈
+条例内容记心间
+十不
+保命！

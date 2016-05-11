@@ -1,0 +1,228 @@
+=======================================================================
+MTK平台
+
+1. 列出所有可以编译的平台
+   ./mk listp
+   例： banyan_addon_x86
+        krillin
+        vegetahd
+
+2. 第一次编译某个平台需要new/n
+   ./mk vegetahd new   
+
+3. 已编译过的平台可以用remake
+   ./mk vegetahd r
+  
+4. 单独编译kernel
+   ./mk r kernel
+   ./mk bootimage
+
+5. 编译单个模块
+   例编译mediatek/custom/bulma/hal/imgsensor/ov13850_mipi_raw
+   ./mk n dr libcameracustom          //编译得到libcameracustom.so库
+
+6. 使用flash_tool工具烧录
+
+
+
+编译完之后打包的命令
+mk ckt_release
+
+
+=======================================================================
+高通平台
+
+一.下载/更新/上传代码
+   MODEM 部分
+   1. modem 可以直接用git下载： git clone szgit@10.240.2.41:msm8939_kk_modem
+   2. 更新代码：git pull --rebase
+   3. 创建本地分支：git branch a_sw3_testing remotes/origin/a_sw3_testing
+   4. 提交代码：git push origin a_sw3_testing:a_sw3_testing
+   
+   AP 部分
+   1. AP部分用repo下载： repo init -u szgit@10.240.2.41:msm/platform/manifest.git  --repo-url=szgit@10.240.2.41:git-repo.git  -b release -m cd_a_baseline_LNX.LA.3.7.3.1-02710-8939.0.xml
+   2. 更新代码： repo sync   
+   3. repo仓库查看分支名：
+      在android/.repo/manifest.xml 里面<default remote="origin" revision="a_sw3_testing" sync-c="true"/>
+   4. repo仓库变更分支：
+      repo init -u szgit@10.240.2.41:msm/platform/manifest.git  --repo-url=szgit@10.240.2.41:git-repo.git  -b release -m a_sw3_testing_LNX.LA.3.7.3.1-02710-8939.0.xml
+   5. 提交代码： 以package/apps/Settings为例：
+                 1) repo start settings  package/apps/Settings
+                 2) 进入 package/apps/Settings
+                 3) git add / git commit
+                 4) git push 提交代码， 也可以用repo upload提交
+
+二.如何编译，整体编译和单模块编译
+   1. 将MODEM代码复制到AP中： 
+   将 msm8939_kk_modem/LINUX/android/vendor/qcom/proprietary 复制到 android/vendor/qcom/下面
+   2. 1) cp android
+      2) . build/envsetup.sh
+      3) lunch
+      4) make
+      
+三.如何烧录设备
+   1. cd out/target/product/msmxxx/
+   2. 不用关机，通过USB连接到PC端
+   3. adb reboot-bootloader 
+   4. fastboot flash boot boot.img
+      fastboot flash aboot emmc_appsboot.mbn
+      fastboot flash system system.img
+      fastboot flash userdata userdata.img
+      fastboot flash persist persist.img
+      fastboot flash recovery recovery.img
+      fastboot flash cache cache.img
+      fastboot flash splash splash.img
+      fastboot reboot
+   5. 如果烧录成功，自动开机  
+
+四.知道配置文件的位置
+
+
+五.知道overlay目录的位置
+时间格式/默认值等
+android/device/qcom/mirage01a_msm8916_64/overlay/
+字符串等
+android/vendor/qcom/proprietary/qrdplus/globalization/multi-language/res-overlay/
+
+预置APK位置
+LINUX\android\vendor\third-party
+
+请同时打开三个DOC窗口，分别输入下面三条命令同时抓取log
+adb logcat -v time -b main >d:/log_main.log
+adb logcat -v time -b radio>d:/log_ radio.log
+adb logcat -v time -b events >d:/log_events.log
+
+苏海龙
+用repo status 或者 repo forall -p -c git status 遍历一下 修改了那些模块
+
+分支切换：
+Modem部分 git checkout xxx分支
+AP部分 repo forall -p -c git checkout xxx分支
+
+
+张亚强 在代码中区分项目
+String product = SystemProperties.get("ro.build.product");
+if（product.contains("mirage01a")）
+if（product!=null && product.contains("mirage01a")）
+
+
+android/device/qcom/spirit_msm8916_64/BoardConfig.mk
+
+
+常用串号：
+*#*#620000#*#*可以root
+*#166*#                        高通手机FactoryKit串号
+*#*#610000#*#*                 高通手机查看DeviceInfo
+*#18375#                       高通查询外部版本号
+*#29826633#                    高通查询内部版本号
+*#*#564548#*#*                 高通手机Logkit串号
+
+解决编译打包OTA时tmp空间不足问题，/xxx/tmp/为另外一个磁盘的路径
+sudo rsync -aXS --exclude='/*/.gvfs' /tmp/.   /xxx/tmp/. 
+sudo mv /tmp/ /tmp_old/
+sudo ln -sf /xxx/tmp/  /tmp
+=======================================================================
+搜索速度快的指令
+grep -r "XXX" ./ --exclude-dir=.git --exclude-dir=out --exclude-dir=.repo
+find -type f -name "*.xml" | xargs grep " "
+
+
+=======================================================================
+张亚强(D22249) 2014-11-12 17:22:40
+
+ mmm packages/apps/Camera2/ 2>&1 | tee log.txt
+ 编译时加  2>&1 | tee log.txt  可以在根目录下生成编译log信息
+
+make -j8 2>&1 | tee build.log
+
+
+=====================================================
+代码中不能使用tab 须使用空格代替tab 
+设置方法： 
+1、SourceInsight3.5设置TAB键替换为空格的方法为： 
+Options－>Document Options－>勾选Expand tabs，并设置Tab witdh为4。 
+2、UltraEdit11.0设置TAB键替换为空格的方法为： 
+高级－>配置－>编辑－>勾选“使用空格代替制表符”，并设置“制表符宽度值”为4，设置“缩进空格数”为4。 
+
+====================================================
+代码注释
+(1) 新增代码必须增加修订注释。 
+正确示例： 
+/* Begin: Added by yaqiang.zhang for <项目名>_<缺陷ID号>_功能简述 日期*/ 
+    ......(add source code) 
+/* End: Added by yaqiang.zhang for <项目名>_<缺陷ID号>_功能简述 日期*/ 
+
+(2) 修改代码必须增加修订注释。 
+/* Begin: Modified by yaqiang.zhang for <项目名>_<缺陷ID号>_功能简述 日期*/ 
+//original source code .....(new add source code) 
+/* End: Modified by yaqiang.zhang for <项目名>_<缺陷ID号>_功能简述 日期*/ 
+
+说明： 
+1）姓名表示：必须是姓的第一个字母加名字的全拼。 
+2）功能简述：可简单描述一下新加的功能和修改的功能 。 
+3）修改Bug必须注明缺陷管理的ID号。 
+  
+(3) 删除代码必须增加修订注释。 
+/* Begin: Deleted by yaqiang.zhang for <项目名>_<缺陷ID号>_功能简述 日期*/ 
+/* original source code 
+*/ 
+/* End: Deleted by yaqiang.zhang for <项目名>_<缺陷ID号>_功能简述 日期*/ 
+
+下面是我加的按键背光灯的功能  搜 __KEYPAD_LIGHT__ 包含的代码就是按键背光灯的代码 方便查找  方便移植
+    /*--Begin: yaqiang.zhang add __KEYPAD_LIGHT__, 20141104--*/
+    private int mKeyBoardLightTimeout;
+    IntentFilter mFilter;
+    /*--End: yaqiang.zhang add __KEYPAD_LIGHT__, 20141104--*/
+    
+===================================================
+陈玉成(D22240) 2014-11-13 10:35:01
+Eclipse编码格式
+
+请将Eclipse编码格式设为UTF-8格式，设置方法如下： 
+window->Preferences->general->Workspace，右 侧Text file encoding，选择Other，改变为UTF-8，以后新建立工程其属性对话框中的Text file encoding即为UTF-8.
+window->Preferences->general->Content Types，右侧Context Types树，点开Text，选择Java Source File，在下面的Default encoding输入框中输入UTF-8，点Update，则设置Java文件编码为UTF-8。其他java应用开发相关的文件如： properties、XML等已经由Eclipse缺省指定，分别为ISO8859-1，UTF-8，如开发中确需改变编码格式则可以在此指定。
+
+请将Eclipse行定义格式设为Unix格式，设置方法如下： 
+window->preferences->general->workspace->New text file line delimiter 设置为Unix。 
+
+Android模板和格式模板文件设置
+设置的方法如下： 
+Java代码风格设置 
+Window->preferences->Java->Code Style->Organize Imports 导入android.imported
+Window->preferences->Java->Code Style->Formatter导入android-formatting.xml
+注：android.imported文件和android-formatting.xml文件可从将源码目录\development \ide\eclipse 获得。格式化Java代码的快捷方式是：选中修改的代码然后ctrl+shift+f。 
+
+C/C++代码风格设置 
+window->preferences->C/C++->Code style中选择内建配置文件GNU风格。 
+注：代码编辑时Tab键自动转成2个空格；保存后，Eclipse会自动将行末尾和空行中多余的空格去除。 
+
+Tab与空格
+程序中不允许出现Tab符号，所有的Tab需用4个空格来代替，请用如下方法配置：
+Window->Preferences->General->Editors->Text Editors->Insert spaces for tabs 
+XML文件的Tab格式也需要单独配置一下，用如下方法配置:
+Window->Preferences->XML->XML Files->Editor
+
+
+
+======================log 查看打开的activity==============
+D/ActivityThread( 2230): ACT-AM_ON_PAUSE_CALLED ActivityRecord{41fa59f8 token=android.os.BinderProxy@41fa5b20 {com.android.settings/com.android.settings.accounts.ChooseAccountActivity}}
+D/ActivityThread( 2230): ACT-PAUSE_ACTIVITY_FINISHING handled : 0 / android.os.BinderProxy@41fa5b20
+D/ActivityThread( 2230): ACT-SHOW_WINDOW handled : 0 / android.os.BinderProxy@420a2440
+D/ActivityThread( 2405): SVC-Creating service: CreateServiceData{token=android.os.BinderProxy@41f3a028 className=com.skype.android.service.AccountService packageName=com.skype.rover intent=null}
+D/ActivityThread( 2405): SVC-CREATE_SERVICE handled : 0 / CreateServiceData{token=android.os.BinderProxy@41f3a028 className=com.skype.android.service.AccountService packageName=com.skype.rover intent=null}
+
+
+D/MessageQueue( 3194): Dump Message in Queue (1): { when=-40s100ms what=114 obj=CreateServiceData{token=android.os.BinderProxy@41e88378 className=com.facebook.katana.platform.FacebookAuthenticationService packageName=com.facebook.katana intent=null} target=android.app.ActivityThread$H target=Handler (android.app.ActivityThread$H) {41e7a150} }
+D/MessageQueue( 3194): Dump Message in Queue (2): { when=-40s132ms what=121 obj=BindServiceData{token=android.os.BinderProxy@41e88378 intent=Intent { act=android.accounts.AccountAuthenticator cmp=com.facebook.katana/.platform.FacebookAuthenticationService }} target=android.app.ActivityThread$H target=Handler (android.app.ActivityThread$H) {41e7a150} }
+D/ActivityThread( 3194): installProvider: context.getPackageName()=com.facebook.katana
+D/ActivityThread( 3194): installProvider: context.getPackageName()=com.facebook.katana
+
+
+[SPIRIT01A-S10A][REQ][.]
+[SPIRIT01A-S10A][REQ][.]
+
+
+
+spirit
+TP:cypress_TMA463,ttconfig_ver:17
+LCD goworld_1080p_video_mode_dsi_panel

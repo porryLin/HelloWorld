@@ -1,0 +1,132 @@
+UserSettings.java
+--> onCreate();
+        mAddUser = findPreference(KEY_ADD_USER);
+        mAddUser.setOnPreferenceClickListener(this);
+        
+--> onPreferenceClick();
+       else if (pref == mAddUser) {
+            showDialog(DIALOG_CHOOSE_USER_TYPE);
+       }
+
+--> onCreateDialog();
+       onAddUserClicked(which == 0 ? USER_TYPE_USER : USER_TYPE_RESTRICTED_PROFILE);
+
+--> onAddUserClicked();
+       case USER_TYPE_RESTRICTED_PROFILE:
+            if (hasLockscreenSecurity()) {
+                   addUserNow(USER_TYPE_RESTRICTED_PROFILE);
+            } else {
+                    showDialog(DIALOG_NEED_LOCKSCREEN); //如果没有设置锁屏，则先锁屏
+            }
+             break;
+
+--> addUserNow();
+private void addUserNow(final int userType) {
+        synchronized (mUserLock) {  //是否代码执行完就自动解锁？
+            mAddingUser = true;
+            //updateUserList();
+            new Thread() {
+                public void run() {
+                    UserInfo user = null;
+                    // Could take a few seconds
+                    if (userType == USER_TYPE_USER) {
+                        user = createTrustedUser();   //创建受信任的用户
+                    } else {
+                        user = createLimitedUser();   //创建受限制的用户
+                    }
+                    synchronized (mUserLock) {
+                        mAddingUser = false;
+                        if (userType == USER_TYPE_USER) {
+                            mHandler.sendEmptyMessage(MESSAGE_UPDATE_LIST);
+                            mHandler.sendMessage(mHandler.obtainMessage(
+                                    MESSAGE_SETUP_USER, user.id, user.serialNumber));
+                        } else {
+                            mHandler.sendMessage(mHandler.obtainMessage(
+                                    MESSAGE_CONFIG_USER, user.id, user.serialNumber));
+                        }
+                    }
+                }
+            }.start();
+        }
+}
+
+--> createLimitedUser(); //创建受限制的用户
+    private UserInfo createLimitedUser() {
+        UserInfo newUserInfo = mUserManager.createUser(
+                getResources().getString(R.string.user_new_profile_name),
+                UserInfo.FLAG_RESTRICTED);
+        int userId = newUserInfo.id;
+        UserHandle user = new UserHandle(userId);
+        mUserManager.setUserRestriction(UserManager.DISALLOW_MODIFY_ACCOUNTS, true, user);
+        mUserManager.setUserRestriction(UserManager.DISALLOW_SHARE_LOCATION, true, user);
+        Secure.putStringForUser(getContentResolver(),
+                Secure.LOCATION_PROVIDERS_ALLOWED, "", userId);
+        Bitmap bitmap = BitmapFactory.decodeResource(getResources(),
+                UserSettings.USER_DRAWABLES[
+                        userId % UserSettings.USER_DRAWABLES.length]);
+        mUserManager.setUserIcon(userId, bitmap);
+        // Add shared accounts
+        AccountManager am = AccountManager.get(getActivity());
+        Account [] accounts = am.getAccounts();
+        if (accounts != null) {
+            for (Account account : accounts) {
+                am.addSharedAccount(account, user);
+            }
+        }
+        return newUserInfo;
+    }
+    
+--> createTrustedUser();   //创建受信任的用户
+    private UserInfo createTrustedUser() {
+        UserInfo newUserInfo = mUserManager.createUser(
+                getResources().getString(R.string.user_new_user_name), 0);
+        if (newUserInfo != null) {
+            assignDefaultPhoto(newUserInfo);
+        }
+        return newUserInfo;
+    }
+    
+--> handleMessage(); //处理创建用户后的信息
+    private Handler mHandler = new Handler() {
+        @Override
+        public void handleMessage(Message msg) {
+            switch (msg.what) {
+            case MESSAGE_UPDATE_LIST:
+                updateUserList();
+                break;
+            case MESSAGE_SETUP_USER:
+                onUserCreated(msg.arg1);
+                break;
+            case MESSAGE_CONFIG_USER:
+                onManageUserClicked(msg.arg1, true); //true表示创建新用户，创建后再去设置就是false
+                break;
+            }
+        }
+    };
+    
+--> onManageUserClicked(); //配置受限制的用户
+       Bundle extras = new Bundle();
+       extras.putInt(RestrictedProfileSettings.EXTRA_USER_ID, userId);
+       extras.putBoolean(RestrictedProfileSettings.EXTRA_NEW_USER, newUser);
+       ((PreferenceActivity) getActivity()).startPreferencePanel(
+                RestrictedProfileSettings.class.getName(),
+                extras, R.string.user_restrictions_title, null,
+                null, 0);
+
+
+PreferenceActivity.java
+--> startPreferencePanel();
+
+
+RestrictedProfileSettings.java
+--> 至此打住，待续
+
+-->
+
+-->
+
+-->
+
+-->
+
+-->

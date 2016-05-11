@@ -1,0 +1,12 @@
+Content-Type: text/x-zim-wiki
+Wiki-Format: zim 0.4
+Creation-Date: 2014-02-26T10:16:06+08:00
+
+====== Goole官网 ======
+Created Wednesday 26 February 2014
+
+CTS测试
+http://source.android.com/compatibility/cts-development.html#setting-up-eclipse
+
+增加节点权限白名单的修改 /dev/pvr_sync
+https://android.googlesource.com/platform/cts/+/6a4d9871135f249f7278d8d9b2698df90cd8ebe0%5E!/

@@ -1,0 +1,119 @@
+Content-Type: text/x-zim-wiki
+Wiki-Format: zim 0.4
+Creation-Date: 2014-06-23T16:48:15+08:00
+
+====== 开机启动流程 ======
+Created Monday 23 June 2014
+
+
+上电，运行uboot 引导系统启动
+
+在uboot中判断启动模式（正常开机模式or recovery模式）
+
+==============================================================================
+
+== 正常开机模式 ==
+
+挂载 boot.img
+
+boot.img 由 ramdisk.img + kernel 生成
+
+ramdisk.img 由 out 目录下的 /root  生成，里面创建了 /system,  /data 等空目录，存在 init.rc 等文件 （类似于 linux的文件系统，根目录为 /， 其他目录都在根目录下面）
+
+启动 init 进程，系统开始跑到Android部分（init 是用户空间第一个进程，之前跑的一直都是内核空间部分）
+
+init进程解析 init.rc 等后缀名为 rc 的文件，运行其中的 vold service，进行分区的挂载
+
+将 system, data 等分区挂载到 /system,  /data等目录下面
+
+
+
+
+=======================================================================
+
+== recovery模式 ==
+
+挂载 recovery.img
+
+recovery.img 由 ramdisk-recovery.img + kernel 生成
+
+ramdisk-recovery.img 由 out 目录下的 /recovery 生成， recovery 目录下面同样有个以 /root 为根目录的文件系统，进入recovery模式需要用到的文件都在里面
+
+接下来启动 init 进程，解析 recovery 模式下的 init.rc 等 rc 文件
+
+init.rc 中存在这么一句：service recovery /sbin/recovery
+
+运行 recovery 这个 service，该可执行文件的位置在  /out/target/product/fiber-a31stm/recovery/root/sbin/recovery
+
+recovery 由 android/bootloader/recovery 目录下面的源码编译生成，入口函数为 recovery.cpp 的main 函数
+
+--> recovery.cpp
+int  main(int argc, char **argv) {
+        ...
+        load_volume_table();  // 根据 /out/target/product/fiber-a31stm/recovery/root/etc/recovery.fstab 来挂载分区
+        ...
+        if (update_package != NULL) {          //升级
+                    status = install_package(update_package, &wipe_cache, TEMPORARY_INSTALL_FILE); 
+         } else if (wipe_data) {
+                 // 擦除data
+         }  else if (wipe_cache) {
+                 // 擦除缓存
+         }  else if(wipe_full){
+                 // 全部擦除
+        } else if (!just_exit) {
+                // 不做操作，退出
+        }
+        finish_recovery(send_intent);      // 我们要在 recovery 模式中做的事情已经完成，可以清除掉recovery指令了，为下一次开机进入正常启动模式做准备
+        ...
+        property_set(ANDROID_RB_PROPERTY, "reboot,"); // 重启，到这里recovery 模式结束
+        ...
+}
+
+--> install.cpp
+int install_package(const char* path, int* wipe_cache, const char* install_file)
+{
+        ...
+        really_install_package(path, wipe_cache);
+        ...
+}
+static int really_install_package(const char *path, int* wipe_cache)
+{
+        Certificate* loadedKeys = load_keys(PUBLIC_KEYS_FILE, &numKeys);     // 加载key
+        err = verify_file(path, loadedKeys, numKeys);        // 根据加载的key 验证升级包中的签名 key是否一致
+        err = VERIFY_SUCCESS;          // FIXME 由于添加了 /data分区的第三方APK，key验证不通过，所以强制让验证通过
+        ...
+        err = mzOpenZipArchive(path, &zip);   // 打开升级包 update.zip
+        return try_update_binary(path, &zip, wipe_cache);      
+}
+static int  try_update_binary(const char *path, ZipArchive *zip, int* wipe_cache)
+ {
+         ...
+         const char* binary = "/tmp/update_binary";   //将升级包中的可执行文件/META-INF/com/google/android/update_binary 复制到 tmp目录下面，该文件用于解析和执行升级脚本updater-script
+         pid_t pid = fork();           //接着fork出两个进程，父进程用来执行解析升级脚本，子进程用来显示升级过程中的UI显示
+         if (pid == 0) {
+             close(pipefd[0]);
+             execv(binary, (char* const*)args);
+             fprintf(stdout, "E:Can't run %s (%s)\n", binary, strerror(errno));
+             _exit(-1);
+          }
+         close(pipefd[1]);
+         ...
+        return INSTALL_SUCCESS;
+}
+ 
+
+
+
+== 第四步：init进程: ==
+
+Action/Service 	描述
+on early-init 	设置init进程以及它创建的子进程的优先级，设置init进程的安全环境
+on init 	设置全局环境，为cpu accounting创建cgroup(资源控制)挂载点
+on fs 	挂载mtd分区
+on post-fs 	改变系统目录的访问权限
+on post-fs-data 	改变/data目录以及它的子目录的访问权限
+on boot 	基本网络的初始化，内存管理等等
+service servicemanager 	启动系统管理器管理所有的本地服务，比如位置、音频、Shared preference等等…
+service zygote 	启动zygote作为应用进程
+
+在这个阶段你可以在设备的屏幕上看到“Android”logo了。

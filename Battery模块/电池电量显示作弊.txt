@@ -1,0 +1,90 @@
+Content-Type: text/x-zim-wiki
+Wiki-Format: zim 0.4
+Creation-Date: 2014-06-23T09:33:25+08:00
+
+====== 电池电量显示作弊 ======
+Created Monday 23 June 2014
+
+作弊原因：电量在100%～90%的使用时间比90%～0%的使用时间少，所以想延长90%～100%这个的使用时间，这种作弊方法只是简单的让显示电量与实际电量不成正比而已。
+会导致一个bug：90%～80%的使用时间非常短，90%～100%的充电时间非常长。
+
+
+lichee/tools/pack_brandy/chips/sun6i/configs/android/fiber-a31stm/sys_config.fex 
+
+@@ -1459,8 +1459,8 @@ pmu_used                   = 1
+ pmu_twi_addr               = 0x34
+ pmu_twi_id                 = 1
+ pmu_irq_id                 = 0
+-pmu_battery_rdc            = 100
+-pmu_battery_cap            = 0
++pmu_battery_rdc            = 120
++pmu_battery_cap            = 3150
+ pmu_batdeten               = 1
+ pmu_runtime_chgcur         = 900
+ pmu_earlysuspend_chgcur    = 1650
+@@ -1476,36 +1476,36 @@ pmu_init_chg_csttime       = 720
+ pmu_batt_cap_correct       = 1
+ pmu_bat_regu_en            = 0
+ 
+-pmu_bat_para1              = 1
+-pmu_bat_para2              = 1
+-pmu_bat_para3              = 1
+-pmu_bat_para4              = 2
+-pmu_bat_para5              = 4
+-pmu_bat_para6              = 4
+-pmu_bat_para7              = 6
+-pmu_bat_para8              = 7
+-pmu_bat_para9              = 8
+-pmu_bat_para10             = 9
+-pmu_bat_para11             = 11
+-pmu_bat_para12             = 12
+-pmu_bat_para13             = 15
+-pmu_bat_para14             = 23
+-pmu_bat_para15             = 32
+-pmu_bat_para16             = 45
+-pmu_bat_para17             = 48
+-pmu_bat_para18             = 52
+-pmu_bat_para19             = 56
+-pmu_bat_para20             = 59
+-pmu_bat_para21             = 61
+-pmu_bat_para22             = 65
+-pmu_bat_para23             = 71
+-pmu_bat_para24             = 75
+-pmu_bat_para25             = 80
+-pmu_bat_para26             = 83
+-pmu_bat_para27             = 87
+-pmu_bat_para28             = 90
+-pmu_bat_para29             = 92
+-pmu_bat_para30             = 94
++pmu_bat_para1              = 0
++pmu_bat_para2              = 0
++pmu_bat_para3              = 0
++pmu_bat_para4              = 0
++pmu_bat_para5              = 0
++pmu_bat_para6              = 0
++pmu_bat_para7              = 0
++pmu_bat_para8              = 0
++pmu_bat_para9              = 1
++pmu_bat_para10             = 1
++pmu_bat_para11             = 1
++pmu_bat_para12             = 2
++pmu_bat_para13             = 2
++pmu_bat_para14             = 8
++pmu_bat_para15             = 15
++pmu_bat_para16             = 20
++pmu_bat_para17             = 26
++pmu_bat_para18             = 36
++pmu_bat_para19             = 42
++pmu_bat_para20             = 46
++pmu_bat_para21             = 51
++pmu_bat_para22             = 55
++pmu_bat_para23             = 61
++pmu_bat_para24             = 67
++pmu_bat_para25             = 73
++pmu_bat_para26             = 77
++pmu_bat_para27             = 81
++pmu_bat_para28             = 85
++pmu_bat_para29             = 88
++pmu_bat_para30             = 92
+ pmu_bat_para31             = 96
+ pmu_bat_para32             = 100

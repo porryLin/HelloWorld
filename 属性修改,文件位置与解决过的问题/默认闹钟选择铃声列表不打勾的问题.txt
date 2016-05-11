@@ -1,0 +1,96 @@
+Packages 目录有一个 DeskClock.apk,
+GMS 包里面有一个 DeskClockGoogle.apk
+
+出问题的是 DeskClockGoogle.apk
+
+原因是uri值错误
+mExistingUri = intent.getParcelableExtra(RingtoneManager.EXTRA_RINGTONE_EXISTING_URI);
+打印得到  mExistingUri = content://settings/system/alarm_alert
+
+正确的uri值应该是  mExistingUri = content://media/internal/audio/media/9
+
+
+
+在Clock中通过发送一个intent来调用铃声选择列表：
+
+AlarmClockFragment.java
+--> launchRingTonePicker();
+    mSelectedAlarm = alarm;
+    Uri oldRingtone = Alarm.NO_RINGTONE_URI.equals(alarm.alert) ? null : alarm.alert;
+    final Intent intent = new Intent(RingtoneManager.ACTION_RINGTONE_PICKER);
+    intent.putExtra(RingtoneManager.EXTRA_RINGTONE_EXISTING_URI, oldRingtone);
+    intent.putExtra(RingtoneManager.EXTRA_RINGTONE_TYPE, RingtoneManager.TYPE_ALARM);
+    intent.putExtra(RingtoneManager.EXTRA_RINGTONE_SHOW_DEFAULT, false);
+    startActivityForResult(intent, REQUEST_CODE_RINGTONE);
+
+
+RingtoneManager.java
+    public static final String ACTION_RINGTONE_PICKER = "android.intent.action.RINGTONE_PICKER";
+
+AndroidManifest.xml
+        <activity android:name="RingtonePickerActivity"
+                android:theme="@*android:style/Theme.Holo.Dialog.Alert"
+                android:configChanges="orientation|screenSize"
+                android:excludeFromRecents="true">
+            <intent-filter>
+                <action android:name="android.intent.action.RINGTONE_PICKER" />
+                <category android:name="android.intent.category.DEFAULT" />
+            </intent-filter>
+        </activity>
+        
+RingtonePickerActivity.java
+--> onPrepareListView(ListView listView)
+    {
+        if (mHasMoreRingtonesItem) {  //false
+            mMoreRingtonesPos = addMoreRingtonesItem(listView);
+        }
+        
+        if (mHasDefaultItem) {        //false
+            mDefaultRingtonePos = addDefaultRingtoneItem(listView);
+
+            if (RingtoneManager.isDefault(mExistingUri)) {
+                mClickedPos = mDefaultRingtonePos;
+            }
+        }
+
+        if (mHasSilentItem) {         //true
+            mSilentPos = addSilentItem(listView);
+
+            // The 'Silent' item should use a null Uri
+            if (mExistingUri == null) {
+                mClickedPos = mSilentPos;
+            }
+        }
+
+        if (mClickedPos == POS_UNKNOWN) {        //true
+            /// M: if the given uri not exist, show default ringtone.
+            if (RingtoneManager.isRingtoneExist(getApplicationContext(), mExistingUri)) {
+                mClickedPos = getListPosition(mRingtoneManager.getRingtonePosition(mExistingUri));
+                // ckt-chunhui, If no ringtone has been checked, show default instead.
+                if (mClickedPos == POS_UNKNOWN) {  //由于返回的值为-1，所以给它重新赋值
+                    if (mHasDefaultItem) {
+                          mClickedPos = mDefaultRingtonePos;
+                    } else {
+                          mClickedPos = getListPosition(mRingtoneManager.getRingtonePosition(
+                                   RingtoneManager.getDefaultRingtoneUri(getApplicationContext(), mType)));
+                    }
+                }
+            } else {
+                if (mHasDefaultItem) {
+                    mClickedPos = mDefaultRingtonePos;
+                } else {
+                    mClickedPos = getListPosition(mRingtoneManager.getRingtonePosition(
+                            RingtoneManager.getDefaultRingtoneUri(getApplicationContext(), mType)));
+                }
+                
+            }
+        }
+        
+        // Put a checkmark next to an item.
+        mAlertParams.mCheckedItem = mClickedPos;
+    }
+    
+
+RingtoneManager.java
+--> getRingtonePosition();
+一直跑到最后的 return -1;

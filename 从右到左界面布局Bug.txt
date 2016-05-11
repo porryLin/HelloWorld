@@ -1,0 +1,369 @@
+Content-Type: text/x-zim-wiki
+Wiki-Format: zim 0.4
+Creation-Date: 2014-03-10T17:26:15+08:00
+
+====== 从右到左界面布局Bug ======
+Created Monday 10 March 2014
+
+=== 问题描述： ===
+開啟強制使用從右到左的布局方向，重啟後反復彈出進程”com.android.systemui"已停止運行的強制關閉。
+當設置語言為語言列表中倒數第八或第九種語言后(任何一种从右到左布局的语言都会)，重啟幾台反復彈出抱歉進程”com.android.systemui"已停止運行的強制關閉信息。
+Steps:
+1.進入設置
+2.點擊關於平板電腦->連續點擊版本號7下調出開發者選項
+3.打開開發者選項開啟“強制使用從右到左的布局方向”
+4.重啟後觀察界面顯示
+
+=== Log信息： ===
+
+=== 原因分析： ===
+由于导航键中的音量+、- 按钮不是Google默认的，是全志加的，从右到左布局忘记添加了，才会导致报错。
+
+=== 解决方法： ===
+android4.4/frameworks/base/packages/SystemUI/res/layout-ldrtl/navigation_bar.xml
+
+<com.android.systemui.statusbar.phone.NavigationBarView
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:systemui="http://schemas.android.com/apk/res/com.android.systemui"
+    android:layout_height="match_parent"
+    android:layout_width="match_parent"
+    android:background="@drawable/system_bar_background"
+    >
+
+    <FrameLayout android:id="@+id/rot0"
+        android:layout_height="match_parent"
+        android:layout_width="match_parent"
+        >
+
+        <LinearLayout
+            android:layout_height="match_parent"
+            android:layout_width="match_parent"
+            android:orientation="horizontal"
+            android:clipChildren="false"
+            android:clipToPadding="false"
+            android:id="@+id/nav_buttons"
+            android:animateLayoutChanges="true"
+            >
+
+            <!-- navigation controls -->
+            <View
+                android:layout_width="40dp"
+                android:layout_height="match_parent"
+                android:layout_weight="0"
+                android:visibility="invisible"
+                />
++			<com.android.systemui.statusbar.policy.KeyButtonView android:id="@+id/volume_down"
++               android:layout_width="@dimen/navigation_key_width"
++               android:layout_height="match_parent"
++				android:layout_weight="0"
++                android:scaleType="center"
++                android:src="@drawable/ic_sysbar_volume_down"
++                systemui:keyCode="25"
++                systemui:glowBackground="@drawable/ic_sysbar_highlight"
++                />
+				
+            <com.android.systemui.statusbar.policy.KeyButtonView android:id="@+id/back"
+                android:layout_width="@dimen/navigation_key_width"
+                android:layout_height="match_parent"
+                android:src="@drawable/ic_sysbar_back"
+                systemui:keyCode="4"
+                android:layout_weight="0"
+                android:scaleType="center"
+                systemui:glowBackground="@drawable/ic_sysbar_highlight"
+                android:contentDescription="@string/accessibility_back"
+                />
+            <View 
+                android:layout_width="match_parent"
+                android:layout_height="match_parent"
+                android:layout_weight="1"
+                android:visibility="invisible"
+                />
+            <com.android.systemui.statusbar.policy.KeyButtonView android:id="@+id/home"
+                android:layout_width="@dimen/navigation_key_width"
+                android:layout_height="match_parent"
+                android:src="@drawable/ic_sysbar_home"
+                systemui:keyCode="3"
+                systemui:keyRepeat="false"
+                android:layout_weight="0"
+                systemui:glowBackground="@drawable/ic_sysbar_highlight"
+                android:contentDescription="@string/accessibility_home"
+                />
+            <View 
+                android:layout_width="match_parent"
+                android:layout_height="match_parent"
+                android:layout_weight="1"
+                android:visibility="invisible"
+                />
+            <com.android.systemui.statusbar.policy.KeyButtonView android:id="@+id/recent_apps"
+                android:layout_width="@dimen/navigation_key_width"
+                android:layout_height="match_parent"
+                android:src="@drawable/ic_sysbar_recent"
+                android:layout_weight="0"
+                systemui:glowBackground="@drawable/ic_sysbar_highlight"
+                android:contentDescription="@string/accessibility_recent"
+                />
++			<com.android.systemui.statusbar.policy.KeyButtonView android:id="@+id/volume_up"
++                android:layout_width="@dimen/navigation_key_width"
++                android:layout_height="match_parent"
++				android:layout_weight="0"
++                android:scaleType="center"
++                android:src="@drawable/ic_sysbar_volume_up"
++                systemui:keyCode="24"
++                systemui:glowBackground="@drawable/ic_sysbar_highlight"
++                />
+            <com.android.systemui.statusbar.policy.KeyButtonView android:id="@+id/menu"
+                android:layout_width="@dimen/navigation_menu_key_width"
+                android:layout_height="match_parent"
+                android:src="@drawable/ic_sysbar_menu"
+                systemui:keyCode="82"
+                android:layout_weight="0"
+                android:visibility="invisible"
+                android:contentDescription="@string/accessibility_menu"
+                systemui:glowBackground="@drawable/ic_sysbar_highlight"
+                />
+        </LinearLayout>
+
+        <!-- lights out layout to match exactly -->
+        <LinearLayout
+            android:layout_height="match_parent"
+            android:layout_width="match_parent"
+            android:orientation="horizontal"
+            android:id="@+id/lights_out"
+            android:visibility="gone"
+            >
+            <ImageView
+                android:layout_width="80dp"
+                android:layout_height="match_parent"
+                android:layout_marginStart="40dp"
+                android:src="@drawable/ic_sysbar_lights_out_dot_small"
+                android:scaleType="center"
+                android:layout_weight="0"
+                />
+            <View 
+                android:layout_width="match_parent"
+                android:layout_height="match_parent"
+                android:layout_weight="1"
+                android:visibility="invisible"
+                />
+            <ImageView
+                android:layout_width="80dp"
+                android:layout_height="match_parent"
+                android:src="@drawable/ic_sysbar_lights_out_dot_large"
+                android:scaleType="center"
+                android:layout_weight="0"
+                />
+            <View 
+                android:layout_width="match_parent"
+                android:layout_height="match_parent"
+                android:layout_weight="1"
+                android:visibility="invisible"
+                />
+            <ImageView
+                android:layout_width="80dp"
+                android:layout_marginEnd="40dp"
+                android:layout_height="match_parent"
+                android:src="@drawable/ic_sysbar_lights_out_dot_small"
+                android:scaleType="center"
+                android:layout_weight="0"
+                />
+        </LinearLayout>
+
+        <com.android.systemui.statusbar.policy.KeyButtonView
+            android:layout_width="80dp"
+            android:id="@+id/search_light"
+            android:layout_height="match_parent"
+            android:layout_gravity="center_horizontal"
+            android:src="@drawable/search_light"
+            android:scaleType="center"
+            android:visibility="gone"
+            android:contentDescription="@string/accessibility_search_light"
+            />
+
+        <com.android.systemui.statusbar.policy.DeadZone
+            android:id="@+id/deadzone"
+            android:layout_height="match_parent"
+            android:layout_width="match_parent"
+            systemui:minSize="@dimen/navigation_bar_deadzone_size"
+            systemui:maxSize="@dimen/navigation_bar_deadzone_size_max"
+            systemui:holdTime="@integer/navigation_bar_deadzone_hold"
+            systemui:decayTime="@integer/navigation_bar_deadzone_decay"
+            systemui:orientation="horizontal"
+            android:layout_gravity="top"
+            />
+    </FrameLayout>
+
+    <FrameLayout android:id="@+id/rot90"
+        android:layout_height="match_parent"
+        android:layout_width="match_parent"
+        android:visibility="gone"
+        android:paddingTop="0dp"
+        >
+
+        <LinearLayout 
+            android:layout_height="match_parent"
+            android:layout_width="match_parent"
+            android:orientation="vertical"
+            android:clipChildren="false"
+            android:clipToPadding="false"
+            android:id="@+id/nav_buttons"
+            android:animateLayoutChanges="true"
+            >
+            
+            <!-- navigation controls -->
++			<com.android.systemui.statusbar.policy.KeyButtonView android:id="@+id/volume_down"
++				android:layout_height="80dp"
++				android:layout_width="match_parent"
++				android:src="@drawable/ic_sysbar_volume_down"
++				systemui:keyCode="25"
++				android:layout_weight="0"
++				systemui:glowBackground="@drawable/ic_sysbar_highlight"
++				/>
+            <com.android.systemui.statusbar.policy.KeyButtonView android:id="@+id/menu"
+                android:layout_height="40dp"
+                android:layout_width="match_parent"
+                android:src="@drawable/ic_sysbar_menu_land"
+                systemui:keyCode="82"
+                android:layout_weight="0"
+                android:visibility="invisible"
+                android:contentDescription="@string/accessibility_menu"
+                systemui:glowBackground="@drawable/ic_sysbar_highlight_land"
+                />
+            <com.android.systemui.statusbar.policy.KeyButtonView android:id="@+id/back"
+                android:layout_height="80dp"
+                android:layout_width="match_parent"
+                android:src="@drawable/ic_sysbar_back_land"
+                android:scaleType="center"
+                systemui:keyCode="4"
+                android:layout_weight="0"
+                android:contentDescription="@string/accessibility_back"
+                systemui:glowBackground="@drawable/ic_sysbar_highlight_land"
+                />
+            <View
+                android:layout_height="match_parent"
+                android:layout_width="match_parent"
+                android:layout_weight="1"
+                android:visibility="invisible"
+                />
+            <com.android.systemui.statusbar.policy.KeyButtonView android:id="@+id/home"
+                android:layout_height="80dp"
+                android:layout_width="match_parent"
+                android:src="@drawable/ic_sysbar_home_land"
+                systemui:keyCode="3"
+                systemui:keyRepeat="false"
+                android:layout_weight="0"
+                android:contentDescription="@string/accessibility_home"
+                systemui:glowBackground="@drawable/ic_sysbar_highlight_land"
+                />
+            <View 
+                android:layout_height="match_parent"
+                android:layout_width="match_parent"
+                android:layout_weight="1"
+                android:visibility="invisible"
+                />
+            <com.android.systemui.statusbar.policy.KeyButtonView android:id="@+id/recent_apps"
+                android:layout_height="80dp"
+                android:layout_width="match_parent"
+                android:src="@drawable/ic_sysbar_recent_land"
+                android:layout_weight="0"
+                android:contentDescription="@string/accessibility_recent"
+                systemui:glowBackground="@drawable/ic_sysbar_highlight_land"
+                />
+            <View
+                android:layout_height="40dp"
+                android:layout_width="match_parent"
+                android:layout_weight="0"
+                android:visibility="invisible"
+                />
++			<com.android.systemui.statusbar.policy.KeyButtonView android:id="@+id/volume_up"
++				android:layout_height="80dp"
++				android:layout_width="match_parent"
++				android:src="@drawable/ic_sysbar_volume_up"
++				systemui:keyCode="25"
++				android:layout_weight="0"
++				systemui:glowBackground="@drawable/ic_sysbar_highlight"
++				/>
++            <View
++                android:layout_height="40dp"
++                android:layout_width="match_parent"
++                android:layout_weight="0"
++                android:visibility="invisible"
++                />
+        </LinearLayout>
+
+        <!-- lights out layout to match exactly -->
+        <LinearLayout 
+            android:layout_height="match_parent"
+            android:layout_width="match_parent"
+            android:orientation="vertical"
+            android:id="@+id/lights_out"
+            android:visibility="gone"
+            >
+            <ImageView
+                android:layout_height="80dp"
+                android:layout_marginTop="40dp"
+                android:layout_width="match_parent"
+                android:src="@drawable/ic_sysbar_lights_out_dot_small"
+                android:scaleType="center"
+                android:layout_weight="0"
+                />
+            <View 
+                android:layout_height="match_parent"
+                android:layout_width="match_parent"
+                android:layout_weight="1"
+                android:visibility="invisible"
+                />
+            <ImageView
+                android:layout_height="80dp"
+                android:layout_width="match_parent"
+                android:src="@drawable/ic_sysbar_lights_out_dot_large"
+                android:scaleType="center"
+                android:layout_weight="0"
+                />
+            <View 
+                android:layout_height="match_parent"
+                android:layout_width="match_parent"
+                android:layout_weight="1"
+                android:visibility="invisible"
+                />
+            <ImageView
+                android:layout_height="80dp"
+                android:layout_marginBottom="40dp"
+                android:layout_width="match_parent"
+                android:src="@drawable/ic_sysbar_lights_out_dot_small"
+                android:scaleType="center"
+                android:layout_weight="0"
+                />
+        </LinearLayout>
+
+        <com.android.systemui.statusbar.policy.KeyButtonView
+            android:id="@+id/search_light"
+            android:layout_height="80dp"
+            android:layout_width="match_parent"
+            android:layout_gravity="center_vertical"
+            android:src="@drawable/search_light"
+            android:scaleType="center"
+            android:visibility="gone"
+            android:contentDescription="@string/accessibility_search_light"
+            />
+
+        <com.android.systemui.statusbar.policy.DeadZone
+            android:id="@+id/deadzone"
+            android:layout_height="match_parent"
+            android:layout_width="match_parent"
+            systemui:minSize="@dimen/navigation_bar_deadzone_size"
+            systemui:maxSize="@dimen/navigation_bar_deadzone_size_max"
+            systemui:holdTime="@integer/navigation_bar_deadzone_hold"
+            systemui:decayTime="@integer/navigation_bar_deadzone_decay"
+            systemui:orientation="vertical"
+            android:layout_gravity="top"
+            />
+    </FrameLayout>
+
+    <!-- not used -->
+    <View android:id="@+id/rot270"
+        android:layout_height="match_parent"
+        android:layout_width="match_parent"
+        android:visibility="gone"
+        />
+
+</com.android.systemui.statusbar.phone.NavigationBarView>

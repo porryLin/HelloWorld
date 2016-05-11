@@ -1,0 +1,155 @@
+Content-Type: text/x-zim-wiki
+Wiki-Format: zim 0.4
+Creation-Date: 2014-04-14T19:21:33+08:00
+
+====== MTP in Android ======
+Created Monday 14 April 2014
+
+
+MTP in Android
+
+经作者同意，转发我们公司MTP专家同事huirong的一篇文章。大家也可在程序员第5期看到。
+
+=====================================================================================
+
+MTP的全称是Media Transfer Protocol（媒体传输协议），它是微软公司提出的一套媒体文件传输协议。Android从3.0开始支持MTP。不过，在今天的智能手机领域内，Google和微软是一对冤家，为什么Android中会使用MTP呢？请看下文。
+一  背景知识介绍
+
+笔者相信《程序员》杂志的绝大多数读者或多或少都使用过MTP。因为早在智能手机普及前，数码相机和MP3播放器等都使用了MTP的前身PTP（Picture Transfer Protocol）进行媒体文件传输。那时，只要通过USB数据线把它们连接上Windows操作系统，就能在“我的电脑“中见到这些设备了。此后，用户可以把它们当做U盘一样使用，例如对其进行目录、文件的浏览和拷贝等操作。
+
+既然可以通过MTP把智能设备当作U盘使用，那么它和我们常用的USB大容量存储（USB Mass Storage，简称UMS）有何不同呢？
+
+    UMS模式下，PC操作存储设备的粒度是设备块（FAT block），而非文件系统。什么意思？此处举一个简单例子。当Android手机通过UMS将sdcard挂载到PC后，PC就拥有对sdcard的绝对控制权。这样，手机就无法同时访问sdcard了。这种做法带来的后果就是Camera或Music程序将因没有外部存储空间而提示无法进行操作（注意，有些厂商的手机对此进行过修改，使得Camera能短时间录制一部分视频到内部存储空间）。这也是Android早期版本中一个很明显的特点。另外，由于PC在操作sdcard时可能弄坏其文件系统，这将导致sdcard重新挂载到手机后不能被识别。
+    如果Android手机的sdcard以MTP模式挂载到PC机上，sdcard的控制权其实还是属于手机。只不过智能手机通过MTP协议向PC机构建了一个虚拟文件系统。PC机操作其中的文件时，都会通过标准MTP协议向智能手机发起请求。另外，Android把MTP功能集成在MediaProvider[1]中，其好处是PC机操作（例如拷贝或删除等）媒体文件时，媒体数据都会及时更新到媒体数据库中。而UMS模式下，当sdcard挂载回手机后，Android还得花较长时间重新扫描媒体文件以更新媒体数据库。
+
+MTP的好处还有很多，例如它可判断PC机拷贝的媒体文件是否受目标手机支持，甚至可以触发对应的转码程序将其转换成手机支持的格式。不过和UMS相比，MTP也有不足之处：
+
+    传输大文件的速度较慢。
+    MTP不能直接修改文件本身。只能先拷贝到本地修改，完毕后再拷贝回去。
+    除了Windows外，Linux和MacOS对MTP支持还不是很完善。
+
+
+=====================================================================================
+下面我们将介绍MTP协议。
+1.1  MTP协议介绍
+
+根据协议，MTP的使用者包括两个部分，分别是Initiator和Responder。如图1-1所示：
+
+图1-1  Initiator和Responder图示
+
+由图1-1可知：
+
+    Initiator：主要是指USB Host，例如PC机，笔记本等。协议规定所有MTP操作只能由Initator发起。
+    Responder：一般是诸如数码相机、智能手机等存储媒体文件的设备。Responder在MTP中的作用就是处理Initator发起的请求。同时，它还会根据自身状态的变化发送Event以通知Initiator。
+
+注意：后文我们将统一以PC代表Initiator，Android手机代表Responder。
+
+与很多协议一样，MTP也有自己的协议栈，如图1-2所示：
+
+图1-2  MTP协议栈
+
+由图1-2可知，MTP协议栈由下到上分别是：
+
+    Pyshical Layer（物理层）：物理层在MTP协议中用来传输数据。目前有三种物理层可供MTP使用。它们分别是USB：其主要特点是传输文件，同步媒体文件时速度快，而且可以边工作边充电，这是目前用的最多的一种方式；IP：基于IP的MTP（简称MTP/IP）将通过UPnP来匹配和发现设备。它是家庭网络中是最理想的传输方式；Bluetooth：MTP/BT是最省电，同时也是速度最慢的一种传输方式，用处较少。
+    传输层：MTP中，数据传输格式遵循PTP协议
+    命令层：实现了MTP协议中的各种命令。
+
+如上文所述，MTP采用命令-应答方式来工作（Initator发送命令给Responder处理，Responser反馈处理结果），这种方式的主要特点有：
+
+    所有MTP命令均以Package（数据包）的方式在设备两端进行传递。
+    Initiator必须接收到前一条消息的处理结果（不论是成功还是超时）后，才能发送下一条消息。
+
+下面我们将以PC通过MTP打开一个文件为例，按顺序介绍其中涉及到几个主要MTP命令：
+
+    当设备第一次连接上PC后，Initiator（即PC）首先会发送一个名为GetDeviceInfo的请求以获取设备的信息，这些信息包括设备所支持PTP版本的程度，以百分号表示（默认是100）、所支持的MTP命令（Operation Supported）、所支持的Event类型等。
+    接着PC端会发送OpenSession命令以创建一个会话，该会话一直保持到设备从PC上断开为止。此后所有命令（除GetDeviceInfo命令外）必须在此会话存活期间才能发送。会话在MTP协议中由SessionID来标识，它是一个32位的无符号整型，由PC选择并传给手机。
+    PC端如果要进行文件操作的话，必须从根目录开始定位目标文件。由于Windows的特殊性，手机内部存储卡在windows系统中显示为盘符。注意，如果手机内部有两块存储卡的话（如内部存储卡和外部sd卡），Windows中会显示为两个盘符。PC端需要通过GetStorageIDs命令返回某个盘符对应的StorageID。在MTP中，StorageID是一个32位无符号整型，每一个StorageID代表了一个逻辑盘符。
+    PC端可以根据上一步的StorageID号，利用GetStorageInfo操作去获取存储设备的信息，例如剩余存储空间、文件系统类型、访问权限等。
+    接着，PC就会通过GetObjectHandles命令来获取此盘符下的文件和子目录的Object Handles（一个Object Handle代表一个文件或目录。该值由Responder生成并保证唯一性）。有了Object Handle，PC就可以操作这些文件或目录了，例如继续通过GetObjectHandles获取某个目录中子文件和子目录的信息。
+    假设现在需拷贝一个文件到手机上，那么PC会通过SendObjectInfo命令将文件信息（如文件名、文件大小）等传递给手机。而手机需要检查目标目录是否有足够的空间和对应权限。
+    如果一切正常，PC将通过SendObject把数据传递给手机。真正写文件到设备存储空间的则是手机中的Responder。Android实现的MTP还会在媒体文件传输完毕后，将信息更新到媒体数据库中。
+    除此之外，PC还可利用SetObjectPropValue 命令来设置文件的各种属性值，如Audio BitRate（比特率），Sample Rate（采样率），Number Of Channels（声道）等。
+
+以上为读者描述了MTP使用的一个简单案例。至于其中的各种MTP命令，读者不妨阅读参考文献1，即《MTP Specification v1.0.pdf》。协议对各种命令都有非常精确的描述，例如表1-1，表1-2所示为GetDeviceInfo命令，返回值定义。其参数类型，传递方向都有详细解释（不得不说，和Linux比起来，微软的开发/技术文档做得相当到位）。
+
+
+1.2  OS对MTP的支持及认证
+
+MTP协议既然由微软提出，理所当然，Windows对其支持自然是不遗余力。目前Windows操作系统中，MTP和多媒体框架紧密结合，并且已经成为Windows Media框架中的重要一部分。如WMP10(Windows Media Player 10)和WMP11均内置对MTP功能，其中WMP11还新增对Playlist和Album art的支持。
+
+微软除了提出MTP协议并在Windows操作系统中提供大力支持外，它对使用MTP协议的设备也有所管理。所有标称支持MTP协议的设备，必须通过微软的测试WLK（Windows Logo Kit）。WLK测试通过的设备可以获得一个徽标。关于WLK测试的详细信息，请读者参考http://msdn.microsoft.com/zh-cn/library/windows/hardware/gg487530.aspx。从以上链接中也能下载到wpdmon，它是MTP开发中最常用的测试工具，可显示出所有PC与手机进行MTP操作时发送的命令、数据及返回值。图1-3为笔者测试某台Android手机的MTP功能时用wpdmon截获的信息示意图：
+
+图1-3  wpdmon工具使用示意图
+
+
+=====================================================================================
+
+下面我们来看MTP在Android平台中的实现。
+二  Android中的MTP
+
+== Android从3.0开始集成MTP功能，主要原因有三个: ==
+
+    手机要支持UMS的话，必须有一个sd卡，因为sd卡往往采用Windows支持的分区格式。如果想把内部存储空间通过UMS挂载到Windows上，则内部存储空间需采用特定的分区格式。这对某些手机而言根本不可行。因为内部存储空间本身可能是一个设备，它们采用统一的分区格式。不能因为需要使用UMS，而再增加一块特定分区格式的存储设备。
+    UMS挂载到PC后，PC操作系统拥有绝对控制权。此时，Android系统将无法操作这些设备。根据前文举的Camera例子而言，这对越来越高级的Android版本而言是不可接受的。
+    另外一个不可忽略的事实就是Windows操作系统在普通劳动人民那儿依然占据极高的市场份额。这恐怕也是明知Linux、MacOS对MTP支持力度不够，Android也要集成它的一个重要原因吧。
+
+2.1  Android中MTP的代码架构
+
+要使用MTP功能，首先需要在设置中启用USB连接模式为MTP，如图1-4所示：
+
+图1-4  Settings中的MTP设置
+
+图1-4所示为参考机（Android 4.1版本）中“USB连接模式”设置。该操作实际上会触发USB驱动做相应变动。本文不拟讨论其中的过程，读者可参考手机中init.platform-name.usb.rc文件以查看Android系统中USB的模式设置。从目前市面上发布的数款Android 4.0及后续版本的机型来看，MTP/PTP大有取代UMS的趋势。
+
+根据前文所述，Android中的MTP和已有的MediaProvider模块结合紧密，以更好体现“Media Transfer”的特性。其主要结构如图1-5所示：
+
+图1-5  Android MTP架构图
+
+由图1-5可知,Android MTP架构由下到上分别是：
+
+    C++层包括几个主要对象，如MtpRequestPacke负责从USB驱动读取数据，并结构化命令格式及其参数、MtpDataPacket负责结构化手机要返回给PC的数据包、MtpResponsePacket负责结构化手机要给PC返回的response。MtpServer负责解析来自PC的命令并调用相应的接口函数进行处理。
+    Java层包括UsbReceiver、MtpService、MtpServer等对象。其中UsbReceiver用来监视USB事件，判断何时启动或停止MtpService。MtpService负责启动MtpServer和加载存储设备的信息到数据库。MtpServer负责通过jni接口去启动/停止C++层中MtpServer以及处理Storage的添加和删除。MediaProvider则负责查询和更新数据库。MtpDatabase名字虽然叫Database，但实际功能用于在MediaProvider和MtpServer之间转换数据格式。例如把MTP传递过来的信息（如文件大小、文件路径等）转换成MediaProvider需要的格式以方便其更新数据库。
+
+下面我们来看MTP的工作流程。
+2.2  MTP流程分析
+
+我们先来看MTP模块启动的流程，如图1-6所示：
+
+图1-6  MTP主要模块启动流程
+
+由图1-6可知：
+
+    当手机连上usb线后，UsbReceiver会收到来自系统的USB_STATE广播事件。接着它需要从UsbManager中查询USB的链接状态，MTP的设置信息和PTP的设置信息。当用户设置为使用MTP模式时，UsbReceiver将通过startService函数启动MtpService。
+    MtpService启动，在其onStartCommand中将创建MtpDatabase对象和MtpServer对象。
+    UsbReceiver同时通过insert一条特殊uri（值为“content://media/none/mtp_connected”）的方式，触发MdiaProvder调用MtpService的bindService函数。这样，MediaProvider和MtpService就建立了紧密联系。
+
+MtpServer是Android平台中MTP协议处理的核心模块，它会单独启动一个线程用于接收PC端的命令，其代码如图1-7所示：
+
+图1-7  MtpServer run函数代码片段
+
+由图1-7可知，MtpServer不断从文件描述符读取请求，然后调用handleRequest进行处理。最后把处理结果返回给对端。
+
+从这段代码读者可以发现，Android MTP命令层和物理层之间的耦合度较低，这样也方便将来实现MTP/IP功能。
+
+接下来我们看看PC端发送SendObjectInfo的处理流程，如图1-8所示：
+
+图1-8  sendObjectInfo处理流程图
+
+由图1-8可知SendObjectInfo的处理流程大体步骤如下：
+
+    PC发SendObjectInfo命令给MtpServer。MtpServer需要检查存储设备剩余空间、可支持的最大文件大小。如果一切正常的话，它会通过MediaProvider的insert函数往媒体数据库中加入一条数据项。
+    接着PC通过SendObject将文件内容传递给给MtpServer。而MtpServer就会创建该文件，并把数据写到文件中。
+    当文件数据发送完毕，MtpServer调用endSendObject。而endObject则会触发MediaScanner进行媒体文件扫描。当然，扫描完后，该文件携带的媒体信息（假如是MP3文件的话，则会把专辑信息、歌手、流派、长度等内容）加入到媒体数据库中。
+
+通过对SendObjectInfo描述，我们也可看出，Android充分利用了其平台本身的特性，真正将媒体传输协议和媒体文件扫描恰到好处得结合起来，从而发挥了MTP最大功效。
+
+=====================================================================================
+三  总结
+
+本文主要对Android中的MTP进行了相关介绍。虽然MTP协议由微软提供，但因为历史原因，其使用程度相当广泛，以至于Android也提供了最基本的MTP实现。
+
+当然，如果要做到真正实用并通过微软认证，手机厂商还需要在此基础上做进一步的开发。结合笔者自己的使用经历，国外大牌手机厂商例如Sony、Samsung、Nokia等对MTP的支持相当到位。相比而言，国内手机厂商的起步稍微晚一点，需要投入更多的精力才能超越。另外，随着无线技术的普及，MTP基于IP的实现也将极大方便用户的使用。笔者在此希望大家能一起努力，早日让用户从USB数据线中解放出来。
+
+
+
+

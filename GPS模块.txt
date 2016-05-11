@@ -1,0 +1,460 @@
+Content-Type: text/x-zim-wiki
+Wiki-Format: zim 0.4
+Creation-Date: 2014-07-09T10:25:21+08:00
+
+====== GPS模块 ======
+Created Wednesday 09 July 2014
+
+
+GPS不能用的问题，可能是gps信息服务器不通
+
+在下面这篇论坛中说了更换gpsconfig.xml 和 gps.conf 两个文件后将OK了
+http://www .transformerforums .com/forum/transformer-prime-help/15421-gps-working-tf201-running-ics-4-0-3-a.html
+请看底楼。我英文看的也不是很明了。好像那个人替换了acer a500里面的gpsconfig.xml和gps.conf两个文件后。能搜到11，12颗星，状态时绿的。
+
+在CS1中打的Patch如下：（解决testGetProvider、 testGetProviders两个CTS Fail项）
+1.
+---------- android4.4/device/softwinner/fiber-a31stm/fiber_a31stm.mk ----------
+index 7ce2ff7..22ab64e 100755
+@@ -44,6 +44,14 @@ PRODUCT_COPY_FILES += \
+ 	external/bluetooth/bluedroid/conf/bt_vendor.conf:system/etc/bluetooth/bt_vendor.conf \
+ 	device/softwinner/fiber-a31stm/bcm40183b2.hcd:system/vendor/modules/bcm40183b2.hcd
+ 
++# gps
++PRODUCT_COPY_FILES += \
++	device/softwinner/fiber-a31stm/gps/gps.exdroid.so:system/lib/hw/gps.exdroid.so \
++	device/softwinner/fiber-a31stm/gps/glgps:system/bin/glgps \
++	device/softwinner/fiber-a31stm/gps/gpslogd:system/bin/gpslogd \
++	device/softwinner/fiber-a31stm/gps/gpsconfig.xml:system/etc/gps/gpsconfig.xml \
++	device/softwinner/fiber-a31stm/gps/gps.conf:system/etc/gps.conf
+
+2.
+------------ android4.4/device/softwinner/fiber-a31stm/gps/glgps -------------
+new file mode 100644
+index 0000000..87b28cc
+Binary files /dev/null and b/android4.4/device/softwinner/fiber-a31stm/gps/glgps differ
+
+3.
+------------ android4.4/device/softwinner/fiber-a31stm/gps/gps.conf ------------
+new file mode 100644
+index 0000000..eae2850
+@@ -0,0 +1 @@
++NTP_SERVER=pool.ntp.org
+
+XTRA_SERVER_1=http://gllto.glpals.com/7day/v3/latest/lto2.dat
+
+XTRA_SERVER_2=http://gllto.glpals.com/7day/v3/latest/lto2.dat
+
+XTRA_SERVER_3=http://gllto.glpals.com/7day/v3/latest/lto2.dat
+
+SUPL_HOST=supl.google.com
+
+SUPL_PORT=7276
+
+\ No newline at end of file
+
+4.
+--------- android4.4/device/softwinner/fiber-a31stm/gps/gps.exdroid.so ---------
+new file mode 100644
+index 0000000..69796ca
+Binary files /dev/null and b/android4.4/device/softwinner/fiber-a31stm/gps/gps.exdroid.so differ
+
+5.
+--------- android4.4/device/softwinner/fiber-a31stm/gps/gpsconfig.xml ---------
+new file mode 100644
+index 0000000..ff18aba
+@@ -0,0 +1,320 @@
++<?xml version="1.0" encoding="utf-8"?>
++<glgps xmlns="http://www.glpals.com/" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://www.glpals.com/ glconfig.xsd" >
++  <!--HAL Confguration  -->
++  
++  <hal 
++    acPortName="/dev/ttyS1"
++    lBaudRate="115200"
++    gpioNStdbyPath="/sys/class/gps/standby"
++    gpioNResetPath="/sys/class/gps/reset"
++       gpioDelayMs="250"
++       acNvStoDir="/data/gps/"
++       acLogDirectory="/data/gps/log/"
++       cLogEnabled="false"
++       gpslogdPipePath="/data/gps/.gpslogd.pipe"
++       arp-supl-enable="false"
++       arp-supl-cap-msb="true"
++       arp-supl-cap-msa="true"
++       arp-supl-cap-ecid="false"
++       arp-supl-use-apn="false"
++       acSuplServer="supl.google.com"
++       SuplPort="7276"
++       SuplMinorVersion="1"
++       SuplVersion="1"
++       tlsEnable="false"
++       tlsCertPath="/data/gps/cacertqa1.pem"
++       tlsStopForInvPath="true"
++       arp-supl-ssl-method="TLSv1"
++       arp-supl-ssl-verify="peer"
++       SuplLogEnable="true"
++       SuplLogFullName="/data/gps/log/supllog.txt"
++       LbsEnable="true"
++       LbsLocal="false"
++       LbsServer="lbs.glpals.com"
++       LbsPort="80"
++       LbsSyncLto="false"
++       SyncLto="true"
++       ltoFileName="lto2.dat"
++       acLtoDir="/data/gps/"
++       LbsSyncLtoThresholdDays="3"
++       acNmeaOutName="/data/gps/nmea"
++       ctrlPipe="/data/gps/glgpsctrl"
++	   LbsTAC="10107100"
++  />
++
++  <hal 
++       SensorsTimePeriodGyroMs="20"
++       SensorsTimePeriodAcclMs="20"
++  />
++
++  <gll 
++       LogPriMask="LOG_DEBUG"
++       LogFacMask="LOG_GLLAPI | LOG_NMEA"
++       FrqPlan="FRQ_PLAN_26MHZ_2PPM"
++       RfType="GL_RF_47511_BRCM_EXT_LNA"
++       WarmStandbyTimeout1Seconds="10"
++       WarmStandbyTimeout2Seconds="15"
++  />
++
++
++<!-- List of jobs can be performed by the GPS controller    -->
++
++<!-- Periodic Position Fix using default settings -->
++<job Id="Periodic">
++    <task>
++        <req_pos/>
++    </task>
++</job>
++
++<!-- Periodic Position with the ROM almanac Ignored for simulator testing -->
++<job Id="Simulator_Periodic">
++    <task Id="cont" Repeat="1">
++        <startup IgnoreRomAlm="true" />
++        <req_pos ValidFixes="2000" DurationSec="4500"/>      
++    </task>
++</job>
++
++<!-- This job must be performed before any systematic tests  -->
++<job Id="CollectAlmanac">
++    <task Repeat="1">
++        <startup
++            IgnoreOsc="true"
++            IgnoreRomAlm="true"
++            IgnoreRamAlm="true"
++            IgnorePosition="true"
++            IgnoreNav="true"
++            IgnoreTime="true"
++        />
++        <req_pos ValidFixes="800"/>
++    </task>
++</job>
++
++<!-- This job must be performed every time the GPS simulator scenario is reset  -->
++<job Id="CollectEphemeris">
++    <task Repeat="1">
++        <startup
++            IgnoreOsc="true"
++            IgnoreRomAlm="true"
++            IgnoreRamAlm="true"
++            IgnorePosition="true"
++            IgnoreNav="true"
++            IgnoreTime="true"
++        />
++        <req_pos ValidFixes="200"/>
++    </task>
++</job>
++
++<!--  Systematic Test: Repetitive cold starts -->
++<job Id="Cold_Starts">
++    <task Repeat="20">
++        <startup
++            IgnoreOsc="false"
++            IgnoreRomAlm="false"
++            IgnoreRamAlm="false"
++            IgnorePosition="true"
++            IgnoreNav="true"
++            IgnoreTime="true"
++        />
++        <req_pos ValidFixes="1"/>
++    </task>
++</job>
++
++<!-- Systematic Test: Repetitive cold starts with the ROM almanac Ignored for 
++        simulator testing -->
++<job Id="Simulator_Cold_Starts">
++    <task Repeat="20">
++            <startup
++                IgnoreOsc="false"
++                IgnoreRomAlm="true"
++                IgnoreRamAlm="false"
++                IgnorePosition="true"
++                IgnoreNav="true"
++                IgnoreTime="true"
++            />
++        <req_pos ValidFixes="1"/>
++    </task>
++</job>
++
++<!-- Systematic Test: Repetetive warm starts  
++     Stored ephemeris data is discarded before the start begins
++     Simulates GPS receiver start after it was left off for more that 4 hours
++-->
++<job Id="Warm_Starts">
++    <task Repeat="20">
++        <startup IgnoreNav="true"/>
++        <req_pos ValidFixes="1"/>
++    </task>
++</job>
++
++<!-- Systematic Test: Repetetive warm starts performed on GPS simulator -->
++<job Id="Simulator_Warm_Starts">
++    <task Repeat="20">
++        <startup 
++            IgnoreRomAlm="true"
++            IgnoreNav="true" 
++        />
++        <req_pos ValidFixes="1"/>
++    </task>
++</job>
++
++<!-- Systematic Test: Repetetive hot starts  -->
++<job Id="Hot_Starts">
++    <task Repeat="20">
++        <req_pos ValidFixes="1"/>
++    </task>
++</job>
++
++<!-- Systematic Test: Repetitive far starts -->
++<job Id="Far_Starts">
++    <task Repeat="20">
++        <!-- Tell GLL to Ignore all elements stored in NVRAM listed below -->
++        <startup 
++            IgnoreNav="true" 
++            PosError="true"
++        />
++        <req_pos ValidFixes="1" />
++    </task>
++</job>
++
++<!-- This job performes series of single shot requests using the data stored 
++      in NVRAM to simulate assistance data received from the network 
++      The QoS parameters are set to maxmize the GPS sensitivity 
++-->
++<job Id="Assisted_Cold_Starts">
++    <task Repeat="20">
++        <startup 
++            IgnoreRomAlm="true" 
++            IgnoreRamAlm="true"
++        />
++        <assistance>
++            <!--pos Lat="-30.0" Lon="-50.0" Alt="50" /-->
++            <position Lat="33.7691" Lon="-84.4062" Alt="300" />
++            <!--pos Lat="37.0" Lon="-122.0" Alt="50" /-->
++            <!--pos Lat="37.26533652" Lon="-121.94128855" Alt="51.4" /-->
++        </assistance>
++        <req_pos_single AccuracyMask="50" Timeout="30" />
++    </task>
++</job>
++
++<!-- This job performes series of single shot requests using the data stored 
++      in NVRAM to simulate assistance data received from the network 
++      The QoS parameters are set as it woudld be set by Spirent ULTS executing 
++      3GPP TS performance tests.
++-->
++<job Id="3GPP_Assisted_Cold_Starts">
++    <task Repeat="20">
++        <startup 
++            IgnoreRomAlm="true" 
++            IgnoreRamAlm="true"
++        />
++        <assistance>
++            <!--pos Lat="-30.0" Lon="-50.0" Alt="50" /-->
++            <pos Lat="33.7691" Lon="-84.4062" Alt="300" />
++            <!--pos Lat="37.0" Lon="-122.0" Alt="50" /-->
++            <!--pos Lat="37.26533652" Lon="-121.94128855" Alt="51.4" /-->
++        </assistance>
++        <req_pos_single AccuracyMask="25" Timeout="20" />
++    </task>
++</job>
++
++<!-- This job starts signle chanel factory test mode 
++     The signal is expected to be in the range from -125 dBm to -145 dBm 
++     with the frequency offset range from -2 ppm to +2 ppm 
++     for this mode to provide reliable results.
++-->
++<job Id="Factory_Track_Test">
++    <task Id="test" Repeat="1">
++        <startup
++            IgnoreOsc="true"
++            IgnoreRomAlm="true"
++            IgnoreRamAlm="true"
++            IgnorePosition="true"
++            IgnoreNav="true"
++            IgnoreTime="true"
++        />
++        <req_ftest
++            Prn="1"
++            FactoryTestItems="GL_FACT_TEST_WER"
++            FactoryTestMode="GL_FACT_TEST_CONT"
++            AvgeragingIntervalSec="10"
++            DurationSec="60"
++        />
++    </task>
++</job>
++
++<!-- This job starts signle chanel factory test mode 
++     The signal is expected to be in the range from -125 dBm to -145 dBm 
++     with the frequency offset range from -2 ppm to +2 ppm 
++     for this mode to provide reliable results.
++
++     The name Factory_High_SNR is legacy only. The recommended name is
++     Factory_Track_Test.     
++-->    
++<job Id="Factory_High_SNR">
++    <task Id="test" Repeat="1">
++        <startup
++            IgnoreOsc="true"
++            IgnoreRomAlm="true"
++            IgnoreRamAlm="true"
++            IgnorePosition="true"
++            IgnoreNav="true"
++            IgnoreTime="true"
++        />
++        <req_ftest
++            Prn="3"
++            FactoryTestItems="GL_FACT_TEST_WER"
++            FactoryTestMode="GL_FACT_TEST_CONT"
++            AvgeragingIntervalSec="10"
++            DurationSec="60"
++        />
++     </task>
++</job>
++
++<!-- This job is intended to be ran after the Factory_High_SNR job 
++     It uses the TCXO offset stored in NVRAM during the Factory_High_SNR job.
++
++     This is a low-signal strength acquisition only test. It performs repeated 
++     acquisitions but no tracking, hence it cannot be used to produce, for 
++     example, WER measurements.     
++-->
++<job Id="Factory_Low_SNR">
++    <task Id="test" Repeat="1">
++        <startup
++            IgnoreOsc="false"
++            IgnoreRomAlm="true"
++            IgnoreRamAlm="true"
++            IgnorePosition="true"
++            IgnoreNav="true"
++            IgnoreTime="true"
++        />
++        <req_ftest
++            Prn="1"
++            FactoryTestItems="GL_FACT_TEST_WER"
++            FactoryTestMode="GL_FACT_TEST_CONT"
++            AvgeragingIntervalSec="10"
++            DurationSec="60"
++        />
++     </task>
++</job>
++
++<job Id="Factory_Low_SNR_Acquisition">
++    <task Id="test" Repeat="1">
++        <startup
++            IgnoreOsc="false"
++            IgnoreRomAlm="true"
++            IgnoreRamAlm="true"
++            IgnorePosition="true"
++            IgnoreNav="true"
++            IgnoreTime="true"
++        />
++        <req_ftest
++            Prn="1"
++            FactoryTestItems="GL_FACT_TEST_WER"
++            FactoryTestMode="GL_FACT_TEST_CONT"
++            AvgeragingIntervalSec="10"
++            DurationSec="200"
++        />
++    </task>
++</job>
++
++</glgps>
+
+
+6.
+------------ android4.4/device/softwinner/fiber-a31stm/gps/gpslogd ------------
+new file mode 100644
+index 0000000..f6ab648
+Binary files /dev/null and b/android4.4/device/softwinner/fiber-a31stm/gps/gpslogd differ
+
+
+7.
+------ android4.4/device/softwinner/fiber-common/tablet_core_hardware.xml ------
+index 83b9c88..825d8a7 100755
+@@ -25,7 +25,6 @@
+ <permissions>
+     <feature name="android.hardware.location" />
+     <feature name="android.hardware.location.network" />
+-    <!-- <feature name="android.hardware.location.gps" /> -->
+     <feature name="android.hardware.sensor.compass" />
+     <feature name="android.hardware.sensor.accelerometer" />
+     <feature name="android.hardware.touchscreen" />
+@@ -40,6 +39,7 @@
+     <feature name="android.software.input_methods" />
+     <!-- Feature to specify if the device supports adding device admins. -->
+     <feature name="android.software.device_admin" />
++     <feature name="android.hardware.camera.autofocus" />
+     <!-- devices with GPS must include android.hardware.location.gps.xml -->
+     <!-- devices with a rear-facing camera must include one of these as appropriate:
+          android.hardware.camera.xml or 
+
+
+8.
+--- android4.4/frameworks/native/data/etc/android.hardware.location.gps.xml ---
+index 3184b14..72ab732 100644
+@@ -18,5 +18,5 @@
+ <permissions>
+     <feature name="android.hardware.location" />
+     <feature name="android.hardware.location.network" />
+-    <!--<feature name="android.hardware.location.gps" />-->
++    <feature name="android.hardware.location.gps" />
+ </permissions>
+
+9.
+------- android4.4/frameworks/native/data/etc/tablet_core_hardware.xml --------
+index 0ce4bdf..f5e3050 100644
+@@ -25,7 +25,7 @@
+ <permissions>
+     <feature name="android.hardware.location" />
+     <feature name="android.hardware.location.network" />
+-    <feature name="android.hardware.sensor.compass"/> 
++    <feature name="android.hardware.sensor.compass" /> 
+     <feature name="android.hardware.sensor.accelerometer" />
+     <feature name="android.hardware.bluetooth" />
+     <feature name="android.hardware.touchscreen" />
+@@ -34,15 +34,16 @@
+     <feature name="android.hardware.microphone" />
+     <feature name="android.hardware.screen.portrait" />
+     <feature name="android.hardware.screen.landscape" />
+-    <feature name="android.hardware.camera.autofocus" />
+     <feature name="android.software.app_widgets" />
+     <feature name="android.software.home_screen" />
+     <feature name="android.software.input_methods" />
+-    <!-- <feature name="android.hardware.location.gps" /> -->
+-    <feature name="android.hardware.sensor.light" /> 
+     <!-- Feature to specify if the device supports adding device admins. -->
+     <feature name="android.software.device_admin" />
+     <!-- devices with GPS must include android.hardware.location.gps.xml -->
++    <feature name="android.hardware.location.gps" />
++     <!--<feature name="android.hardware.sensor.gyroscope" />-->
++   <feature name="android.hardware.sensor.light" /> 
++    <feature name="android.hardware.camera.autofocus" /> 
+     <!-- devices with a rear-facing camera must include one of these as appropriate:
+          android.hardware.camera.xml or 
+          android.hardware.camera.autofocus.xml or 
+

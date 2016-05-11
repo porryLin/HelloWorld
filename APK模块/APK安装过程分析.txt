@@ -1,0 +1,250 @@
+===== apk 安装过程 =====
+
+Android系统中Application的数据都保存在它的APK文件中，同时可以被多个进程访问，安装的过程包括如下几个步骤：
+
+    Installer通过每个apk的manifest文件获取与当前应用程序相关联的permissions信息；
+    Home application读取当前APK的Name和Icon等信息；
+    System server将读取一些与Application运行相关信息，例如：获取和处理Application的notifications请求等；
+    最后，APK所包含的内容不仅限于当前Application所使用，而且可以被其它的Application调用，提高系统资源的可复用性。
+
+
+
+就是这样的，我想问下就是apk安装后， 将apk中的dex文件安装到dalvik-cache目录下(dex文件是dalvik虚拟机的可执行文件,
+其大小约为原始apk文件大小的四分之一)。那么这个文件夹里面包含的类、配置文件、其他的文件。这个文件夹在什么位置？
+里面的内容在手机这边可以修改的吗？而不是在编译这个阶段修改。
+
+
+============================================================================
+
+
+==== 来自华为内部资料 ====
+
+ PackageInstaller 原理简述
+
+
+
+应用安装是智能机的主要特点，即用户可以把各种应用（如游戏等）安装到手机上，并可以对其进行卸载等管理操作。
+APK是Android Package的缩写，即Android安装包。
+APK是类似Symbian Sis或Sisx的文件格式。
+通过将APK文件直接传到Android模拟器或Android手机中执行即可安装。
+
+
+
+Android应用安装有如下四种方式
+
+1.        系统应用安装――开机时完成，没有安装界面
+
+2.        网络下载应用安装――通过market应用完成，没有安装界面
+
+3.        ADB工具安装――没有安装界面。
+
+4.        第三方应用安装――通过SD卡里的APK文件安装，有安装界面，由packageinstaller.apk应用处理安装及卸载过程的界面。
+
+应用安装的流程及路径
+应用安装涉及到如下几个目录：
+
+system/app
+ 系统自带的应用程序，无法删除
+
+data/app
+ 用户程序安装的目录，有删除权限。
+
+安装时把apk文件复制到此目录
+
+data/data
+ 存放应用程序的数据
+
+Data/dalvik-cache
+ 将apk中的dex文件安装到dalvik-cache目录下(dex文件是dalvik虚拟机的可执行文件,其大小约为原始apk文件大小的四分之一)
+
+
+
+
+       安装过程：复制APK安装包到data/app目录下，解压并扫描安装包，把dex文件(Dalvik字节码)保存到dalvik-cache目录，并data/data目录下创建对应的应用数据目录。
+
+       卸载过程：删除安装过程中在上述三个目录下创建的文件及目录。
+
+
+
+
+===== 一、系统应用安装： =====
+PackageManagerService处理各种应用的安装，卸载，管理等工作，开机时由systemServer启动此服务
+
+(源文件路径：android\frameworks\base\services\java\com\android\server\PackageManagerService.java)
+
+
+
+PackageManagerService服务启动的流程：
+
+1. 首先扫描安装“system\framework”目录下的jar包
+
+1. scanDirLI(mFrameworkDir,PackageParser.PARSE_IS_SYSTEM,
+
+                    scanMode | SCAN_NO_DEX);
+
+
+
+
+2.第二步扫描安装“system\app”目录下的各个系统应用
+
+scanDirLI(mSystemAppDir,PackageParser.PARSE_IS_SYSTEM, scanMode);
+
+
+3.第三步扫描“data\app”目录，即用户安装的第三方应用
+
+scanDirLI(mAppInstallDir, 0, scanMode);
+
+
+4.第四步扫描" data\app-private"目录，即安装DRM保护的APK文件（目前没有遇到过此类的应用）。
+
+scanDirLI(mDrmAppPrivateInstallDir,0, scanMode | SCAN_FORWARD_LOCKED);
+
+
+
+安装应用的过程
+
+1.scanDirLI(Filedir, int flags, int scanMode) 遍历安装指定目录下的文件
+
+
+
+2.scanPackageLI(FilescanFile,
+
+            File destCodeFile, FiledestResourceFile, int parseFlags,
+
+            int scanMode)                安装package文件
+
+
+
+3.scanPackageLI(
+
+        File scanFile, File destCodeFile, FiledestResourceFile,
+
+        PackageParser.Package pkg, intparseFlags, int scanMode)
+
+通过解析安装包parsePackage获取到安装包的信息结构
+
+
+
+4.mInstaller.install(pkgName,pkg.applicationInfo.uid,
+
+              pkg.applicationInfo.uid);   实现文件复制的安装过程
+
+（源文件路径：frameworks\base\cmds\installd\installd.install）
+
+
+===== 二、从market上下载应用： =====
+Google Market应用需要使用gmail账户登录才可以使用，选择某一应用后，开始下载安装包，此过程中，在手机的信号区有进度条提示，下载完成后，会自动调用Packagemanager的接口安装，调用接口如下：
+
+public void installPackage(final Uri packageURI, final IPackageInstallObserver observer,final int flags)
+
+final Uri packageURI：文件下载完成后保存的路径
+
+final IPackageInstallObserver observer：处理返回的安装结果
+
+final int flags：安装的参数，从market上下载的应用，安装参数为-r (replace)
+
+installPackage接口函数的安装过程：
+
+1.public void installPackage(final Uri packageURI, final IPackageInstallObserver observer, final int flags, final String installerPackageName)
+
+final StringinstallerPackageName:安装完成后此名称保存在settings里，一般为null,不是关键参数
+
+2.FiletmpPackageFile = copyTempInstallFile(packageURI, res);
+
+把apk文件复制到临时目录下的临时文件
+
+3.private void installPackageLI(Uri pPackageURI,
+
+            int pFlags, boolean newInstall,String installerPackageName,
+
+           File tmpPackageFile, PackageInstalledInfo res)
+
+解析临时文件，获取应用包名pkgName = PackageParser.parsePackageName(
+
+                   tmpPackageFile.getAbsolutePath(), 0);
+
+4.判断如果带有参数INSTALL_REPLACE_EXISTING，则调用replacePackageLI(pkgName,
+
+                        tmpPackageFile,
+
+                        destFilePath,destPackageFile, destResourceFile,
+
+                        pkg, forwardLocked,newInstall, installerPackageName,
+
+                        res)
+
+5.如果没有，则调用installNewPackageLI(pkgName,
+
+                        tmpPackageFile,
+
+                        destFilePath,destPackageFile, destResourceFile,
+
+                        pkg,forwardLocked, newInstall, installerPackageName,
+
+                        res);
+
+6.privatePackageParser.Package scanPackageLI(
+
+        File scanFile, File destCodeFile, FiledestResourceFile,
+
+        PackageParser.Package pkg, intparseFlags, int scanMode)
+
+scanPackageLI以后的流程，与开机时的应用安装流程相同。
+
+===== 三、从ADB工具安装 =====
+Android Debug Bridge (adb) 是SDK自带的管理设备的工具，通过ADB命令行的方式也可以为手机或模拟器安装应用，其入口函数源文件为pm.java
+
+(源文件路径：android\frameworks\base\cmds\pm\src\com\android\commands\pm\pm.java)
+
+ADB命令行的形式为adb install <path_to_apk> ,还可以带安装参数如："-l""-r" "-i" "-t"
+
+函数runInstall()中判断参数
+
+"-l"――INSTALL_FORWARD_LOCK
+
+ "-r"——INSTALL_REPLACE_EXISTING
+
+"-i" ——installerPackageName
+
+"-t"——INSTALL_ALLOW_TEST
+
+我们常用的参数为-r，表示覆盖安装手机上已安装的同名应用。从market上下载的应用，也是直接传入这个参数安装的。
+
+runInstall与market调用同样的接口完成应用安装。
+
+public void installPackage(android.net.Uri packageURI,android.content.pm.IPackageInstallObserver observer, int flags, java.lang.String installerPackageName)
+
+===== 四、第三方应用安装――通过SD卡里的APK文件安装 =====
+把APK安装包保存在SD卡中，从手机里访问SD卡中的APK安装包，点击就可以启动安装界面，系统应用Packageinstaller.apk处理这种方式下的安装及卸载界面流程，如下图：
+
+
+PackageInstallerActivity负责解析包，判断是否是可用的Apk文件
+
+创建临时安装文件/data/data/com.android.packageinstaller/files/ApiDemos.apk
+
+并启动安装确认界面startInstallConfirm，列出解析得到的该应用基本信息。如果手机上已安装有同名应用，则需要用户确认是否要替换安装。
+
+确认安装后，启动InstallAppProgress，调用安装接口完成安装。
+
+pm.installPackage(mPackageURI, observer, installFlags);
+
+其它：
+1. PackageManagerService.java的内部类AppDirObserver实现了监听app目录的功能：当把某个APK拖到app目录下时，可以直接调用scanPackageLI完成安装。
+
+2.手机数据区目录“data/system/packages.xml”文件中，包含了手机上所有已安装应用的基本信息，如安装路径，申请的permission等信息。
+
+
+
+
+
+
+
+http://wenku.baidu.com/view/3a64c3c6bb4cf7ec4afed05f.html
+
+
+
+APK文件结构详解
+
+
+
+http://www.ophonesdn.com/article/show/38

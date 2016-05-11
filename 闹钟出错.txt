@@ -1,0 +1,44 @@
+A2 专案
+接收系统闹钟的广播：
+
+final String ALARM_ALERT_ACTION = "com.android.deskclock.ALARM_ALERT"; 
+
+private boolean isClockAlarm = false;
+
+private BroadcastReceiver clockReceiver = new BroadcastReceiver() {
+    @Override
+    public void onReceive(Context context, Intent intent) {
+        String action = intent.getAction(); 
+        if (action == null)
+            return;
+
+	  if(action.equals(ALARM_ALERT_ACTION)) {
+		isClockAlarm = true;
+	   }
+     }
+};
+
+注册广播 ：IntentFilter clockIntentFilter = new IntentFilter();
+	   clockIntentFilter.addAction(ALARM_ALERT_ACTION);
+	   registerReceiver(clockReceiver, clockIntentFilter);
+
+解除注册： unregisterReceiver(clockReceiver);
+
+当系统闹钟响时，调用当前 Acitivy 的 onPause() 方法，然后调用 onResume() 方法。
+
+修改方法1 ： 在 onPause() 方法的 playermenu.this.finish() 语句前加入判断，如果 isClockAlarm = true 则不执行
+             在 onResume() 方法中加入判断，使 isClockAlarm = false;
+
+出现新问题，关闭闹钟重新播放时，画面被拉伸，没有恢复。解决方法是：
+if (isClockAlarm) {
+       isClockAlarm = false;
+       if(m1080scale == 2 || (m1080scale == 1 && (outputmode.contains("1080p") || outputmode.contains("1080i") || outputmode.contains("720p")))){
+		Intent intent_video_on = new Intent(ACTION_REALVIDEO_ON);
+		playermenu.this.sendBroadcast(intent_video_on);   // 主要是发送 ACTION_REALVIDEO_ON 广播
+		SystemProperties.set("mbx.hideStatusBar.enable","true");
+	 }
+}
+
+现在剩下一个问题，闹钟响时，背景是黑色的，不是播放的暂停状态
+
+setOSDOnOff(true);注释掉导致黑屏，也不显示闹钟，点一下就恢复

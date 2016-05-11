@@ -1,0 +1,45 @@
+Content-Type: text/x-zim-wiki
+Wiki-Format: zim 0.4
+Creation-Date: 2014-02-26T09:44:50+08:00
+
+====== 多用户模块 ======
+Created Wednesday 26 February 2014
+
+Owner用户的 Internal Storage 目录是 /0  -> /storage/emulated/0
+
+新创建多用户，第一个用户的 Internal Storage 的目录是 /10  -> /storage/emulated/10
+                                   第二个用户的 Internal Storage 的目录是 /11  -> /storage/emulated/11
+                                   第二个用户的 Internal Storage 的目录是 /12  -> /storage/emulated/12
+以此类推......
+
+各个用户之间不能看到对方的Internal Storage的内容
+除了Owner用户之外，普通用户没有使用Developer options的权限，即无法使用Adb shell进行调试
+
+每个用户都可以使用extsd，即插拔的SD卡！！！
+
+== 发现BUG ==
+偶尔出现： 打开File Manager，按Power键锁屏切换用户，File Manager仍保持打开的现象。其它APP是否也会出现该现象。
+
+试验：创建4个用户，
+      1.用户1打开计算器，并锁屏
+      2.切换到用户2，打开Gallery并锁屏
+      3.切换到用户3，打开File Manager并锁屏
+      4.切换到用户4，打开Chrome并锁屏
+      5.重复切换到用户1、2、3，有时发现仍然打开该用户最后退出的APP，有时该APP已经退出，有时该用户打开了其他用户打开的APP，结果无规律
+
+猜想：每个用户锁屏时会保存锁屏前信息，切换到其他用户时，该信息仍然会保存下来，重复切换几次后，该信息被弄混了。
+
+疑问：锁屏切换用户前该信息保存在哪里，私有内存空间还是公共的堆栈空间，与用户的一一对应关系是怎样的？
+
+解决方法：最简单的方法是在切换新用户时发送一个广播，或者新建一个服务用于擦除旧用户使用信息。
+
+
+=====================================================
+
+
+	
+	
+	
+	
+	
+	

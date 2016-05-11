@@ -1,0 +1,138 @@
+Content-Type: text/x-zim-wiki
+Wiki-Format: zim 0.4
+Creation-Date: 2014-06-21T10:24:04+08:00
+
+====== 增加按键Key值的方法 ======
+Created Saturday 21 June 2014
+
+------- android4.4/frameworks/base/core/java/android/view/KeyEvent.java -------
+index 5a5fc10..a17af6e 100644
+@@ -633,7 +633,16 @@ public class KeyEvent extends InputEvent implements Parcelable {
+	* Switches the audio tracks. */
+     public static final int KEYCODE_MEDIA_AUDIO_TRACK = 222;
+ 
+-    private static final int LAST_KEYCODE           = KEYCODE_MEDIA_AUDIO_TRACK;
++
++//xcj
++ public static final int KEYCODE_ND2_CIRCLE_1  = 223;
++ public static final int KEYCODE_ND2_TRIANGLE_2  = 224;
++ public static final int KEYCODE_ND2_SQUARE_3  = 225;
++ public static final int KEYCODE_ND2_STAR_4  = 226;
++ public static final int KEYCODE_ND2_ARL_5  = 227;
++ private static final int LAST_KEYCODE           = KEYCODE_ND2_ARL_5;
++
++    //private static final int LAST_KEYCODE           = KEYCODE_MEDIA_AUDIO_TRACK;
+ 
+     // NOTE: If you add a new keycode here you must also add it to:
+     //  isSystem()
+@@ -878,6 +887,13 @@ public class KeyEvent extends InputEvent implements Parcelable {
+         names.append(KEYCODE_BRIGHTNESS_DOWN, "KEYCODE_BRIGHTNESS_DOWN");
+         names.append(KEYCODE_BRIGHTNESS_UP, "KEYCODE_BRIGHTNESS_UP");
+         names.append(KEYCODE_MEDIA_AUDIO_TRACK, "KEYCODE_MEDIA_AUDIO_TRACK");
++//xcj
++names.append(KEYCODE_ND2_CIRCLE_1, "KEYCODE_ND2_CIRCLE_1");
++names.append(KEYCODE_ND2_TRIANGLE_2, "KEYCODE_ND2_TRIANGLE_2");
++names.append(KEYCODE_ND2_SQUARE_3, "KEYCODE_ND2_SQUARE_3");
++names.append(KEYCODE_ND2_STAR_4, "KEYCODE_ND2_STAR_4");
++names.append(KEYCODE_ND2_ARL_5, "KEYCODE_ND2_ARL_5");
++ 
+     };
+ 
+     // Symbolic names of all metakeys in bit order from least significant to most significant.
+
+----------- android4.4/frameworks/base/core/res/res/values/attrs.xml -----------
+index 42e3b50..ef54948 100644
+@@ -1567,6 +1567,12 @@
+         <enum name="KEYCODE_BRIGHTNESS_DOWN" value="220" />
+         <enum name="KEYCODE_BRIGHTNESS_UP" value="221" />
+         <enum name="KEYCODE_MEDIA_AUDIO_TRACK" value="222" />
++<!-- //xcj -->
++<enum name="KEYCODE_ND2_CIRCLE_1" value="223" />
++<enum name="KEYCODE_ND2_TRIANGLE_2" value="224" />
++<enum name="KEYCODE_ND2_SQUARE_3" value="225" />
++<enum name="KEYCODE_ND2_STAR_4" value="226" />
++<enum name="KEYCODE_ND2_ARL_5" value="227" />
+     </attr>
+ 
+     <!-- ***************************************************************** -->
+
+------------- android4.4/frameworks/base/data/keyboards/Generic.kl -------------
+index 1413319..b2f2709 100644
+@@ -404,6 +404,13 @@ key 484   B                 FUNCTION
+ # key 503 KEY_BRL_DOT7
+ # key 504 KEY_BRL_DOT8
+ 
++#//xcj
++key 505 ND2_CIRCLE_1
++key 506 ND2_TRIANGLE_2
++key 507 ND2_SQUARE_3
++key 508 ND2_STAR_4
++key 509 ND2_ARL_5
++
+ # Keys defined by HID usages
+ key usage 0x0c006F BRIGHTNESS_UP
+ key usage 0x0c0070 BRIGHTNESS_DOWN
+
+----------- android4.4/frameworks/native/include/android/keycodes.h -----------
+index 1ca1332..3eb55e2 100644
+@@ -267,6 +267,14 @@ enum {
+     AKEYCODE_BRIGHTNESS_UP   = 221,
+     AKEYCODE_MEDIA_AUDIO_TRACK = 222,
+ 
++//xcj
++AKEYCODE_ND2_CIRCLE_1  = 223 ,
++AKEYCODE_ND2_TRIANGLE_2  = 224 ,
++AKEYCODE_ND2_SQUARE_3  = 225 ,
++AKEYCODE_ND2_STAR_4  = 226 ,
++AKEYCODE_ND2_ARL_5  = 227 ,
++
++
+     // NOTE: If you add a new keycode here you must also add it to several other files.
+     //       Refer to frameworks/base/core/java/android/view/KeyEvent.java for the full list.
+ };
+
+---------- android4.4/frameworks/native/include/input/KeycodeLabels.h ----------
+index c64c5d8..2b26f53 100644
+@@ -248,6 +248,13 @@ static const KeycodeLabel KEYCODES[] = {
+     { "BRIGHTNESS_UP", 221 },
+     { "MEDIA_AUDIO_TRACK", 222 },
+ 
++//xcj
++{ "ND2_CIRCLE_1", 223 },
++{ "ND2_TRIANGLE_2", 224 },
++{ "ND2_SQUARE_3", 225 },
++{ "ND2_STAR_4", 226 },
++{ "ND2_ARL_5", 227 },
++
+     // NOTE: If you add a new keycode here you must also add it to several other files.
+     //       Refer to frameworks/base/core/java/android/view/KeyEvent.java for the full list.
+ 
+
+-------------- android4.4/frameworks/native/libs/input/Input.cpp --------------
+index 6f53996..54fee26 100644
+@@ -71,6 +71,12 @@ bool KeyEvent::hasDefaultAction(int32_t keyCode) {
+         case AKEYCODE_BRIGHTNESS_DOWN:
+         case AKEYCODE_BRIGHTNESS_UP:
+         case AKEYCODE_MEDIA_AUDIO_TRACK:
++//xcj
++case AKEYCODE_ND2_CIRCLE_1:
++case AKEYCODE_ND2_TRIANGLE_2:
++case AKEYCODE_ND2_SQUARE_3:
++case AKEYCODE_ND2_STAR_4:
++case AKEYCODE_ND2_ARL_5:
+             return true;
+     }
+     
+@@ -110,6 +116,13 @@ bool KeyEvent::isSystemKey(int32_t keyCode) {
+         case AKEYCODE_BRIGHTNESS_DOWN:
+         case AKEYCODE_BRIGHTNESS_UP:
+         case AKEYCODE_MEDIA_AUDIO_TRACK:
++//xcj
++case AKEYCODE_ND2_CIRCLE_1:
++case AKEYCODE_ND2_TRIANGLE_2:
++case AKEYCODE_ND2_SQUARE_3:
++case AKEYCODE_ND2_STAR_4:
++case AKEYCODE_ND2_ARL_5:
++
+             return true;
+     }

@@ -1,0 +1,135 @@
+Content-Type: text/x-zim-wiki
+Wiki-Format: zim 0.4
+Creation-Date: 2014-02-26T09:12:44+08:00
+
+====== AIDL&Service ======
+Created Wednesday 26 February 2014
+
+===============================================
+
+===== AIDL =====
+AIDL学习（Android Interface Definition Language 安卓接口定义语言，用来实现IPC通信，即进程间通信，其实质上是请求公共服务对象，
+请求服务端来完成客户端需要实现的操作，真正实现功能的是在服务端）
+
+=== 1.接口定义方法： ===
+AIDL接口声明了服务端的抽象方法，该文件在客户端和服务端都需要存在？是的
+
+=== 2.服务端实现方法： ===
+服务端实现AIDL接口，创建一个iBinder
+    IMountService.Stub iBinder = new IMountService.Stub() {
+       //在此处实现了AIDL接口定义的方法。
+    }
+
+=== 3.客户端获得接口： ===
+
+客户端通过 mMountService = IMountService.Stub.asInterface(service)来获得服务端的操作接口。 
+其中的service是在绑定服务端的时候，服务端onBind()方法返回的iBinder；
+
+
+
+=== 那么客户端是如何绑定服务端的呢？具体操作为 ===
+：
+1. ServiceConnection mConnection = new ServiceConnection() {
+       public void onServiceConnected(ComponentName name, IBinder service) {
+            此处连接成功后服务端会通过onBind()返回参数iBinder,这样我们就可以拿来操作了。
+          mMountService = IMountService.Stub.asInterface(service);
+       }
+       public void onServiceDisconnected(ComponentName name) {}
+  }
+
+2. context.bindService(service, mConnection, Context.BIND_AUTO_CREATE, UserHandle.USER_OWNER);
+
+现在mMountService已经可以使用了。
+
+
+
+
+===== 下面两种service有什么区别？ =====
+======================================== 
+
+==== system-level service ====
+ =====================================
+
+从Context.java 类中的抽象方法getSystemService() 的说明中可以看出：目前系统级别的service有 "window"， "layout_inflater"， "activity"， "power"， "alarm"， "notification"， "keyguard"， "location"，"search"， "vibrator"， "connection"， "wifi"， "input_method"， "uimode"，"download"
+后面还有好多个service，如"usb", "storage", "user"等，但是却没有添加在getSystemService()这个方法的说明里面，因此这里存在疑问
+
+
+system-level service 的调用：
+    context.getSystemService(name);
+     例子 ： mStorageManager = (StorageManager) context.getSystemService(Context.STORAGE_SERVICE);
+注：   Context.getSystemService() 是一个抽象方法，具体实现 在 ContextImpl.java 的方法 getSystemService() 中。
+
+
+system-level service 的创建：
+      在ContextImpl.java 类中有两个内部抽象类：StaticServiceFetcher 和 ServiceFetcher ，在抽象类中分别定义了抽象方法
+     createStaticService() {
+         //重写此方法创建 static service
+     }
+     createService() {
+         //重写此方法创建 service
+     }
+
+
+system-level service 的集合：
+     在ContextImpl.java 类中通过registerService() 将service添加到集合 SYSTEM_SERVICE_MAP ，
+     如果service 属于 ServiceFetcher 则队列 mContextCacheIndex + 1
+
+
+
+system-level service 的通信连接：
+     也是通过类似如下形式来创建客户端与服务端的通信连接的，不过不需要创建ServiceConnection, 也不需要使用 binService()
+    mMountService = IMountService.Stub.asInterface(ServiceManager.getService("mount"));
+
+
+
+======================================== 
+
+==== application service ====
+ =======================================
+frameworks/base/core/java/android/content/Context.java
+
+
+/**
+* 绑定服务，没有该服务则创建一个。
+* Connect to an application service, creating it if needed.
+* conn must not be null
+  */
+bindService(Intent service, ServiceConnection conn, int flags);     
+bindService(Intent service, ServiceConnection conn, int flags, int userHandle);
+
+
+
+/**
+* 启动服务，如果服务没有在运行则实例化一个服务然后启动，运行过程中报错的话服务会自动重启
+* If this service is not already running, it will be instantiated and started (creating a
+* process for it if needed); if it is running then it remains running.
+  *
+* 会自动触发目标service 的onStartCommand() 方法，如果需要实现的功能在该方法中定义了，则不需要再去调用bindService()
+  *
+* If any errors happen in the service's process, it will automatically be restarted.
+  */
+startService(Intent service);
+startServiceAsUser(Intent service, UserHandle user);
+
+
+
+/**
+* 断开绑定
+* Disconnect from an application service.  You will no longer receive
+* calls as the service is restarted, and the service is now allowed to
+* stop at any time.
+* conn must not be null
+  */
+unbindService(ServiceConnection conn);
+
+
+
+/**
+* 如果没有断开所有绑定 bindings，该服务并没有被销毁
+* Request that a given application service be stopped.  If the service is
+* not running, nothing happens.  Otherwise it is stopped.  Note that calls
+* to startService() are not counted -- this stops the service no matter
+* how many times it was started.
+  */
+stopServiceAsUser(Intent service, UserHandle user);
+stopService(Intent service);

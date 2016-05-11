@@ -1,0 +1,25 @@
+
+     * <p>Note that if this method is being called from outside of an
+     * {@link android.app.Activity} Context, then the Intent must include
+     * the {@link Intent#FLAG_ACTIVITY_NEW_TASK} launch flag.  This is because,
+     * without being started from an existing Activity, there is no existing
+     * task in which to place the new activity and thus it needs to be placed
+     * in its own separate task.
+
+如果不是从Activity 等 Context 里面调用startActivty()方法, 则intent需要包含Flag  "Intent.FLAG_ACTIVITY_NEW_TASK"
+   intent.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
+or intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
+
+
+News&Weather Quickoffice applications
+Once we use temporary GMS Package including Quickoffice .apk and GenieWidget.apk, but replacing with Google Official GMS Package not including these.
+
+Videos has been instead of Play Movies & TV.
+If you add other apk at will, I thinks it affects to GMS Certification.
+
+Thank you!
+
+
+If the proper options are implemented,the hp-printservice.apk must be installed.
+
+ We need the options preinstalled on device, please check this option on Nexus 5, and implement the same vehaviour on Vegeta.

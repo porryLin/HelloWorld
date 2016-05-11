@@ -1,0 +1,17 @@
+Content-Type: text/x-zim-wiki
+Wiki-Format: zim 0.4
+Creation-Date: 2014-03-05T14:34:07+08:00
+
+====== 分区 ======
+Created Wednesday 05 March 2014
+
+NAND一般只能分为4个区，其他的区是扩展分区
+
+（1）、fat分区,作为sd卡用；
+
+（2）、系统分区，相当为电脑c 盘，用来安装android系统；
+
+（3）、userdata分区；
+
+（4）、cache分区。
+

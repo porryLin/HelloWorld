@@ -1,0 +1,65 @@
+Content-Type: text/x-zim-wiki
+Wiki-Format: zim 0.4
+Creation-Date: 2014-03-24T09:30:44+08:00
+
+====== storage list ======
+Created Monday 24 March 2014
+
+=============================================================================
+Google默认的storage_list.xml文件：
+
+<!-- The <device> element should contain one or more <storage> elements.
+     Exactly one of these should have the attribute primary="true".
+     This storage will be the primary external storage and should have path="/mnt/sdcard".
+     Each storage should have both a path and description attribute set.
+     The following boolean attributes are optional:
+
+        primary:    this storage is the primary external storage
+        removable:  this is removable storage (for example, a real SD card)
+        emulated:   the storage is emulated via the FUSE sdcard daemon
+        mtp-reserve: number of megabytes of storage MTP should reserve for free storage
+                     (used for emulated storage that is shared with system's data partition)
+
+      A storage should not have both emulated and removable set to true
+-->
+<StorageList xmlns:android="http://schemas.android.com/apk/res/android">
+    <!-- removable is not set in nosdcard product -->
+    <storage
+        android:mountPoint="/storage/sdcard"
+        android:storageDescription="@string/storage_usb"
+        android:primary="true" />
+</StorageList>
+
+== 所以Vivo手机里面的内部存储空间显示为Udisk？ ==
+
+=============================================================================
+A31平台的storage_list.xml文件：
+
+<StorageList xmlns:android="http://schemas.android.com/apk/res/android">
+        <storage android:mountPoint="/mnt/sdcard"
+             android:storageDescription="@string/storage_internal"
+             android:primary="true"
+             android:removable="false"
+             android:emulated="true"  
+             android:mtpReserve="100"             // 100M？有什么作用，保留这个空间给谁用？
+             android:allowMassStorage="false"
+             android:maxFileSize="0"/>
+	<storage android:mountPoint="/mnt/extsd"
+             android:storageDescription="@string/storage_sd_card"
+             android:primary="false"
+             android:removable="true"
+             android:emulated="false"  
+             android:mtpReserve="0" 
+             android:allowMassStorage="true"
+             android:maxFileSize="0"/>
+	<storage android:mountPoint="/mnt/usbhost1"
+             android:storageDescription="@string/storage_usb"
+             android:primary="false"
+             android:removable="true"
+             android:allowMassStorage="false"
+             android:emulated="false"  
+             android:mtpReserve="0" 
+             android:maxFileSize="0"/>
+</StorageList>
+
+

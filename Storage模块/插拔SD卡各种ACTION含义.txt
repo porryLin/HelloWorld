@@ -1,0 +1,92 @@
+1.直接拔掉 sdcard
+
+    receive action = andrid.intent.action.MEDIA_UNMOUNTED
+    receive action = andrid.intent.action.MEDIA_BAD_REMOVAL
+    receive action = andrid.intent.action.MEDIA_REMOVED
+    receive action = andrid.intent.action.MEDIA_EJECT
+    receive action = andrid.intent.action.MEDIA_UNMOUNTED
+
+
+
+2.再次将 sdcard 插入卡槽
+
+    receive action = andrid.intent.action.MEDIA_CHECKING
+    receive action = andrid.intent.action.MEDIA_MOUNTED
+    receive action = andrid.intent.action.MEDIA_SCANNER_STARTED
+    receive action = andrid.intent.action.MEDIA_SCANNER_FINISHED
+
+    先大概 1-3 秒的 media checking，然后才是 mounted -- scanner started -- scanner finished
+
+ 
+
+3.  在通知栏卸载 sdcard
+
+    receive action = andrid.intent.action.MEDIA_EJECT
+    receive action = andrid.intent.action.MEDIA_UNMOUNTED
+
+    紧接着，从卡槽拔出 sdcard（必须拔出，才会接收到下面的 action）
+
+    receive action = andrid.intent.action.MEDIA_UNMOUNTED
+    receive action = andrid.intent.action.MEDIA_REMOVED
+
+    可以看出，这种情况属于正常卸载 sdcard，不是强制拔出。不同于 1.
+    这个时候，你将 sdcard 插入卡槽，发生的情况与 2 一致。
+
+ 
+
+
+4. 在通知栏选择 "大容量存储"，即共享
+   
+    receive action = andrid.intent.action.MEDIA_EJECT
+    receive action = andrid.intent.action.MEDIA_UNMOUNTED
+    receive action = andrid.intent.action.MEDIA_SHARED
+
+    然后，我们再次在通知栏选择 "关闭 usb 存储设备"，接下来发生的与 2 一致。
+
+ 
+
+ 
+
+从这几个测试，我们可以发现几个规律：
+
+1.  不管以何种方式卸载（正常卸载拔出、正常卸载不拔出 sd 卡、直接拔出 sd 卡）
+   
+系统都会发出下面的 action 广播
+ACTION_MEDIA_EJECT
+ACTION_MEDIA_UNMOUNTED
+ 
+
+2.  不管以何种方式安装 sd 卡，系统都会发出下面的 action 广播
+
+    receive action = andrid.intent.action.MEDIA_CHECKING
+    receive action = andrid.intent.action.MEDIA_MOUNTED
+    receive action = andrid.intent.action.MEDIA_SCANNER_STARTED
+    receive action = andrid.intent.action.MEDIA_SCANNER_FINISHED
+
+
+3.  ACTION_MEDIA_REMOVED 与 ACTION_MEDIA_UNMOUNTED 区别
+
+ACTION_MEDIA_REMOVED  ：表示 sdcard 已经从卡槽移除。
+
+ACTION_MEDIA_UNMOUNTED ：只可以说明 sd 卡没有 mount 在文件系统上面，不可以说明其已经从卡槽移除。
+
+
+4. ACTION_MEDIA_REMOVED 与 ACTION_MEDIA_BAD_REMOVAL 区别
+
+ACTION_MEDIA_BAD_REMOVAL ：只有在直接拔出 sd 卡时，系统才会发送这样的 action 广播。
+
+ACTION_MEDIA_REMOVED  ：不管何种方式从卡槽拔出 sd 卡时，系统都会发送这样的 action 广播。
+ 
+
+5. 选择通过 usb 共享，系统一定会发出下面的 action 广播
+
+  ACTION_MEDIA_SHARED
+
+
+6.  注意！！！
+接收到 ACTION_MEDIA_EJECT 广播之后，sd 卡还是可以读写的，
+
+直到接收到 ACTION_MEDIA_REMOVED、ACTION_MEDIA_UNMOUNTED等广播之后，sd 卡才不可以读写。
+
+
+

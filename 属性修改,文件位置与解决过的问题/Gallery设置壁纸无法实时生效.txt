@@ -1,0 +1,62 @@
+Content-Type: text/x-zim-wiki
+Wiki-Format: zim 0.4
+Creation-Date: 2014-03-21T15:58:57+08:00
+
+====== Gallery设置壁纸无法实时生效 ======
+Created Friday 21 March 2014
+
+=== 问题描述： ===
+[Launcher]除開機第一次外設置圖庫中的圖片為壁紙後桌布不會馬上更新，重啟後才更新。
+
+Precondition:沒有外部卡。
+
+Steps:
+1.開機
+2.打開圖庫
+3.點擊一張圖片進入單張預覽界面
+4.選擇屏幕右上角的Menu->將相片設置為->桌布
+5.點擊Home按鈕查看桌布
+6.重復2~5步操作
+7.重啟後查看桌布
+
+Expected Result:
+每次操作後桌布均會更新為所設置的圖片。
+
+Actual Result:
+除第5步操作後可成功更新桌布，再次重復設置壁紙後桌布恢復為默認壁紙，重啟後桌布才更新為所設置的圖片。
+
+Remark:插有外部卡時設置壁紙不存在上述問題。
+
+=== 解决方法： ===
+android4.4/frameworks/base/core/java/android/app/WallpaperManager.java
+
+       mWallpaper = getCurrentWallpaperLocked(context);
+
+       mDefaultWallpaper = getDefaultWallpaperLocked(context);
+
+在两个方法中都添加了图片清理程序：
+        Bitmap bm = null;
+
+         if(bm!=null){
+                   bm.recycle();
+		   bm=null;
+                   System.gc();
+         }
+          //Bitmap bm = BitmapFactory.decodeStream(is, null, options);
+          bm = BitmapFactory.decodeStream(is, null, options);
+或者是
+          Bitmap bm = BitmapFactory.decodeFileDescriptor(
+          bm = BitmapFactory.decodeFileDescriptor(
+
+
+
+
+
+
+
+
+
+
+
+
+

@@ -1,0 +1,61 @@
+点击屏幕触发onClick()方法  mGLRenderView.setOnClickListener(new OnClickListener(){ onClick() }      (ZLAndroidActivity.java)
+
+int focus =menuOp.getMenuInstance().getMenuIns().mouseClick(MouseX,MouseY); 求得点击屏幕的位置
+
+if (focus >= 0) 点击了菜单  menuOp.getMenuInstance().handleOnClick(focus); 调用 Menucontrol.java 的handleOnClick()方法
+
+                          menuUIOp.getMGInstance().onKeyDown()  调用 MenuGroup1.java 的 onKeyDown()方法， 又回调 Menucontrol.java 的 CheckedMenuHandle() 方法
+
+                          Menucontrol.java——>HandleMenuCommand() 调用 MenuCallbackListener.java 接口的子类 GLMusicLayout.java 的 CallbackMenuState()方法
+                                
+                          CallbackMenuState() 中调用 pauseSong, setMenuStatus()  关键！！！！！！！！！！
+
+                         setMenuStatus() 中调用 filenamelistener.CallbackUpdataMenu("music", data);  其中 filenamelistener = new updataFilenameListener()为接口 ,在基类 GLBaseLayout.java中定义
+
+                         RelevaceOp.java 继承了updataFilenameListener()接口, 
+
+                                 GLMusicLayout.java 中的线程 run() 中有一个 showProcess() 方法调用了 filenamelistener.hanlerCallbackMusicState() 方法
+
+                           该方法中 MymenuOp.getMenuInstance().set_seek_bar_info(total, cur) 是画进度条的关键方法！！！！
+
+                          menuUIOp.getMGInstance().UpdataStatus(Id);
+                          MenuGroup1.java -> UpdataStatus();  这里应该是画菜单栏的关键方法！
+if (progess > 0) 点击了拖动条  
+                         mGLRenderView.GetMusicLayoutInstance().setProcess(process);   调用了RenderView.java 的 GetMusicLayoutInstance() 方法,返回 GLMusicLayout 类
+
+                               调用 GLMusicLayout.java 的 setProcess() 方法 ，其中 seekTo(current) , int current = musicService.getDuration(); seekTo() 为 musicService.seekTo(); 
+
+                         musicService = MusicPlayer.getMediaPlayerService(); 是 IGLMusicService 接口
+       
+                                 最后是 MediaPlayer.seekTo() 和 MediaPlayer.getDuration();
+                                 
+                                 
+
+
+
+修改方法 1 暂停状态下只拖动进度条，不开始播放  在 GLMusicLayout.java ——> TimerTask taskAutoPlay = new TimerTask() { 
+
+public void run() {
+                  showProgress(); // Porry add, fix the bar did't drag while pause issue.
+			if (isPlaying()) {
+				//showProgress();  Porry delete
+                         ...
+                         }
+
+修改方法2 暂停状态下拖动进度条并进行播放
+
+在 mGLRenderView.setOnClickListener(new OnClickListener(){ onClick( ) }    (ZLAndroidActivity.java)
+   if(process>0)
+	{
+	 mGLRenderView.GetMusicLayoutInstance().setProcess(process);
+         /*add 
+       List<String> menu = menuOp.getMenuInstance().getMenuIns().menu ;
+       for(int i = 0; i < menu.size(); i++ )
+               { 
+            Log.i("uart", "%%%%%%%%%%%%%Porry test onClick() menu.get(i) =" + menu.get(i));
+            if (menu.get(i).contains("shortcut_common_play_"))
+                menuOp.getMenuInstance().handleOnClick(0);
+                     }
+               }
+         */add end
+      

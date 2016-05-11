@@ -1,0 +1,89 @@
+Content-Type: text/x-zim-wiki
+Wiki-Format: zim 0.4
+Creation-Date: 2014-07-30T13:53:36.946000
+
+====== Animation duration scale ======
+Created Wednesday 30 July 2014
+
+
+== 问题描述：设置了动画程序时长缩放之后没有效果，需要重启才有效果 ==
+
+== NEXUS5上同样存在该现象，为Google默认行为。 ==
+
+DevelopmentSettings.java
+--> onPreferenceChange();
+else if (preference == mAnimatorDurationScale) {
+            writeAnimationScaleOption(2, mAnimatorDurationScale, newValue);
+            return true;
+
+--> writeAnimationScaleOption();
+            float scale = newValue != null ? Float.parseFloat(newValue.toString()) : 1;
+            mWindowManager.setAnimationScale(which, scale);
+            updateAnimationScaleValue(which, pref);     // just update the display value
+
+
+
+WindowManageService.java
+--> setAnimationScale();
+ switch (which) {
+            case 0: mWindowAnimationScale = scale; break;
+            case 1: mTransitionAnimationScale = scale; break;
+            case 2: mAnimatorDurationScale = scale; break;
+ }
+ mH.sendEmptyMessage(H.PERSIST_ANIMATION_SCALE);
+
+--> handleMessage();          //更新ContentResolver数据
+   case PERSIST_ANIMATION_SCALE: {
+                    Settings.Global.putFloat(mContext.getContentResolver(),  Settings.Global.WINDOW_ANIMATION_SCALE, mWindowAnimationScale);
+
+                    Settings.Global.putFloat(mContext.getContentResolver(),  Settings.Global.TRANSITION_ANIMATION_SCALE, mTransitionAnimationScale);
+
+                    Settings.Global.putFloat(mContext.getContentResolver(),  Settings.Global.ANIMATOR_DURATION_SCALE, mAnimatorDurationScale);
+
+                    break;
+      }
+
+
+在初始化函数中
+--> WindowManageServic[[WindowManageService|e(]]);
+    setAnimatorDurationScale(Settings.Global.getFloat(context.getContentResolver(),
+                Settings.Global.ANIMATOR_DURATION_SCALE, mAnimatorDurationScale));
+
+--> setAnimatorDurationScale();
+        mAnimatorDurationScale = scale;
+        ValueAnimator.setDurationScale(scale);
+
+ValueAnimator.java 
+--> setDurationScale();
+          sDurationScale = durationScale;
+
+-->  public ValueAnimator setDuration(long duration) {      ** //能够起作用的地方，试过将 sDurationScale 改为固定值5，不论怎么设置和重启之后动画时长都是5倍。**
+           if (duration < 0) {
+                   throw new IllegalArgumentException("Animators cannot have negative duration: " + duration);
+            }
+           mUnscaledDuration = duration;
+           mDuration = (long)(duration * sDurationScale);
+           return this;
+    }
+
+
+WindowManagerGlobal.java
+-->  public static IWindowSession getWindowSession() {        **//怀疑与这个被锁链的类也有关系，而且根据log分析在进入设置界面时会被调用一次，也只调用了一次。**
+        synchronized (WindowManagerGlobal.class) {
+            if (sWindowSession == null) {
+                try {
+                       InputMethodManager imm = InputMethodManager.getInstance();
+                       IWindowManager windowManager = getWindowManagerService();
+                       sWindowSession = windowManager.openSession  imm.getClient(), imm.getInputContext());
+                       float animatorScale = windowManager.getAnimationScale(2);
+                       ValueAnimator.setDurationScale(animatorScale);    ** //试过注释掉这两行，之后不管怎么设置重启后都不会改变效果**
+                } catch (RemoteException e) {
+                      Log.e(TAG, "Failed to open window session", e);
+                }
+            }
+            return sWindowSession;
+        }
+    }
+
+虽然这个问题不用改了，但还是要搞明白它的原理。
+

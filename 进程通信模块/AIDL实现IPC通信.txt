@@ -1,0 +1,89 @@
+Content-Type: text/x-zim-wiki
+Wiki-Format: zim 0.4
+Creation-Date: 2014-02-26T09:12:44+08:00
+
+====== AIDL实现IPC通信 ======
+Created Wednesday 26 February 2014
+
+===============================================
+
+===== AIDL =====
+AIDL学习（Android Interface Definition Language 安卓接口定义语言，用来实现IPC通信，即进程间通信，其实质上是请求公共服务对象，
+请求服务端来完成客户端需要实现的操作，真正实现功能的是在服务端）
+注：如果是客户端和服务端在两个进程中，则是进程间通信，代理调用；
+         如果客户端和服务端在同个进程中，则只是简单的引用调用。
+
+=== 1.接口定义方法： ===
+AIDL接口声明了服务端的抽象方法，以IPhoneSubInfo.aidl为例
+
+IPhoneSubInfo.aidl
+
+package com.android.internal.telephony;    //包名
+interface IPhoneSubInfo {        //接口
+        String getDeviceId();                //方法
+        String getDeviceSvn();
+        String getSubscriberId();
+        ...
+}
+
+=== 2.服务端实现方法： ===
+服务端实现AIDL接口，继承 Ixxx.Stub 类
+
+PhoneSubInfoProx.java
+
+public class PhoneSubInfoProxy extends IPhoneSubInfo.Stub {
+           public PhoneSubInfoProxy(PhoneSubInfo phoneSubInfo) {
+                      mPhoneSubInfo = phoneSubInfo;
+                      if(ServiceManager.getService("iphonesubinfo") == null) {
+                                    ServiceManager.addService("iphonesubinfo", this);            // 注册了该service
+                      }
+            }
+            
+           @Override
+           public String getDeviceId() {                     //实现了接口定义的方法
+                      return mPhoneSubInfo.getDeviceId();
+           }
+
+          @Override
+          public String getDeviceSvn() {
+                     return mPhoneSubInfo.getDeviceSvn();
+           }
+           ...
+}
+
+
+=== 3.客户端获得通过接口获得服务端代理： ===
+TelephonyManager.java
+
+import com.android.internal.telephony.IPhoneSubInfo;
+
+    private IPhoneSubInfo getSubscriberInfo() {
+          // get it each time because that process crashes a lot
+          return IPhoneSubInfo.Stub.asInterface(ServiceManager.getService("iphonesubinfo"));
+    }
+
+接下来就可以通过 getSubscriberInfo 方法返回的对象来操作服务端。
+如 mIPhoneSubInfo = getSubscriberInfo();
+     mIPhoneSubInfo.getDeviceSvn();   （该动作由服务端去执行）
+
+
+
+
+=== 那么客户端是如何绑定服务端的呢？具体操作为： ===
+
+1. ServiceConnection mConnection = new ServiceConnection() {
+       public void onServiceConnected(ComponentName name, IBinder service) {
+            此处连接成功后服务端会通过onBind()返回参数iBinder,这样我们就可以拿来操作了。
+          mMountService = IMountService.Stub.asInterface(service);
+       }
+       public void onServiceDisconnected(ComponentName name) {}
+  }
+
+2. context.bindService(service, mConnection, Context.BIND_AUTO_CREATE, UserHandle.USER_OWNER);
+
+现在mMountService已经可以使用了。
+
+
+
+
+

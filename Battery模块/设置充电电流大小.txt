@@ -1,0 +1,17 @@
+Content-Type: text/x-zim-wiki
+Wiki-Format: zim 0.4
+Creation-Date: 2014-05-19T16:15:10+08:00
+
+====== 设置充电电流大小 ======
+Created Monday 19 May 2014
+
+lichee/tools/pack_brandy/chips/sun6i/configs/android/fiber-a31stm/sys_config.fex
+
+ pmu_battery_rdc            = 100
+ pmu_battery_cap            = 0
+ pmu_batdeten               = 1
+-pmu_runtime_chgcur         = 1650
++pmu_runtime_chgcur         = 900        // 开机充电电流，可缓解边充电边玩太烫的问题
+ pmu_earlysuspend_chgcur    = 1650
+ pmu_suspend_chgcur         = 1650      // 挂起/休眠充电电流
+ pmu_shutdown_chgcur        = 1650   //关机充电电流

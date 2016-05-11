@@ -1,0 +1,941 @@
+Content-Type: text/x-zim-wiki
+Wiki-Format: zim 0.4
+Creation-Date: 2014-02-26T09:27:13+08:00
+
+====== Audio播放流程分析 ======
+Created Wednesday 26 February 2014
+
+单声道（Mono）
+立体声（STEREO）
+多声道（大于2）的时候会使用downmixer处理，最终使用双声道输出
+================================================================================
+======================================
+
+===== 研究Audio播放音频/视频流程 =====
+================================
+
+=====================================
+
+==== 应用层创建播放器的主要API ====
+============================
+framework/base/media/java/android/media/MediaPlayer.java
+(1)
+-->public static MediaPlayer create(Context context, Uri uri, SurfaceHolder holder) {
+     ...
+     MediaPlayer mp = new MediaPlayer();
+     mp.setDataSource(context, uri);
+     if (holder != null) {
+          mp.setDisplay(holder);
+     }
+     mp.prepare();
+     return mp;
+     ...
+   }
+
+-->public static MediaPlayer create(Context context, int resid) {
+     ...
+     AssetFileDescriptor afd = context.getResources().openRawResourceFd(resid);
+     if (afd == null) return null;
+
+     MediaPlayer mp = new MediaPlayer();
+     mp.setDataSource(afd.getFileDescriptor(), afd.getStartOffset(), afd.getLength());
+     afd.close();
+     mp.prepare();
+     return mp;
+     ...
+   }
+
+(2)
+1.
+--> MediaPlayer mp = new MediaPlayer();
+    public MediaPlayer() {
+    {    ...        
+        native_setup(new WeakReference<MediaPlayer>(this));
+    }
+
+2.//底层会根据音频文件的格式创建对应的播放器，以后只分析第一个native方法
+-->public void setDataSource(Context context, Uri uri);
+-->public void setDataSource(Context context, Uri uri, Map<String, String> headers);
+-->public void setDataSource(String path);
+-->public void setDataSource(String path, Map<String, String> headers);
+-->private void setDataSource(String path, String[] keys, String[] values);
+-->public void setDataSource(FileDescriptor fd);
+
+-->private native void _setDataSource(String path, String[] keys, String[] values);
+-->private native void _setDataSource(FileDescriptor fd, long offset, long length);
+
+//设置视频播放窗口，如果参数为null,则只播放audio track
+-->public void setDisplay(SurfaceHolder sh); //建议使用该方法
+-->public void setSurface(Surface surface);  //不支持{@link #setScreenOnWhilePlaying(boolean)}
+
+3.//此阶段底层开始解码
+-->public native void prepare();      //同步，for file, will blocks until it is ready
+-->public native void prepareAsync(); //异步，for stream, will not blocks
+
+4.//开始播放
+--> public  void start() throws IllegalStateException 
+    {
+        stayAwake(true); //设定系统无法休眠
+        _start();  
+    }
+
+================================================================================
+
+==== JNI层 ====
+// JNI调用android_media_MediaPlayer.cpp
+1.
+--> static void android_media_MediaPlayer_native_setup(JNIEnv *env, jobject thiz, jobject weak_this)
+    {
+        ...
+        sp<MediaPlayer> mp = new MediaPlayer();
+        setMediaPlayer(env, thiz, mp);
+        ...
+    }
+
+2.//setDataSource
+--> static void android_media_MediaPlayer_setDataSourceAndHeaders(
+                                    JNIEnv *env, jobject thiz, jstring path,
+                                    jobjectArray keys, jobjectArray values) 
+    {
+        ...
+        status_t opStatus = mp->setDataSource(pathStr, headersVector.size() > 0? &headersVector : NULL);
+        ...
+    }
+
+3.//prepare
+--> static void android_media_MediaPlayer_prepare(JNIEnv *env, jobject thiz)
+    {
+        ...
+        process_media_player_call( env, thiz, mp->prepare(), "java/io/IOException", "Prepare failed." );
+    }
+
+4.//start
+--> static void android_media_MediaPlayer_start(JNIEnv *env, jobject thiz)
+    {
+        ...
+        sp<MediaPlayer> mp = getMediaPlayer(env, thiz);
+        ...
+        process_media_player_call( env, thiz, mp->start(), NULL, NULL );    //异常处理
+        ...
+    }
+
+================================================================================
+
+====== Native 客户端 ======
+
+//调用到frameworks/av/media/libmedia/mediaplayer.cpp
+   // mediaplayer.h中定义： sp<IMediaPlayer>            mPlayer;
+1.
+--> MediaPlayer::MediaPlayer()
+    {
+        ...
+        mCurrentState = MEDIA_PLAYER_IDLE;
+        mAudioSessionId = AudioSystem::newAudioSessionId();
+        AudioSystem::acquireAudioSessionId(mAudioSessionId);
+        ...
+    }
+--> int AudioSystem::newAudioSessionId()
+    {
+        const sp<IAudioFlinger>& af = AudioSystem::get_audio_flinger();
+        if (af == 0) return 0;
+        return af->newAudioSessionId();
+    }
+    // IPC，IAudioFlinger.cpp -> AudioFlinger.cpp
+--> int AudioFlinger::newAudioSessionId()
+    {
+        return nextUniqueId();
+    }
+--> uint32_t AudioFlinger::nextUniqueId()
+    {
+        return android_atomic_inc(&mNextUniqueId);
+    }
+
+2.//setDataSource
+--> status_t MediaPlayer::setDataSource(const sp<IStreamSource> &source) //多出来这个不知道对应JAVA哪一个方法
+--> status_t MediaPlayer::setDataSource(int fd, int64_t offset, int64_t length);
+--> status_t MediaPlayer::setDataSource(const char *url, const KeyedVector<String8, String8> *headers);
+    {
+       ...
+       const sp<IMediaPlayerService>& service(getMediaPlayerService());
+       if (service != 0) {
+            sp<IMediaPlayer> player(service->create(getpid(), this, mAudioSessionId));
+            if ((NO_ERROR != doSetRetransmitEndpoint(player)) ||
+                 (NO_ERROR != player->setDataSource(url, headers)))
+            {
+                  player.clear();
+            }
+            err = attachNewPlayer(player); //将旧的播放器实例清掉并使 mPlayer = player
+       }
+       ...
+    }
+
+3. //prepare
+--> status_t MediaPlayer::prepare()
+    {
+        ...
+        mPrepareSync = true;
+        status_t ret = prepareAsync_l();
+        ...
+        if (mPrepareSync) {
+           mSignal.wait(mLock);  // wait for prepare done
+           mPrepareSync = false;
+        }
+    }
+--> status_t MediaPlayer::prepareAsync_l()
+    {
+        ...
+        mCurrentState = MEDIA_PLAYER_PREPARING;
+        return mPlayer->prepareAsync();
+    }
+
+4. //start
+--> status_t MediaPlayer::start()
+    {
+        ...
+        mCurrentState = MEDIA_PLAYER_STARTED;
+        status_t ret = mPlayer->start();
+        return ret;
+    }
+
+================================================================================
+
+====== IPC通信，请求服务端执行 ======
+     //通过IPC通信请求MediaPlayerService完成操作
+--> IMediaDeathNotifier::getMediaPlayerService()
+    {
+       ...
+       sp<IServiceManager> sm = defaultServiceManager();
+       sp<IBinder> binder;
+       ...
+       binder = sm->getService(String16("media.player"));
+       ...
+       binder->linkToDeath(sDeathNotifier); //binder死亡通知
+       sMediaPlayerService = interface_cast<IMediaPlayerService>(binder);
+       ...
+    }
+
+    /*
+	* IPC通信
+	* file: frameworks/av/media/libmedia/IMediaPlayerService.h/cpp
+	* BpMediaPlayerService 代理端，客户端
+	* BnMediaPlayerService 服务端
+     */
+    //代理端BP：发送请求
+-->class BpMediaPlayerService: public BpInterface<IMediaPlayerService>
+   {
+       ... 
+       virtual sp<IMediaPlayer> create(const sp<IMediaPlayerClient>& client, int audioSessionId)
+      {
+          virtual sp<IMediaPlayer> create(
+                const sp<IMediaPlayerClient>& client, int audioSessionId) {
+          Parcel data, reply;
+          data.writeInterfaceToken(IMediaPlayerService::getInterfaceDescriptor());
+          data.writeStrongBinder(client->asBinder());
+          data.writeInt32(audioSessionId);
+
+          remote()->transact(CREATE, data, &reply);  //发送客户请求
+          return interface_cast<IMediaPlayer>(reply.readStrongBinder());
+      }
+
+    //服务端BN：响应请求
+class BnMediaPlayerService: public BnInterface<IMediaPlayerService>
+
+-->status_t BnMediaPlayerService::onTransact(uint32_t code, const Parcel& data, Parcel* reply, uint32_t flags)
+   {
+     switch (code) {
+        case CREATE: {
+            CHECK_INTERFACE(IMediaPlayerService, data, reply);
+            sp<IMediaPlayerClient> client = interface_cast<IMediaPlayerClient>(data.readStrongBinder());
+            int audioSessionId = data.readInt32();
+            sp<IMediaPlayer> player = create(client, audioSessionId);
+            reply->writeStrongBinder(player->asBinder());
+            return NO_ERROR;
+        } break;
+        case ...
+      }
+   }
+
+     //继承服务端接口：
+    class MediaPlayerService : public BnMediaPlayerService
+--> sp<IMediaPlayer> MediaPlayerService::create(const sp<IMediaPlayerClient>& client, int audioSessionId)
+    {
+         ...
+         sp<Client> c = new Client(
+               this, pid, connId, client, audioSessionId,
+               IPCThreadState::self()->getCallingUid());
+
+         wp<Client> w = c;
+         {
+             Mutex::Autolock lock(mLock);
+             mClients.add(w);
+         }
+         return c;
+    }
+     //该内部类 Client 被返回，到此只是建立一个IBinder连接，真正的操作都丢给服务端执行
+--> MediaPlayerService::Client::Client(const sp<MediaPlayerService>& service, pid_t pid,
+                                      int32_t connId, const sp<IMediaPlayerClient>& client,
+                                      int audioSessionId, uid_t uid);
+
+================================================================================
+
+====== Native 服务端 ======
+2. //setDataSource
+--> status_t MediaPlayerService::Client::setDataSource(const char *url,
+                                                       const KeyedVector<String8, String8> *headers)
+    {
+        ...
+        if ((strncmp(url, "http://", 7) == 0) ||
+        ...
+        if (strncmp(url, "content://", 10) == 0) {
+              ...
+              int fd = android::openContentProviderFile(url16);
+              setDataSource(fd, 0, 0x7fffffffffLL); // this sets mStatus
+        } else {
+              ...
+        } 
+
+--> status_t MediaPlayerService::Client::setDataSource(int fd, int64_t offset, int64_t length)
+    {
+        ...
+        player_type playerType = MediaPlayerFactory::getPlayerType(this,
+                                                               fd,
+                                                               offset,
+                                                               length,
+                                                               true
+                                                               );
+    
+        sp<MediaPlayerBase> p = setDataSource_pre(playerType);
+        setDataSource_post(p, p->setDataSource(fd, offset, length)); //与设置重传端点有关
+        return mStatus;
+    }
+
+     /*注：MediaPlayerBase 在MediaPlayerInterface.h中定义，AudioSink是MediaPlayerBase内部类，都为抽象类
+      AudioOutput实现了AudioSink
+
+       需要经过AudioFlinger实现软件混音，最终使用AudioFlinger中的的AudioHardWare对应的Output输出通路：
+      class MediaPlayerInterface : public MediaPlayerBase  hardwareOutput() = false
+
+       直接输出到硬件：
+      class MediaPlayerHWInterface : public MediaPlayerBase hardwareOutput() = true
+   */
+-->sp<MediaPlayerBase> MediaPlayerService::Client::setDataSource_pre(player_type playerType)
+   {
+         sp<MediaPlayerBase> p = createPlayer(playerType);
+         if (p == NULL) {
+               return p;
+         }
+         if (!p->hardwareOutput()) {
+               mAudioOutput = new AudioOutput(mAudioSessionId);
+                  //不直接往硬件输出时，则指定Audio输出到某个Sink
+               static_cast<MediaPlayerInterface*>(p.get())->setAudioSink(mAudioOutput);
+         }
+         return p;
+    }
+
+-->sp<MediaPlayerBase> MediaPlayerService::Client::createPlayer(player_type playerType)
+   {
+         ...
+         sp<MediaPlayerBase> p = MediaPlayerFactory::createPlayer(playerType, this, notify);
+         ...
+         return p;
+   }
+
+================================================================================
+
+==== 真正创建播放器的地方 ====
+//根据媒体类型 playerType 创建播放器实例
+-->sp<MediaPlayerBase> MediaPlayerFactory::createPlayer(player_type playerType,
+                                                        void* cookie,
+                                                        notify_callback_f notifyFunc)
+   {
+        ...
+        IFactory* factory = sFactoryMap.valueFor(playerType);
+        sp<MediaPlayerBase> p = factory->createPlayer();
+        ...
+        return p;
+   }
+
+extmap FILE_EXTS [] =  {
+		{".ogg",  STAGEFRIGHT_PLAYER},
+		{".mp3",  STAGEFRIGHT_PLAYER},
+		{".wav",  STAGEFRIGHT_PLAYER},
+		{".amr",  STAGEFRIGHT_PLAYER},
+		{".flac", STAGEFRIGHT_PLAYER},
+		{".m4a",  STAGEFRIGHT_PLAYER},
+		{".m4r",  STAGEFRIGHT_PLAYER},
+		{".out",  CEDARX_PLAYER},
+		//{".3gp",  STAGEFRIGHT_PLAYER},
+        //{".aac",  STAGEFRIGHT_PLAYER},
+            
+        {".mid",  SONIVOX_PLAYER},
+        {".midi", SONIVOX_PLAYER},
+        {".smf",  SONIVOX_PLAYER},
+        {".xmf",  SONIVOX_PLAYER},
+        {".mxmf", SONIVOX_PLAYER},
+        {".imy",  SONIVOX_PLAYER},
+        {".rtttl",SONIVOX_PLAYER},
+        {".rtx",  SONIVOX_PLAYER},
+        {".ota",  SONIVOX_PLAYER},
+            
+        {".ape", CEDARA_PLAYER},
+        {".ac3", CEDARA_PLAYER},
+        {".dts", CEDARA_PLAYER},
+        {".wma", CEDARA_PLAYER},
+        {".aac", CEDARA_PLAYER},
+        {".mp2", CEDARA_PLAYER},
+        {".mp1", CEDARA_PLAYER},
+        {".athumb", THUMBNAIL_PLAYER},
+};
+
+extmap MP4A_FILE_EXTS [] =  {
+	{".m4a", CEDARX_PLAYER},
+	{".m4r", CEDARX_PLAYER},
+	{".3gpp", CEDARX_PLAYER},
+};
+
+-->class NuPlayerFactory : public MediaPlayerFactory::IFactory {...}
+-->class SonivoxPlayerFactory : public MediaPlayerFactory::IFactory {...}
+-->class TestPlayerFactory : public MediaPlayerFactory::IFactory {...}
+-->class CedarXPlayerFactory : public MediaPlayerFactory::IFactory {...}
+-->class CedarAPlayerFactory : public MediaPlayerFactory::IFactory {...}
+-->class TPlayerFactory : public MediaPlayerFactory::IFactory {...}
+-->class StagefrightPlayerFactory : public MediaPlayerFactory::IFactory
+   {
+      ...
+      virtual sp<MediaPlayerBase> createPlayer() {
+           return new StagefrightPlayer();  //一般用于播放本地文件
+      }
+   }
+
+class StagefrightPlayer : public MediaPlayerInterface //需要经过AudioFlinger混音,需要设置setAudioSink()
+-->StagefrightPlayer::StagefrightPlayer() : mPlayer(new AwesomePlayer)
+  {
+      mPlayer->setListener(this);
+  }
+
+3. //prepare
+--> status_t MediaPlayerService::Client::prepareAsync()
+    {
+         sp<MediaPlayerBase> p = getPlayer();
+         status_t ret = p->prepareAsync();
+         return ret;
+    }
+--> status_t StagefrightPlayer::prepareAsync()
+    {
+        return mPlayer->prepareAsync();
+    }
+
+4. //start
+--> status_t MediaPlayerService::Client::start()
+    {
+        sp<MediaPlayerBase> p = getPlayer();
+        p->setLooping(mLoop);
+        return p->start();
+    }
+--> status_t StagefrightPlayer::start()
+    {
+        return mPlayer->play();
+    }
+
+====== AwesomePlayer ======
+//setDataSource(), prepare(), prepareAsync(), start()...都由 AwesomePlayer实现
+
+2. //setDataSource
+-->status_t AwesomePlayer::setDataSource(...);
+-->status_t AwesomePlayer::setDataSource_l(const sp<DataSource> &dataSource)
+   {
+       ...
+       sp<MediaExtractor> extractor = MediaExtractor::Create(dataSource); //创建媒体解复用器，提取音频和视频流
+       ...
+       return setDataSource_l(extractor);
+       ...
+   }
+
+   /* 
+	* MediaExtractor 创建解复用器，根据文件格式选择具体的分离器
+	* 目前4.4支持的分离器:mp4, mp3, arm, flac, wav, ogg, Matroska, MPEG2TS, MPEG2PS, WVM, aac。
+    */
+-->static sp<MediaExtractor> MediaExtractor::Create(const sp<DataSource> &source, const char *mime)
+   {
+        ...
+        source->sniff(&tmp, &confidence, &meta);
+        mime = tmp.string();
+        if (!strncmp(mime, "drm+", 4)) {
+            //...判断是否有版权保护,注：WVM格式没有该标志
+        }
+        MediaExtractor *ret = NULL;
+        if (!strcasecmp(mime, MEDIA_MIMETYPE_CONTAINER_MPEG4) || !strcasecmp(mime, "audio/mp4")) {
+             ret = new MPEG4Extractor(source);
+        } else if (...)
+        ...
+        return ret;
+   }
+   /*
+	* 遍历所有的分离器注册的方法：SniffMPEG4，SniffMatroska，SniffOgg，SniffWAV，SniffFLAC，SniffAMR，SniffMPEG2TS，
+	* SniffMP3，SniffAAC，SniffMPEG2PS，SniffWVM
+	* 找到 newConfidence 分数最大的分离器
+    */
+-->bool DataSource::sniff(String8 *mimeType, float *confidence, sp<AMessage> *meta)
+  {
+      ...
+      for (List<SnifferFunc>::iterator it = gSniffers.begin(); it != gSniffers.end(); ++it)
+      {
+        (*it)(this, &newMimeType, &newConfidence, &newMeta);
+         ...
+      }
+      return *confidence > 0.0;
+   }
+
+-->status_t AwesomePlayer::setDataSource_l(const sp<MediaExtractor> &extractor)
+   {
+        ...
+          // 遍历所有的tracks
+        for (size_t i = 0; i < extractor->countTracks(); ++i) {
+             sp<MetaData> meta = extractor->getTrackMetaData(i);
+
+             CHECK(meta->findCString(kKeyMIMEType, &_mime));
+
+             String8 mime = String8(_mime);
+
+             if (!haveVideo && !strncasecmp(mime.string(), "video/", 6)) {   //如果该track是视频流
+                  setVideoSource(extractor->getTrack(i));           //设置video源
+                  haveVideo = true;
+                  meta->findInt32(kKeyDisplayWidth, &displayWidth);  //求出视频长宽值
+                  meta->findInt32(kKeyDisplayHeight, &displayHeight);
+                  ...
+             } else if(!haveAudio && !strncasecmp(mime.string(), "audio/", 6)) {  //如果该track是音频流
+
+                  setAudioSource(extractor->getTrack(i));   //设置audio源
+                  haveAudio = true;
+                  mActiveAudioTrackIndex = i;
+                  ...
+             }
+             ...
+          }
+    }
+
+-->void AwesomePlayer::setVideoSource(sp<MediaSource> source)
+   {
+        CHECK(source != NULL);
+
+        sp<MediaSource> mVideoTrack = source;
+   }
+-->void AwesomePlayer::setAudioSource(sp<MediaSource> source)
+   {
+        CHECK(source != NULL);
+
+        sp<MediaSource> mAudioTrack = source;  //以MPEG4Extractor为例：mAudioTrack = new MPEG4Source()
+   }
+
+3. //prepare
+同步
+--> status_t AwesomePlayer::prepare();
+--> status_t AwesomePlayer::prepare_l()
+--> status_t AwesomePlayer::prepareAsync_l();  //mIsAsyncPrepare = false;
+异步
+--> status_t AwesomePlayer::prepareAsync();
+--> status_t AwesomePlayer::prepareAsync_l() //mIsAsyncPrepare = true;
+
+殊途同归
+-->status_t AwesomePlayer::prepareAsync_l() 
+   {
+       ...
+       if (!mQueueStarted) {
+           mQueue.start();
+           mQueueStarted = true;
+       }
+       modifyFlags(PREPARING, SET);
+       mAsyncPrepareEvent = new AwesomeEvent(this, &AwesomePlayer::onPrepareAsyncEvent);
+
+       mQueue.postEvent(mAsyncPrepareEvent);      //时间调度，待深入研究
+
+       return OK;
+   }
+
+-->void AwesomePlayer::onPrepareAsyncEvent();
+-->void AwesomePlayer::beginPrepareAsync_l()
+   {
+       ...
+       if (mUri.size() > 0) {      // mUri >0 即 setDataSource()中的一条没有创建MediaExtractor的分支
+           status_t err = finishSetDataSource_l();   //为了避免阻塞线程，实际的setDataSource工作在这里完成
+           ...
+       }
+       if (mVideoTrack != NULL && mVideoSource == NULL) {
+           status_t err = initVideoDecoder();        //初始化视频解码器
+           ...
+       }
+       if (mAudioTrack != NULL && mAudioSource == NULL) {
+           status_t err = initAudioDecoder();        //初始化音频解码器
+           ...
+       }
+       modifyFlags(PREPARING_CONNECTED, SET);
+     
+       if (isStreamingHTTP()) {          //网络流...待深入
+            postBufferingEvent_l();
+       } else {
+            finishAsyncPrepare_l();
+       }
+   }
+
+=====================================================================================================
+
+====== 音频解码器,此处需要独立写一篇流程了 ======
+
+-->status_t AwesomePlayer::initAudioDecoder()
+  {
+       ...
+         //检查该格式的音频是否支持硬件解码
+       mOffloadAudio = canOffloadStream(meta, (mVideoSource != NULL), isStreamingHTTP());
+       ...
+         //创建软解码器
+       mOmxSource = OMXCodec::Create(
+                mClient.interface(), mAudioTrack->getFormat(),
+                false, // createEncoder
+                mAudioTrack);
+       if (mOffloadAudio) {
+            ALOGV("createAudioPlayer: bypass OMX (offload)");
+            mAudioSource = mAudioTrack;      // 使用硬解码
+       } else {
+            mAudioSource = mOmxSource;       // 使用软解码
+       }
+       ...
+       if(mAudioSource != null) {
+            ...
+            status_t err = mAudioSource->start();  //开始软解码？
+            ...      
+            TrackStat *stat = &mStats.mTracks.editItemAt(mStats.mAudioTrackIndex);
+            mAudioSource->getFormat()->findCString(kKeyDecoderComponent, &component);
+
+            stat->mDecoderName = component;      // 解码器名字？
+       }
+       return mAudioSource != NULL ? OK : UNKNOWN_ERROR;
+   }
+
+4. //start
+--> status_t AwesomePlayer::play()
+    {
+        ATRACE_CALL();
+
+        Mutex::Autolock autoLock(mLock);
+
+        modifyFlags(CACHE_UNDERRUN, CLEAR);
+
+        return play_l();
+    }
+--> status_t AwesomePlayer::play_l()
+    {
+        ...
+        if (mAudioSource != NULL) {
+              if (mAudioPlayer == NULL) {
+                   createAudioPlayer_l();
+              }
+              if (mVideoSource == NULL) {     //如果只有音频没有视频
+                   status_t err = startAudioPlayer_l(false /* sendErrorNotification */);
+              }
+              ...
+        }
+        if (mVideoSource != NULL) {
+              // Kick off video playback
+              postVideoEvent_l();
+
+              if (mAudioSource != NULL && mVideoSource != NULL) {   //如果同时存在音频视频
+                   postVideoLagEvent_l();
+              }
+         }
+         ...
+    }
+ 
+--> void AwesomePlayer::createAudioPlayer_l()
+    {
+         ...
+         mAudioPlayer = new AudioPlayer(mAudioSink, flags, this);    //创建AudioPlayer
+         mAudioPlayer->setSource(mAudioSource);
+
+         mTimeSource = mAudioPlayer;
+         ...
+    }
+
+--> status_t AwesomePlayer::startAudioPlayer_l(bool sendErrorNotification)
+    {
+         ...
+         if (mOffloadAudio) {
+             mQueue.cancelEvent(mAudioTearDownEvent->eventID());  //该event是否软解码过程产生的，解码完就释放
+             mAudioTearDownEventPending = false;
+         }
+         err = mAudioPlayer->start(true /* sourceAlreadyStarted */);   //如果还没播放过则开始播放
+         ...
+         err = mAudioPlayer->resume();     //已经播放过将接着播放
+         return err;
+    }
+
+================================================================================
+
+====== AudioPlayer ======
+--> status_t AudioPlayer::start(bool sourceAlreadyStarted)
+    {
+        ...
+        if (!sourceAlreadyStarted) {
+              err = mSource->start();
+        }
+        ...
+        if (mAudioSink.get() != NULL) {
+                ...
+                status_t err = mAudioSink->open(mSampleRate, numChannels, channelMask, audioFormat,
+                                                DEFAULT_AUDIOSINK_BUFFERCOUNT,
+                                                &AudioPlayer::AudioSinkCallback,
+                                                this,
+                                                (audio_output_flags_t)flags,
+                                                useOffload() ? &offloadInfo : NULL);
+                if (err == OK) {
+                      ...
+                      err = mAudioSink->start();    //MediaPlayerService::AudioOutput : public AudioSink
+                      ...
+                }
+                ...
+         } else {
+                ...
+                mAudioTrack = new AudioTrack(AUDIO_STREAM_MUSIC, mSampleRate, AUDIO_FORMAT_PCM_16_BIT,
+                                             audioMask, 0, AUDIO_OUTPUT_FLAG_NONE, &AudioCallback, this, 0);
+                ...
+                mLatencyUs = (int64_t)mAudioTrack->latency() * 1000;
+                mFrameSize = mAudioTrack->frameSize();
+
+                mAudioTrack->start();
+         }
+         ...
+         return OK;
+     }
+
+// AudioTrack
+--> 
+
+
+接下来要追一下代码，看看是如何调用到AudioFlinger那边的
+
+==================================================================================
+
+====== AudioFlinger 的启动 ======
+//init.rc
+service media /system/bin/mediaserver
+    class main
+    user media
+    group audio camera inet net_bt net_bt_admin net_bw_acct drmrpc sdcard_rw media_rw mediadrm
+    ioprio rt 4
+
+//android4.4/frameworks/av/media/mediaserver/main_mediaserver.cpp
+-->int main(int argc, char** argv)
+   { 
+       ...
+        sp<ProcessState> proc(ProcessState::self());
+        sp<IServiceManager> sm = defaultServiceManager();
+        ALOGI("ServiceManager: %p", sm.get());
+        AudioFlinger::instantiate();   //在模板BinderService.h 中实现，初始化并加入IServiceManager中
+        ...
+        ProcessState::self()->startThreadPool();
+        IPCThreadState::self()->joinThreadPool();
+   }
+
+// 输出设备的打开？
+-->audio_io_handle_t AudioFlinger::openOutput(audio_module_handle_t module,
+                                              audio_devices_t *pDevices,
+                                              uint32_t *pSamplingRate,
+                                              audio_format_t *pFormat,
+                                              audio_channel_mask_t *pChannelMask,
+                                              uint32_t *pLatencyMs,
+                                              audio_output_flags_t flags,
+                                              const audio_offload_info_t *offloadInfo)
+   {
+        ...
+        audio_stream_out_t *outStream = NULL;
+        AudioHwDevice *outHwDev;
+        outHwDev = findSuitableHwDev_l(module, *pDevices);    //找到适配的硬件设备
+        audio_hw_device_t *hwDevHal = outHwDev->hwDevice();
+
+        audio_io_handle_t id = nextUniqueId();
+
+        mHardwareStatus = AUDIO_HW_OUTPUT_OPEN;
+        ...
+        status_t status = hwDevHal->open_output_stream(hwDevHal,       //打开硬件设备,跑到hal层
+                                                       id,
+                                                       *pDevices,
+                                                       (audio_output_flags_t)flags,
+                                                       &config,
+                                                       &outStream);
+        if (status == NO_ERROR && outStream != NULL) {
+
+               AudioStreamOut *output = new AudioStreamOut(outHwDev, outStream, flags);
+
+            if (flags & AUDIO_OUTPUT_FLAG_COMPRESS_OFFLOAD) {
+                thread = new OffloadThread(this, output, id, *pDevices);     //先压缩后输出线程？
+
+            } else if ((flags & AUDIO_OUTPUT_FLAG_DIRECT) ||
+                (config.format != AUDIO_FORMAT_PCM_16_BIT) ||
+                (config.channel_mask != AUDIO_CHANNEL_OUT_STEREO)) {
+                thread = new DirectOutputThread(this, output, id, *pDevices);   //直接输出线程
+
+            } else {
+                thread = new MixerThread(this, output, id, *pDevices);  //混音线程
+            }
+
+            mPlaybackThreads.add(id, thread);   //添加到播放线程中
+            ...
+            thread->audioConfigChanged_l(AudioSystem::OUTPUT_OPENED);  //通知客户端新的output已经建立，类似于回调
+            
+            if ((mPrimaryHardwareDev == NULL) && (flags & AUDIO_OUTPUT_FLAG_PRIMARY))
+            {
+                 mPrimaryHardwareDev = outHwDev;
+
+                 AutoMutex lock(mHardwareLock);
+                 mHardwareStatus = AUDIO_HW_SET_MODE;
+                 hwDevHal->set_mode(hwDevHal, mMode);         //如果是primary输出设备
+                 mHardwareStatus = AUDIO_HW_IDLE;
+            }
+            return id;
+
+        }
+
+        return 0;
+    }
+
+MixerThread 在 frameworks/av/services/audioflinger/Threads.h 声明
+               在 frameworks/av/services/audioflinger/Threads.cpp 实现
+
+-->AudioFlinger::MixerThread::MixerThread(const sp<AudioFlinger>& audioFlinger, AudioStreamOut* output,
+                                          audio_io_handle_t id, audio_devices_t device, type_t type)
+                     : PlaybackThread(audioFlinger, output, id, device, type),
+                       mFastMixerFutex(0)
+   {
+        mAudioMixer = new AudioMixer(mNormalFrameCount, mSampleRate);
+        ...
+        // create an NBAIO sink for the HAL output stream, and negotiate
+        mOutputSink = new AudioStreamOutSink(output->stream);
+
+
+
+=======================================================================================================
+
+==== 全志的 Hal 层 ====
+根据不同的平台调用HAL层实现，F1 442 在 device/softwinner/fiber-common/hardware/audio/audio_hw.c
+-->static int adev_open(const hw_module_t* module, const char* name, hw_device_t** device)
+   {
+        ...
+        struct sunxi_audio_device *adev;
+        ...
+        adev->hw_device.open_output_stream 	= adev_open_output_stream;  // open_output_stream
+        adev->hw_device.close_output_stream 	= adev_close_output_stream;
+        adev->hw_device.open_input_stream 	= adev_open_input_stream;
+        adev->hw_device.close_input_stream 	= adev_close_input_stream;
+        adev->mixer 				= mixer_open(0);
+        ...
+   }
+
+-->static int adev_open_output_stream(struct audio_hw_device *dev,
+                                       audio_io_handle_t handle,
+                                       audio_devices_t devices,
+                                       audio_output_flags_t flags,
+                                       struct audio_config *config,
+                                       struct audio_stream_out **stream_out)
+   {
+         ...
+         struct sunxi_stream_out *out;
+         out->stream.write 			= out_write;
+         *stream_out = &out->stream;
+         return 0;
+         ...
+   }    
+
+-->static ssize_t out_write(struct audio_stream_out *stream, const void* buffer, size_t bytes)
+   {
+        ...
+        if (out->standby) {
+        ret = start_output_stream(out);
+        ...
+        /* only use resampler if required */
+        if (out->resampler) {             //如果有创建重采样器，则进行重采样
+            out->resampler->resample_from_input(out->resampler,
+                                            (int16_t *)buffer,
+                                            &in_frames,
+                                            (int16_t *)out->buffer,
+                                            &out_frames);
+        } else {
+            out_frames = in_frames;
+            buf = (void *)buffer;
+        }
+        ...
+   }
+
+/* must be called with hw device and output stream mutexes locked */
+-->static int start_output_stream(struct sunxi_stream_out *out)
+   {
+        ...
+        unsigned int port = PORT_CODEC; 
+        ...
+          /*选择播放设备，耳机或者扬声器等*/
+	int device = adev->out_device;
+	char prop_value[512];
+        int ret = property_get("audio.routing", prop_value, "");
+	if (ret > 0)
+	{
+	    if(atoi(prop_value) == AUDIO_DEVICE_OUT_SPEAKER)
+	    {
+			device = AUDIO_DEVICE_OUT_SPEAKER;
+		}
+		else if(atoi(prop_value) == AUDIO_DEVICE_OUT_AUX_DIGITAL)
+		{
+			device = AUDIO_DEVICE_OUT_AUX_DIGITAL;
+		}
+		else if(atoi(prop_value) == AUDIO_DEVICE_OUT_DGTL_DOCK_HEADSET)
+		{
+			device = AUDIO_DEVICE_OUT_DGTL_DOCK_HEADSET;
+		}
+		else
+		{
+			ALOGW("unknown audio.routing : %s", prop_value);
+		}
+	}
+	else
+	{
+		// ALOGW("get audio.routing failed");
+	}
+
+	adev->out_device = device;
+          /*选择完毕 */ "根据Log信息get audio.routing failed，并没有选择播放设备成功"
+        ...
+        if (adev->mode != AUDIO_MODE_IN_CALL) {
+             /* FIXME: 当同一时间只能使用一个输出设备时才起作用 */
+             select_output_device(adev);         //选择输出设备
+        }
+        out->config.rate = MM_SAMPLING_RATE;                //此处强制设定为44100，根据Log信息，在此之前已经是44100了
+        if (adev->out_device & AUDIO_DEVICE_OUT_DGTL_DOCK_HEADSET) {      //优先SPDIF
+		card = CARD_A1X_SPDIF;
+                port = PORT_SPDIF;
+        }
+        else if(adev->out_device & AUDIO_DEVICE_OUT_AUX_DIGITAL) {        //再判断是否HDMI
+                card = CARD_A1X_HDMI;
+                port = PORT_HDMI;
+                out->config.rate = MM_SAMPLING_RATE; //奇怪这里怎么还要定义一次
+        }
+        ...
+        out->pcm = pcm_open_req(card, port, PCM_OUT | PCM_MMAP | PCM_NOIRQ, &out->config,
+                                DEFAULT_OUT_SAMPLING_RATE);
+        ...
+        if (DEFAULT_OUT_SAMPLING_RATE != out->config.rate)
+	{
+		ret = create_resampler(DEFAULT_OUT_SAMPLING_RATE,              //创建重采样器
+							   out->config.rate,
+							   2,
+							   RESAMPLER_QUALITY_DEFAULT,
+							   NULL,
+							   &out->resampler);
+	}
+	else
+	{
+		ALOGV("do not use out resampler");
+	}
+
+	if (out->resampler)
+	{
+	    out->resampler->reset(out->resampler);
+	}
+        return 0;
+   }

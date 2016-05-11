@@ -1,0 +1,47 @@
+==== 尝试过修改PC端： ====
+1. 打开文件：/etc/udev/rules.d/51-android.rules
+   添加SUBSYSTEM=="usb", ATTRS{idVendor}=="1f3a", MODE="0666"
+2. 执行指令 $sudo restart udev 重启USB service
+
+3. USB线连接机台，使用指令 adb devices 仍然无法辨别到设备， 使用指令 lsusb 打印USB信息，没有显示该设备公司信息
+
+
+==== 有效的解决方法： ====
+修改文件 android/device/softwinner/fiber-a31stm/init.sun6i.usb.rc
+    write /sys/class/android_usb/android0/idVendor	1f3a
+
+将所有的1f3a更改为18d1（谷歌）或者04e8（三星）或者其他任何 **合法ID标识** 即可
+
+idVendor —— USB设备的制造商ID，须向www.usb.org申请，该标识是在Kernel层起作用，具体情况如何，未深入挖掘。
+idProduct —— USB设备的产品ID，由制造商自定
+
+
+公司     USB制造商ID
+IDAcer(宏碁)0502
+ASUS(华硕)0b05
+Dell(戴尔)413c
+Foxconn(富士康)0489
+Garmin-Asus(华硕)091E
+Google(谷歌)18d1
+HTC(宏达电)0bb4
+Huawei(华为)12d1
+K-Touch(天语)24e3
+KT Tech2116
+Kyocera(京瓷)0482
+Lenevo(联想)17EF
+LG1004
+Motorola(摩托罗拉)22b8
+NEC0409
+Nook2080
+Nvidia(英伟达)0955
+OTGV2257
+Pantech(泛泰)10A9
+Philips(飞利浦)0471
+PMC-Sierra04da
+Qualcomm(高通)05c6
+SK Telesys1f53
+Samsung(三星)04e8
+Sharp(夏普)04dd
+Sony Ericsson(索尼爱立信)0fce
+Toshiba(东芝)0930
+ZTE(中天)19D2

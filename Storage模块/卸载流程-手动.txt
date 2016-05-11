@@ -1,0 +1,252 @@
+Content-Type: text/x-zim-wiki
+Wiki-Format: zim 0.4
+Creation-Date: 2014-03-11T12:18:19+08:00
+
+====== 卸载流程-手动 ======
+Created Tuesday 11 March 2014
+
+==== 手动卸载SD card的流程 ====
+
+== 一. 点击卸载，发送卸载信息： ==
+
+-> Memory.doUnmount();
+
+-> mountService.unmountVolume(sClickedMountPoint, true, false)
+    {
+                 ...
+                 waitForReady();  //等待连接初始化完成，位置在：/* Now that we've done our initialization, release the hounds!  */   mConnectedSignal.countDown();
+                  ...
+     }
+
+-> MountService.doUnmountVolume(path, true, removeEncryption)
+    {
+               ...
+             /*
+			* Force a GC to make sure AssetManagers in other threads of the
+			* system_server are cleaned up. We have to do this since AssetManager
+			* instances are kept as a WeakReference and__ it's possible we have files__
+			* __open on the external storage.__
+			* 关掉一些进程，还有打开的外部存储的文件
+               */
+              Runtime.getRuntime().gc();
+              ...
+              mConnector.execute(cmd);
+              ...
+     }
+
+-> NativeDaemonConnector.execute("volume", "umount", path)
+   {
+       ...
+       mOutputStream.write(sentCmd.getBytes(Charsets.UTF_8));        __  // 通过socket发送"volume unmount /mnt/extsd"信息给 native层__
+       ...
+   }
+
+
+== 二. native 层接收卸载请求信息： ==
+
+-> SocketListener::startListener(); 
+
+-> SocketListener::runListener();  // **监听来自Kernel层和Framework层的socket数据;**
+         
+-> FrameworkListener::onDataAvailable(SocketClient *c);     **//对接收到的数据进行分析，消息从framework层发来的，则调用子类 FrameworkListener 分析**
+
+-> FrameworkListener::dispatchCommand(SocketClient *cli, char *data);  //对命令进行分类
+       
+-> FrameworkCommand::runCommand(SocketClient *c, int argc, char argv**);      **// 根据分析结果执行指令
+
+   **// 不同指令调用不同的子类去实现，各子类在ConmmandListener.cpp中定义;**
+**   //  command = volume (还有其他指令：dump， storage， asec， obb， xwarp， cryptfs， fstrim)**
+-> CommandListener::VolumeCmd::runCommand(SocketClient *cli, int argc, char **argv)
+   {
+             ...
+             cli->sendMsg(ResponseCode::CommandSyntaxError, "Usage: volume unmount <path> [force|force_and_revert]", false);     **// **__向已连接的socket发送信息__
+              ...
+             rc = vm->unmountVolume(argv[2], force, revert);
+              ...
+   }
+
+-> VolumeManager::unmountVolume(const char *label);
+
+-> Volume::unmountVol()
+   {
+            ...
+           __ setState(Volume::State_Unmounting);__
+            usleep(1000 * 1000);      // Give the framework some time to react
+
+           char service[64];
+           snprintf(service, 64, "fuse_%s", getLabel());
+           property_set("ctl.stop", service);
+           /* Give it a chance to stop.  I wish we had a synchronous way to determine this... */
+           sleep(1);
+            ...
+            if (mPartIdx == -1 && mMountedPartNum > 1) {
+                     **// log信息显示： E/Vold    ( 1304): mPartIdx = -1, mMountedPartNum= 1 ，所以不走这一流程**
+            }
+
+             /* Now that the fuse daemon is dead, unmount it */     走这一流程
+             if (doUnmount(getFuseMountpoint(), force) != 0) {                                 // __ ro.sys.storage_type == emulated?  getFuseMountpoint()  =  "/storage/extsd" : getFuseMountpoint()  =  "/mnt/extsd"__
+                          SLOGE("Failed to unmount %s (%s)", getFuseMountpoint(), strerror(errno));
+                          goto fail_remount_secure;
+             }
+             ...
+             __setState(Volume::State_Idle);__
+             mCurrentlyMountedKdev = -1;
+             return 0;      
+   }
+
+-> Volume::doUnmount(const char *path, bool force)
+      {
+                ...
+                while (retries--) {
+                       if (!umount(path) || errno == EINVAL || errno == ENOENT) {            //一般到这里将卸载完成了，如果卸载失败，则循环60次，最后进入下面的强制卸载流程
+                             SLOGI("%s sucessfully unmounted", path);
+                             return 0;
+                       }
+
+                       int action = 0;
+
+                        if (force) {
+                                  if (retries == 1) {
+                                             action = 2; // SIGKILL
+                                   } else if (retries == 58) {
+                                             action = 1; // SIGHUP
+                                  }
+                         }
+                         SLOGW("Failed to unmount %s (%s, retries %d, action %d)",   path, strerror(errno), retries, action);
+
+                         __Process::killProcessesWithOpenFiles(path, action);__
+                         usleep(1000*1000);
+                 }
+       }
+
+
+== 三. 至此卸载完成，接下来更新设备State信息和返回卸载成功信息： ==
+
+-> Volume::setState(int state)
+   {
+       ...
+       mVm->getBroadcaster()->sendBroadcast(ResponseCode::VolumeStateChange, msg, false);       ** //  mVm->getBroadcaster()返回 SocketListener**
+       ...
+   }
+
+-> SocketListener::sendBroadcast(int code, const char *msg, bool addErrno)
+   {
+       ...
+       (*i)->sendMsg(code, msg, addErrno, false);
+         // 即SocketClient::sendMsg(int code, const char *msg, bool addErrno, bool useCmdNum);
+   }
+
+-> SocketClient::sendMsg(int code, const char *msg, bool addErrno, bool useCmdNum);
+
+-> SocketClient::sendMsg(const char *msg);
+
+-> SocketClient::sendData(const void *data, int len);
+
+-> SocketClient::sendDataLocked(const void *data, int len)
+   {
+       ...
+       rc = send(mSocket, p, brtw, MSG_NOSIGNAL); //向已连接的mSocket发送数据p，数据长度为brtw，发送方式为MSG_NOSIGNAL。
+                                                                                                              // __也就是将卸载成功的信息发送回给framework层__
+       ...
+   }
+
+
+== 四. framework层收到卸载成功信息，发送卸载成功广播: ==
+
+-> NativeDaemonConnector.listenToSocket()
+   {
+           mCallbacks.onDaemonConnected();    // 绑定socket之后回调MountService
+            ...
+            int count = inputStream.read(buffer, start, BUFFER_SIZE - start);
+            ...
+            if (event.isClassUnsolicited()) {
+                 // TODO: migrate to sending NativeDaemonEvent instances
+                 mCallbackHandler.sendMessage(mCallbackHandler.obtainMessage(event.getCode(), event.getRawEvent()));
+            }
+            ...
+    }
+
+-> NativeDaemonConnector.handleMessage(Message msg)
+   {
+            String event = (String) msg.obj;
+            ...
+            if (!mCallbacks.onEvent(msg.what, event, NativeDaemonEvent.unescapeArgs(event)));
+            ...
+   }
+
+-> MountService.onEvent(int code, String raw, String[] cooked)
+   {
+       ...
+        // 事件为存储设备的状态变化
+       if (code == VoldResponseCode.VolumeStateChange) {
+             notifyVolumeStateChange(
+                    cooked[2], cooked[3], Integer.parseInt(cooked[7]), Integer.parseInt(cooked[10]));
+       }
+       ...
+   }
+
+-> MountService.notifyVolumeStateChange(String label, String path, int oldState, int newState)
+   {
+           ...
+           if (newState == VolumeState.Unmounting) {      action = Intent.ACTION_MEDIA_EJECT;     }
+ 
+          ...
+           if (action != null )  {     sendStorageIntent(action, volume, UserHandle.ALL);        }   // 此处调用方法发送卸载成功的广播！！！
+          ...
+   }
+
+绑定socket时MountService的回调方法
+-> MountService.onDaemonConnected()
+     { 
+                 new Thread("MountService#onDaemonConnected") {
+                           public void run() {
+                                        for (String volstr : vols) {
+                                                       ...
+                                                        updatePublicVolumeState(volume, state);
+                                        }
+                            }
+                  }
+      }
+
+-> MountService.updatePublicVolumeState( StorageVolume volume, String state )
+    {
+                 // Tell PackageManager about changes to primary volume state, but only
+                // when not emulated.
+                if (volume.isPrimary() && !volume.isEmulated()) {
+                               if (Environment.MEDIA_UNMOUNTED.equals(state)) {
+                                               mPms.updateExternalMediaStatus(false, false);
+
+                                         /*
+				  *Some OBBs might have been unmounted when this volume was unmounted, so send a message to the handler to let it know to remove those from the list of mounted OBBS.
+                                           */
+                                              mObbActionHandler.sendMessage(mObbActionHandler.obtainMessage( OBB_FLUSH_MOUNT_STATE, path));
+                                 } else if (Environment.MEDIA_MOUNTED.equals(state)) {
+                                              mPms.updateExternalMediaStatus(true, false);
+                                 }
+                   }
+                   ...
+                   MountServiceBinderListener bl = mListeners.get(i);
+                   bl.mListener.onStorageStateChanged(path, oldState, state);
+      }
+
+/mnt/extsd  isPrimary() = false
+
+至此framework层手动卸载的工作基本完成，剩下一些收尾工作
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

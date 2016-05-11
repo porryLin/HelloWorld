@@ -1,0 +1,46 @@
+Content-Type: text/x-zim-wiki
+Wiki-Format: zim 0.4
+Creation-Date: 2014-03-20T16:31:43+08:00
+
+====== 蓝牙名 设备号 序列号 ======
+Created Thursday 20 March 2014
+
+===============================================================
+
+== 序列号： ==
+ro.product.firmware
+由于USER版的系统没有su，/snsn 分区没有写权限，如何将sn.txt写到/snsn 分区下？
+
+解决方法：
+先烧录ENG版，将sn.txt 复制到 /snsn 分区下， 再烧录USER版
+
+
+===============================================================
+
+== 蓝牙设备名： ==
+本地显示名称：
+android/device/softwinner/fiber-a31stm/bluetooth/bdroid_buildcfg.h
+#define BTM_DEF_LOCAL_NAME   "NewTab RL1"
+
+在其它设备上显示的名称：
+android/external/bluetooth/bluedroid/conf/bt_stack.conf
+ # Set the phone BT device name
+ Name=NewTab RL1
+
+
+===============================================================
+
+== 设备名 ==
+(在PC上显示的设备名称)：ro.udisk.lable
+android4.4/build/tools/buildinfo.sh
+
+echo "ro.udisk.lable=NewTab RL1"
+
+
+
+
+
+
+
+
+

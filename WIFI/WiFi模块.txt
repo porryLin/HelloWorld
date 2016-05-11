@@ -1,0 +1,62 @@
+Content-Type: text/x-zim-wiki
+Wiki-Format: zim 0.4
+Creation-Date: 2014-02-26T09:46:41+08:00
+
+====== WiFi模块 ======
+Created Wednesday 26 February 2014
+
+asynchronous 异步
+synchronous 同步
+
+执行WIFI的具体操作使用 android.net.wifi.WifiManager.java
+执行网络连接的抽象操作使用 android.net.ConnectivityManager.java
+
+
+=========================
+WLAN始终连接
+1.在设置中选择了始终连接：
+Settings.Global.putInt(getContentResolver(), Settings.Global.WIFI_SLEEP_POLICY, value);  //始终连接value = Settings.Global.WIFI_SLEEP_POLICY_NEVER
+
+
+======================================================
+打开 WIFI 流程分析
+mWifiManager.setWifiEnabled(isChecked);
+
+WifiManager.java
+    mService.setWifiEnabled(enabled); //通过 aidl 调用系统服务 Context.getSystemService(Context.WIFI_SERVICE), 系统服务是单例模式?
+
+WifiServiceImpl.java
+    public synchronized boolean setWifiEnabled(boolean enable); //同步锁方法
+         enforceChangePermission(); //确认权限
+         mSettingsStore.handleWifiToggled(enable);
+         mWifiController.obtainMessage(CMD_WIFI_TOGGLED, mWifiIpoOff ? 1 : 0).sendToTarget(); //状态更改没问题则开始真正的打开 wifi 操作.
+
+WifiSettingsStore.java  
+    Settings.Global.putInt(mContext.getContentResolver(), Settings.Global.WIFI_ON, state); 
+
+       WIFI_DISABLED 0,
+       WIFI_ENABLED 1,
+       WIFI_ENABLED_AIRPLANE_OVERRIDE 2,
+       WIFI_DISABLED_AIRPLANE_ON 3
+
+
+复杂点的来了... 
+WifiController.java 
+打开 wifi 的顺序: ApStaDisabledState -> StaEnabledState -> DeviceActiveState
+关闭 wifi 的顺序刚好相反: DeviceActiveState -> StaEnabledState -> ApStaDisabledState
+
+打开 wifi 的log信息
+D/WifiController(  825): ApStaDisabledState{ when=0 what=155656 target=com.android.internal.util.StateMachine$SmHandler }
+D/WifiController(  825): StaEnabledState
+D/WifiController(  825): DeviceActiveState
+
+关闭 wifi 的log信息
+D/WifiController(  825): DeviceActiveState{ when=0 what=155656 target=com.android.internal.util.StateMachine$SmHandler }
+D/WifiController(  825): StaEnabledState{ when=0 what=155656 target=com.android.internal.util.StateMachine$SmHandler }
+D/WifiController(  825): ApStaDisabledState
+
+
+
+
+
+

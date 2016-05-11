@@ -1,0 +1,98 @@
+Content-Type: text/x-zim-wiki
+Wiki-Format: zim 0.4
+Creation-Date: 2014-06-23T10:18:28+08:00
+
+====== 编user版出现的bug ======
+Created Monday 23 June 2014
+
+    各位大侠：
+              有一个问题向大家请教下。
+               android4.0发布软件要用user模式， 我们调试程序用的是eng模式。在build_android.sh中把eng改为user后编译，出现一些问题：
+    （1）、 设置中wifi开关选项没有；
+    （2）、不能安装应用程序apk;
+    （3）、 camera提示插入sd卡（实际sd卡、nand正常挂载）；
+
+上面三个问题是因为权限，估计是三星的BSP包不完整，改了一些地方好了，后面这个没法了
+（4）、串口终端有信息输出，但是不能操作，（只能看到内核输出信息，敲键盘没反应）。
+
+请高手指导，以前出货都是eng模式的，丫的有病让编译成user模式的，哎！！
+
+平台信息:
+内核：linux3.0
+系统：android4.0.3
+主控：S5PV310(samsung)
+
+
+
+问题今天解了：
+一、对于前三个问题：
+　　　（1）、 设置中wifi开关选项没有；
+　　　（2）、不能安装应用程序apk;　　　／／nand权限不够
+　　　（3）、 camera提示插入sd卡（实际sd卡、nand正常挂载）；　／／nand权限不够
+4.0.3_r1/out/target/product/smdkv310/system/etc/permissions／要有以下三个文件，
+android.hardware.camera.xml
+android.hardware.wifi.xml
+platform.xml
+这三个文件在：4.0.3_r1/frameworks/base/data/etc中，
+我们在4.0.3_r1/device/samsung/smdkv310/deivce.mk中加入copy命令，如下：
+
+PRODUCT_COPY_FILES += \
+frameworks/base/data/etc/android.hardware.camera.xml:system/etc/permissions/android.hardware.camera.xml\
+frameworks/base/data/etc/android.hardware.sensor.compass.xml:system/etc/permissions/android.hardware.sensor.compass.xml\
+frameworks/base/data/etc/android.hardware.touchscreen.multitouch.xml:system/etc/permissions/android.hardware.touchscreen.multitouch.xml\
+frameworks/base/data/etc/android.hardware.wifi.xml:system/etc/permissions/android.hardware.wifi.xml\
+frameworks/base/data/etc/platform.xml:system/etc/permissions/platform.xml\
+frameworks/base/data/etc/tablet_core_hardware.xml:system/etc/permissions/tablet_core_hardware.xml
+
+二、对第四个问题：
+　　　（4）、串口终端有信息输出，但是不能操作，（只能看到内核输出信息，敲键盘没反应）。
+发现
+
+串口不能用时
+shell@android:/ $ cat default.prop                                             
+
+#
+
+# ADDITIONAL_DEFAULT_PROPERTIES
+
+#
+
+ro.secure=1
+
+ro.allow.mock.location=0
+
+ro.debuggable=0
+
+persist.sys.usb.config=mass_storage
+
+shell@android:/ $ 
+
+串口可用
+shell@android:/ # cat default.prop                                             
+
+#
+
+# ADDITIONAL_DEFAULT_PROPERTIES
+
+#
+
+ro.secure=0
+
+ro.allow.mock.location=1
+
+ro.debuggable=1
+
+persist.sys.usb.config=mass_storage,adb
+
+
+更改：4.0.3_r1/build/core/main.mk
+
+ifeq (true,$(strip $(enable_target_debugging)))
+  # Target is more debuggable and adbd is on by default
+  ADDITIONAL_DEFAULT_PROPERTIES += ro.debuggable=1
+  # Include the debugging/testing OTA keys in this build.
+  INCLUDE_TEST_OTA_KEYS := true
+else # !enable_target_debugging
+  # Target is less debuggable and adbd is off by default
+  ADDITIONAL_DEFAULT_PROPERTIES += ro.debuggable=1
+endif # !enable_target_debugging

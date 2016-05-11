@@ -1,0 +1,21 @@
+Content-Type: text/x-zim-wiki
+Wiki-Format: zim 0.4
+Creation-Date: 2014-03-24T17:34:50+08:00
+
+====== CTS常见Fail项 ======
+Created Monday 24 March 2014
+
+android.media.cts.StreamingMediaPlayerTest
+-- testHLS 	                                                        fail 	 junit.framework.AssertionFailedError: Stream did not play successfully after all attempts at
+                                                                                                    android.media.cts.MediaPlayerTestBase.playVideoWithRetries(MediaPlayerTestBase.java:196)
+-- testHTTP_H264Base_AAC_Video1 	fail 	Test failed to run to completion. Reason: 'Instrumentation run failed due to
+                                                                                                   'junit.framework.AssertionFailedError''. Check device logcat for details
+-- testHTTP_H264Base_AAC_Video2 	fail 	Test failed to run to completion. Reason: 'Instrumentation run failed due to
+                                                                                                    'junit.framework.AssertionFailedError''. Check device logcat for details
+
+HLS测试是这样：带宽分为200000，360000，500000， 800000， 1200000，客户端会根据当前获取的带宽值选择是否播放高清还是普通视频，
+公司的带宽比较大，但实际真正的带宽可能会小好多，导致去播放高清视频是会很卡，然后失败
+解决方法：
+参考8x25平台做法，在system.prop里面对带宽做限制:
+media.httplive.max-bw = 360000  
+最大带宽限制在360000，这样，测试HLS的时候，就只会去播放200000的普通视频，基本可以通过。
